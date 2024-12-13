@@ -1,1 +1,4 @@
-docker run -p 8000:8000 -it ctfd/ctfd
+git clone https://github.com/CTFd/CTFd.git
+docker compose up
+
+Import CTF
