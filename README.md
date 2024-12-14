@@ -1,5 +1,5 @@
 To Do:
-- [ ] Discover challenges
+- [x] Discover challenges
 - [ ] ES|QL challenges
 - [ ] Dashboards challenges
 - [ ] Optimize challenge scores, play through ensure good flow
