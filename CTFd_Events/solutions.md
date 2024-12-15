@@ -1,33 +1,67 @@
-(re)Discover
-1. Flag: {ctf_one_search_to_rule_them_all}
-Concept: Saved Search - Flag found in description
+# (re)Discover
 
-2. Flag {ctf_one_query_to_find_them_all}
+Setup - API Call
+```json
+{
+  "from": "2024-11-12T07:43:13.373Z",
+  "to": "now",
+  "display": "Since Last Incident"
+}
+```
+Setup - API Call
 
-,
-  {
-    "from": "2024-11-12T07:43:13.373Z",
-    "to": "now",
-    "display": "Since Last Incident"
-  }
-
-POST logs-yams/_doc
+`POST logs-yams/_doc`
+```json
 {
   "@timestamp" : "2025-11-28T02:02:09.241Z",
   "message" : "hello from the future",
   "custom_field" : "{ctf_where_we_goin_we_dont_need_roads}"
 }
+```
 
-9. Run this 100 times:
-POST logs-yams/_doc
+### 1. Flag: `{ctf_one_search_to_rule_them_all}`
+**Concept:** Saved Search - Flag found in description
+
+### 2. Flag: `{ctf_one_query_to_find_them_all}`
+**Concept:**
+
+### 3. Flag: `{ctf_}`
+**Concept:**
+
+### 4. Flag: `{ctf_}`
+**Concept:**
+
+### 5. Flag: `{ctf_}`
+**Concept:**
+
+### 6. Flag: `{ctf_}`
+**Concept:**
+
+### 7. Flag: `{ctf_}`
+**Concept:**
+
+### 8. Flag: `{ctf_}`
+**Concept:**
+
+### 9. Flag: `{ctf_}`
+**Concept:**
+
+Setup - API Call : (Run this 100 times)
+`POST logs-yams/_doc`
+```json
 {
   "@timestamp" : "2024-11-27T02:02:09.241Z",
   "message" : "Just a regular event log, nothing to see here.",
   "tags" : ["e2","N0","Zl","9o","YX","lf","aW","5f","dG","hl","X2","5l","ZW","Rs","ZV","9z","dG","Fj","a3","0="]
 }
+```
 
-10. 
-POST logs-yams/_doc
+### 10. Flag: `{ctf_}`
+**Concept:**
+
+Setup - API Call:
+`POST logs-yams/_doc`
+```json
 {
   "@timestamp" : "2024-12-01T16:02:09.241Z",
   "special" : [
@@ -56,3 +90,5 @@ POST logs-yams/_doc
   "iVBORw0KGgoAAAANSUhEUgAAACwAAABLCAYAAAALdWXjAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAANZSURBVGhD7ZpPSBRhFMCfWQelopCCbHU97Ep6UIxCxfXiagsdNISQDC96bPWi3kO8SB503UsHjdBIjysUiO4hFJToD2wQoh50ETqkRCZ6KLDe8GqdnNH59ntvQZgfyLw3ePjx7ffNfO/NlwXw5ABOEWfoempwhaVxhaVxhaVxhaVxhaVJS9jrvQhzc/dha+sRHBz0GH8rKx3GvdpaD/2XDMqbn5aWGzA2FoLc3HN05yjx+AZ0dMzAxsYO3eFDWRhHNS8vhzJ7Njd/QCDwkl1aeUo4kUU8nguwsPCAMj6Uhff2flJ0Migdi92jjAdl4fb2Gdje3qfsZOrrvcYi5UKr4ujqumlc/f7LEAoVGVcrotGP0NkZp0wP1hJpZCQI4XAFZSkSia9QXv6cMj1YXxw4iqur3yhL4fNdokgfVmFkcnKZohT4zOZ6obALj45+oshMRcVVivRgF5Z4ux2GXVgaV1gaV1gaV5hzo2MFu3BTk48iGdwpIY0rLI0rLA27cCy2RpGZ3t7b/2pAHdiFcT9sVSZhyT88XGe0s3QQmRJYJdsRDHphcfEhZeqICEciHyxH+S9VVdfSlhZbdNgMPK5LhNLj43cpc46Y8Pz8ptElwqagHc3NfoqcIyaMTE0t/xHepewoWP6rPjlEhfv6aoyf3g4cfZzvKogJ4764u/sWZUfB+d3T84Yy54gJRyJ1tl16HNnS0mfGlFFFRBhHF9usViwtfYGCgqdpN1xEhPv7A5aji13M6uoXlKWHiHBlpfVCC4f1e8Ric/h/8M2Hz2ZdMibMhYjw/v4vivgREV5f/05RipycsxTpkbEpgfthDkSE4/EkRWY4PhtkdNFxfDYQEbb7XseBiHBhofV8Vd2ZWSEiXFKSRxE/GZsSx1UeKrAL46bdiuMqDxXYhRsaiigyMzu7TpEerML4nLUriey+kKrCKhyNBikyg5t2ri+kLMJYYWBjpKzsCt0xMzT0niJ90jovgcdiamquOzr/g/vg4uJRyvRRHmHsIzQ2+hwfVsIOECfKwsFgIUUnMzHxmaXKOAzrojsMLrS2tteU8aEsPDj4jiJ7pqfXtKtjO7IB7jym2BHJ5A5kZ2dBfv550zzGo2GJxBa0tr6CgYG3dJcf1lNVmUBsDssA8BuH0u36c4wdoQAAAABJRU5ErkJggg=="
 ]
 }
+```
+
