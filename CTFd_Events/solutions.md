@@ -1,13 +1,33 @@
 # (re)Discover
 
-Setup - API Call
-```json
-{
-  "from": "2024-11-12T07:43:13.373Z",
-  "to": "now",
-  "display": "Since Last Incident"
-}
-```
+### 1. Flag: `{ctf_one_search_to_rule_them_all}`
+**Concept:** Saved Search - Flag found in description
+
+Setup - Download and Import Saved Object: [1.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/1.ndjson)
+
+### 2. Flag: `{ctf_one_query_to_find_them_all}`
+**Concept:** Saved Query - Flag found in saved query filter
+
+Setup - Download and Import Saved Object: [2.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/2.ndjson)
+
+### 3. Flag: `{ctf_sweet_my_own_data_view}`
+**Concept:** Data View - Flag found in Index Pattern when managing the data view
+
+Setup - Download and Import Saved Object: [3-4-7.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/3-4-7.ndjson)
+
+### 4. Flag: `{ctf_sweet_my_own_data_view_id}`
+**Concept:** Data View Advanced Setting - Flag found in Custom data view ID
+
+Setup - Download and Import Saved Object: [3-4-7.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/3-4-7.ndjson)
+
+### 5. Flag: `{ctf_fancy_query_in_json}`
+**Concept:** Saved Query - Flag found in saved query filter in the Elasticsearch Query DSL
+
+Setup - Download and Import Saved Object: [5.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/5.ndjson)
+
+### 6. Flag: `{ctf_where_we_goin_we_dont_need_roads}`
+**Concept:** Time Filtering - Flag found looking 1 year into the future
+
 Setup - API Call
 
 `POST logs-yams/_doc`
@@ -19,34 +39,32 @@ Setup - API Call
 }
 ```
 
-### 1. Flag: `{ctf_one_search_to_rule_them_all}`
-**Concept:** Saved Search - Flag found in description
+### 7. Flag: `{ctf_meta_data_is_data_too}`
+**Concept:** Field Matadata - Flag found in the description of the `custom_field`
 
-### 2. Flag: `{ctf_one_query_to_find_them_all}`
-**Concept:**
+Setup - Download and Import Saved Object: [3-4-7.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/3-4-7.ndjson)
 
-### 3. Flag: `{ctf_}`
-**Concept:**
+### 8. Flag: `{ctf_X_days_since_last_incident}` or X - Dynamic
+**Concept:** Find custom time selection - Flag is calculated when using the `Since Last Incident` (find start date to calculate days since last incident)
 
-### 4. Flag: `{ctf_}`
-**Concept:**
+Setup - Download and Import Saved Object: [1.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/8.ndjson)
 
-### 5. Flag: `{ctf_}`
-**Concept:**
+or
 
-### 6. Flag: `{ctf_}`
-**Concept:**
+Setup - API Call
+```json
+{
+  "from": "2024-11-12T07:43:13.373Z",
+  "to": "now",
+  "display": "Since Last Incident"
+}
+```
 
-### 7. Flag: `{ctf_}`
-**Concept:**
-
-### 8. Flag: `{ctf_}`
-**Concept:**
-
-### 9. Flag: `{ctf_}`
-**Concept:**
+### 9. Flag: `{ctf_hay_in_the_needle_stack}`
+**Concept:** Patterns in Discover - Select patterns then filter on the "Just a regular event log, nothing to see here."
 
 Setup - API Call : (Run this 100 times)
+
 `POST logs-yams/_doc`
 ```json
 {
@@ -56,8 +74,8 @@ Setup - API Call : (Run this 100 times)
 }
 ```
 
-### 10. Flag: `{ctf_}`
-**Concept:**
+### 10. Flag: `{ctf_images_everywhere}`
+**Concept:** Rendering Images in Kibana - Adjust the data view to render Image for the `special` field
 
 Setup - API Call:
 `POST logs-yams/_doc`
