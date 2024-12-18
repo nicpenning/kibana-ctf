@@ -1,10 +1,10 @@
 To Do:
 - [x] Discover challenges
 - [x] ES|QL challenges
-- [ ] Optimize challenge scores, play through ensure good flow
-- [ ] Ensure all saved objects and elasticsearch docs can be replicated with ease.
-- [ ] Document deploy/setup instructions
-- [ ] reate blind/self test mode to not reveal any flags or secrets during setup process
+- [x] Optimize challenge scores, play through ensure good flow
+- [x] Ensure all saved objects and elasticsearch docs can be replicated with ease.
+- [x] Document deploy/setup instructions
+- [ ] Create blind/self test mode to not reveal any flags or secrets during setup process
 - [ ] Automate setup with PowerShell script
 - [ ] Add ability to randomize flags for unqiue experience every time
 - [ ] Share with community!
