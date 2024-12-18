@@ -110,3 +110,25 @@ Setup - API Call:
 }
 ```
 
+# ES|QL != SQL
+
+### 1. Flag `{ctf_es|ql_is_not_sql_yay}`
+**Concept:** ES|QL Functions - Flag found when cleaning B64 encoded text and concatenation within allParts
+
+Setup - Download and Import Saved Object: [11.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/ES|QL/11.ndjson)
+
+// Find me if you can!
+ROW a = "ea2N0Zl9lc3aaxxbF9ap", b = "c19dub3Rfc3FsX3lheX0", c = "d2hvb3Bz", d = "bm90X2hlcmU"
+// Store my vars in parts!
+| EVAL part1 = a
+| EVAL part2 = b
+| EVAL part5 = c
+| EVAL part4 = d
+// Now let's do a little cleanup!
+| EVAL clean_part1 = REPLACE(part1,"a","")
+| EVAL clean_part2 = REPLACE(part2,"d","")
+// Putting it altogether now!
+| EVAL allParts = CONCAT(part1,part2)
+//Reveal the flag!
+| EVAL reveal_yourself = FROM_BASE64(allParts)
+//| KEEP reveal_yourself, part1, part2, clean_part1
