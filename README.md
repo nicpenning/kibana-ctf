@@ -1,7 +1,6 @@
 To Do:
 - [x] Discover challenges
-- [ ] ES|QL challenges
-- [ ] Dashboards challenges
+- [x] ES|QL challenges
 - [ ] Optimize challenge scores, play through ensure good flow
 - [ ] Ensure all saved objects and elasticsearch docs can be replicated with ease.
 - [ ] Document deploy/setup instructions
