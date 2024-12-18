@@ -117,6 +117,7 @@ Setup - API Call:
 
 Setup - Download and Import Saved Object: [11.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/ES|QL/11.ndjson)
 
+```
 // Find me if you can!
 ROW a = "ea2N0Zl9lc3aaxxbF9ap", b = "c19dub3Rfc3FsX3lheX0", c = "d2hvb3Bz", d = "bm90X2hlcmU"
 // Store my vars in parts!
@@ -132,3 +133,4 @@ ROW a = "ea2N0Zl9lc3aaxxbF9ap", b = "c19dub3Rfc3FsX3lheX0", c = "d2hvb3Bz", d = 
 //Reveal the flag!
 | EVAL reveal_yourself = FROM_BASE64(allParts)
 //| KEEP reveal_yourself, part1, part2, clean_part1
+```
