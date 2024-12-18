@@ -134,3 +134,13 @@ ROW a = "ea2N0Zl9lc3aaxxbF9ap", b = "c19dub3Rfc3FsX3lheX0", c = "d2hvb3Bz", d = 
 | EVAL reveal_yourself = FROM_BASE64(allParts)
 //| KEEP reveal_yourself, part1, part2, clean_part1
 ```
+
+### 2. Flag `{ctf_c2_with_powershell_is_fun}`
+**Concept:** ES|QL Search - Flag found when showing all fields in the document
+
+Setup - Download and Import Saved Object: [12.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/ES|QL/12.ndjson)
+
+### 3. Flag `{ctf_comments_for_the_win}`
+**Concept:** ES|QL Comments - Flag found when uncommenting all lines
+
+Setup - Download and Import Saved Object: [13.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/ES|QL/13.ndjson)
