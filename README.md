@@ -5,29 +5,36 @@ To Do:
 - [x] Ensure all saved objects and elasticsearch docs can be replicated with ease.
 - [x] Document deploy/setup instructions
 - [ ] Create blind/self test mode to not reveal any flags or secrets during setup process
-- [ ] Automate setup with PowerShell script
+- [ ] Automate setup with PowerShell 7 script
 - [ ] Add ability to randomize flags for unqiue experience every time
 - [ ] Share with community!
 
+## Requirements
+- CTFd (Latest)
+- Elastic Stack (Kibana and Elasticsearch 8.16+)
+- PowerShell 7+ (For Automated Setup)
+
 ## How to get started
-Download and start CTFd (requires internet access, docker and docker compose)
+1. Download and start CTFd (requires internet access, docker and docker compose)
 ```bash
 git clone https://github.com/CTFd/CTFd.git
 cd CTFd
 docker compose up
 ```
 
-Import CTF ([challenges](https://github.com/nicpenning/kibana-ctf/blob/main/CTFd_Events/Kibana%20CTF.2024-12-13_04_17_16.zip))
+2. Import CTF ([challenges](https://github.com/nicpenning/kibana-ctf/blob/main/CTFd_Events/Kibana%20CTF.2024-12-13_04_17_16.zip))
 
-Download and start Elasticsearch / Kibana (requires internet access, docker and docker compose)
+3. Download and start Elasticsearch / Kibana (requires internet access, docker and docker compose)
 
-Import Kibana Saved Objects [(Searches / Data Views / Dashboards / Advanced Settings / etc.) ](https://github.com/nicpenning/kibana-ctf/tree/main/Discover)
+4. Create dedicated Kibana CTF space
 
-Import [Elasticsearch Docs](https://github.com/nicpenning/kibana-ctf/blob/main/CTFd_Events/solutions.txt)
+5. Import Kibana Saved Objects [(Searches / Data Views / Dashboards / Advanced Settings / etc.) ](https://github.com/nicpenning/kibana-ctf/tree/main/Discover)
 
-Configure Space to not let participants access Saved Objects
+6. Import [Elasticsearch Docs](https://github.com/nicpenning/kibana-ctf/blob/main/CTFd_Events/solutions.txt)
 
-#### Advanced Settings for CTFd access - Allow others on the network to access
+7. Configure new Space to not let participants access Saved Objects
+
+#### Advanced Settings for CTFd access - Allow others on the network to access CTF
 Note: You can grab the Ubuntu IP by running this from your Ubuntu WSL2 host: `ip addr | grep eth0`:
 ```bash
 2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
@@ -42,4 +49,5 @@ Doing the step above then allows access to your computer from http://192.168.86.
 
 If you have a Windows Firewall enabled, you will need to allow the port used above (ie TCP 31337).
 
-
+#### Future Flow
+Run setup_script.ps1 -> Prompt for user/pass -> Script sets up Kibana CTF space, Import Saved Objects, Ingest Documents -> Setup Complete
