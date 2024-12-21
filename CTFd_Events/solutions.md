@@ -47,6 +47,7 @@
 <p>
 
 `{ctf_sweet_my_own_data_view_id}`
+
 **Concept:** Data View Advanced Setting - Flag found in Custom data view ID
 
 </p>
@@ -61,6 +62,7 @@
 <p>
 
 `{ctf_fancy_query_in_json}`
+
 **Concept:** Saved Query - Flag found in saved query filter in the Elasticsearch Query DSL
 
 </p>
@@ -96,6 +98,7 @@
 <p>
 
 `{ctf_meta_data_is_data_too}`
+
 **Concept:** Field Matadata - Flag found in the description of the `custom_field`
 
 </p>
