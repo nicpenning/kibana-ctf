@@ -47,7 +47,7 @@ Setup - Download and Import Saved Object: [3-4-7.ndjson](https://github.com/nicp
 ### 8. Flag: `{ctf_X_days_since_last_incident}` or X - Dynamic
 **Concept:** Find custom time selection - Flag is calculated when using the `Since Last Incident` (find start date to calculate days since last incident)
 
-Setup - Download and Import Saved Object: [1.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/8.ndjson)
+Setup - Download and Import Saved Object: [8.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/8.ndjson)
 
 or
 
