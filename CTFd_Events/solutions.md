@@ -18,7 +18,8 @@
 <details>
 <summary>Spolier: Reveal Flag Details</summary>
 <p>
-  `{ctf_one_query_to_find_them_all}`
+
+`{ctf_one_query_to_find_them_all}`
 
 **Concept:** Saved Query - Flag found in saved query filter
 
@@ -74,7 +75,8 @@
 <details>
 <summary>Spolier: Reveal Flag Details</summary>
 <p>
-  `{ctf_where_we_goin_we_dont_need_roads}`
+
+`{ctf_where_we_goin_we_dont_need_roads}`
 
 **Concept:** Time Filtering - Flag found looking 1 year into the future
 
@@ -110,7 +112,8 @@
 <details>
 <summary>Spolier: Reveal Flag Details</summary>
 <p>
-  `{ctf_X_days_since_last_incident}` or X - Dynamic
+
+`{ctf_X_days_since_last_incident}` or X - Dynamic
 
 **Concept:** Find custom time selection - Flag is calculated when using the `Since Last Incident` (find start date to calculate days since last incident)
 
@@ -136,6 +139,7 @@ or
 <p>
 
 `{ctf_hay_in_the_needle_stack}`
+
 **Concept:** Patterns in Discover - Select patterns then filter on the "Just a regular event log, nothing to see here."
 
 </p>
@@ -237,6 +241,7 @@ ROW a = "ea2N0Zl9lc3aaxxbF9ap", b = "c19dub3Rfc3FsX3lheX0", c = "d2hvb3Bz", d = 
 <p>
 
 `{ctf_c2_with_powershell_is_fun}`
+
 **Concept:** ES|QL Search - Flag found when showing all fields in the document
 
 </p>
@@ -289,6 +294,7 @@ ROW a = "ea2N0Zl9lc3aaxxbF9ap", b = "c19dub3Rfc3FsX3lheX0", c = "d2hvb3Bz", d = 
 <p>
   
 `{ctf_comments_for_the_win}`
+
 **Concept:** ES|QL Comments - Flag found when uncommenting all lines
 
 </p>
@@ -300,7 +306,8 @@ ROW a = "ea2N0Zl9lc3aaxxbF9ap", b = "c19dub3Rfc3FsX3lheX0", c = "d2hvb3Bz", d = 
 <details>
 <summary>Spolier: Reveal Flag Details</summary>
 <p>
-  `{ctf_creating_lens_from_es|ql_is_kinda_cool}`
+
+`{ctf_creating_lens_from_es|ql_is_kinda_cool}`
 
 **Concept:** ES|QL Lens - Flag found when editing Text elements of the Lens visual
 
@@ -315,6 +322,7 @@ ROW a = "ea2N0Zl9lc3aaxxbF9ap", b = "c19dub3Rfc3FsX3lheX0", c = "d2hvb3Bz", d = 
 <p>
 
 `{ctf_wow_nice_job_finding_this_custom_id}`
+
 **Concept:** ES|QL Metadata - Flag found when adding Meta Data to the from section of the query
 
 </p>
