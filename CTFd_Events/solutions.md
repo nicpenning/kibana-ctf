@@ -1,34 +1,85 @@
 # (re)Discover
 
-### 1. Flag: `{ctf_one_search_to_rule_them_all}`
+### 1. Flag:
+<details>
+<summary>Spolier: Reveal Flag Details</summary>
+<p>
+  
+`{ctf_one_search_to_rule_them_all}`
+
 **Concept:** Saved Search - Flag found in description
 
-Setup - Download and Import Saved Object: [1.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/1.ndjson)
+</p>
+</details>
 
-### 2. Flag: `{ctf_one_query_to_find_them_all}`
+**Setup:** Download and Import Saved Object: [1.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/1.ndjson)
+
+### 2. Flag:
+<details>
+<summary>Spolier: Reveal Flag Details</summary>
+<p>
+  `{ctf_one_query_to_find_them_all}`
+
 **Concept:** Saved Query - Flag found in saved query filter
 
-Setup - Download and Import Saved Object: [2.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/2.ndjson)
+</p>
+</details>
 
-### 3. Flag: `{ctf_sweet_my_own_data_view}`
+**Setup:** Download and Import Saved Object: [2.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/2.ndjson)
+
+### 3. Flag:
+<details>
+<summary>Spolier: Reveal Flag Details</summary>
+<p>
+
+`{ctf_sweet_my_own_data_view}`
+
 **Concept:** Data View - Flag found in Index Pattern when managing the data view
 
-Setup - Download and Import Saved Object: [3-4-7.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/3-4-7.ndjson)
+</p>
+</details>
 
-### 4. Flag: `{ctf_sweet_my_own_data_view_id}`
+**Setup:** Download and Import Saved Object: [3-4-7.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/3-4-7.ndjson)
+
+### 4. Flag:
+<details>
+<summary>Spolier: Reveal Flag Details</summary>
+<p>
+
+`{ctf_sweet_my_own_data_view_id}`
 **Concept:** Data View Advanced Setting - Flag found in Custom data view ID
 
-Setup - Download and Import Saved Object: [3-4-7.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/3-4-7.ndjson)
+</p>
+</details>
 
-### 5. Flag: `{ctf_fancy_query_in_json}`
+**Setup:** Download and Import Saved Object: [3-4-7.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/3-4-7.ndjson)
+
+### 5. Flag:
+
+<details>
+<summary>Spolier: Reveal Flag Details</summary>
+<p>
+
+`{ctf_fancy_query_in_json}`
 **Concept:** Saved Query - Flag found in saved query filter in the Elasticsearch Query DSL
 
-Setup - Download and Import Saved Object: [5.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/5.ndjson)
+</p>
+</details>
 
-### 6. Flag: `{ctf_where_we_goin_we_dont_need_roads}`
+**Setup:** Download and Import Saved Object: [5.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/5.ndjson)
+
+### 6. Flag:
+<details>
+<summary>Spolier: Reveal Flag Details</summary>
+<p>
+  `{ctf_where_we_goin_we_dont_need_roads}`
+
 **Concept:** Time Filtering - Flag found looking 1 year into the future
 
-Setup - API Call
+</p>
+</details>
+
+**Setup:** API Call
 
 `POST logs-yams/_doc`
 ```json
@@ -39,19 +90,35 @@ Setup - API Call
 }
 ```
 
-### 7. Flag: `{ctf_meta_data_is_data_too}`
+### 7. Flag:
+<details>
+<summary>Spolier: Reveal Flag Details</summary>
+<p>
+
+`{ctf_meta_data_is_data_too}`
 **Concept:** Field Matadata - Flag found in the description of the `custom_field`
 
-Setup - Download and Import Saved Object: [3-4-7.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/3-4-7.ndjson)
+</p>
+</details>
 
-### 8. Flag: `{ctf_X_days_since_last_incident}` or X - Dynamic
+**Setup:** Download and Import Saved Object: [3-4-7.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/3-4-7.ndjson)
+
+### 8. Flag:
+<details>
+<summary>Spolier: Reveal Flag Details</summary>
+<p>
+  `{ctf_X_days_since_last_incident}` or X - Dynamic
+
 **Concept:** Find custom time selection - Flag is calculated when using the `Since Last Incident` (find start date to calculate days since last incident)
+
+</p>
+</details>
 
 Setup - Download and Import Saved Object: [8.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/Discover/8.ndjson)
 
 or
 
-Setup - API Call
+**Setup:** API Call
 ```json
 {
   "from": "2024-11-12T07:43:13.373Z",
@@ -60,10 +127,18 @@ Setup - API Call
 }
 ```
 
-### 9. Flag: `{ctf_hay_in_the_needle_stack}`
+### 9. Flag:
+<details>
+<summary>Spolier: Reveal Flag Details</summary>
+<p>
+
+`{ctf_hay_in_the_needle_stack}`
 **Concept:** Patterns in Discover - Select patterns then filter on the "Just a regular event log, nothing to see here."
 
-Setup - API Call : (Run this 100 times)
+</p>
+</details>
+
+**Setup:** API Call : (Run this 100 times)
 
 `POST logs-yams/_doc`
 ```json
@@ -74,10 +149,19 @@ Setup - API Call : (Run this 100 times)
 }
 ```
 
-### 10. Flag: `{ctf_images_everywhere}`
+### 10. Flag:
+<details>
+<summary>Spolier: Reveal Flag Details</summary>
+<p>
+
+`{ctf_images_everywhere}`
+
 **Concept:** Rendering Images in Kibana - Adjust the data view to render Image for the `special` field
 
-Setup - API Call:
+</p>
+</details>
+
+**Setup:** API Call:
 `POST logs-yams/_doc`
 ```json
 {
@@ -112,10 +196,19 @@ Setup - API Call:
 
 # ES|QL != SQL
 
-### 1. Flag `{ctf_es|ql_is_not_sql_yay}`
+### 1. Flag
+<details>
+<summary>Spolier: Reveal Flag Details</summary>
+<p>
+
+`{ctf_es|ql_is_not_sql_yay}`
+
 **Concept:** ES|QL Functions - Flag found when cleaning B64 encoded text and concatenation within allParts
 
-Setup - Download and Import Saved Object: [11.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/ES|QL/11.ndjson)
+</p>
+</details>
+
+**Setup:** Download and Import Saved Object: [11.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/ES|QL/11.ndjson)
 
 ```
 // Find me if you can!
@@ -135,10 +228,18 @@ ROW a = "ea2N0Zl9lc3aaxxbF9ap", b = "c19dub3Rfc3FsX3lheX0", c = "d2hvb3Bz", d = 
 //| KEEP reveal_yourself, part1, part2, clean_part1
 ```
 
-### 2. Flag `{ctf_c2_with_powershell_is_fun}`
+### 2. Flag
+<details>
+<summary>Spolier: Reveal Flag Details</summary>
+<p>
+
+`{ctf_c2_with_powershell_is_fun}`
 **Concept:** ES|QL Search - Flag found when showing all fields in the document
 
-API Call (Also used in future challenge (5))
+</p>
+</details>
+
+**Setup:** API Call (Also used in future challenge (5))
 `PUT logs-windows.sysmon-default/_create/e2N0Zl93b3dfbmljZV9qb2JfZmluZGluZ190aGlzX2N1c3RvbV9pZH0`
 ```json
 {
@@ -174,22 +275,49 @@ API Call (Also used in future challenge (5))
 }
 ```
 
-Setup - Download and Import Saved Object: [12.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/ES|QL/12.ndjson)
+</p>
+</details>
 
-### 3. Flag `{ctf_comments_for_the_win}`
+**Setup:** Download and Import Saved Object: [12.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/ES|QL/12.ndjson)
+
+### 3. Flag
+<details>
+<summary>Spolier: Reveal Flag Details</summary>
+<p>
+  
+`{ctf_comments_for_the_win}`
 **Concept:** ES|QL Comments - Flag found when uncommenting all lines
 
-Setup - Download and Import Saved Object: [13.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/ES|QL/13.ndjson)
+</p>
+</details>
 
-### 4. Flag `{ctf_creating_lens_from_es|ql_is_kinda_cool}`
+**Setup:** Download and Import Saved Object: [13.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/ES|QL/13.ndjson)
+
+### 4. Flag
+<details>
+<summary>Spolier: Reveal Flag Details</summary>
+<p>
+  `{ctf_creating_lens_from_es|ql_is_kinda_cool}`
+
 **Concept:** ES|QL Lens - Flag found when editing Text elements of the Lens visual
 
-Setup - Download and Import Saved Object: [14.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/ES|QL/14.ndjson)
+</p>
+</details>
 
-### 5. Flag `{ctf_wow_nice_job_finding_this_custom_id}`
+**Setup:** Download and Import Saved Object: [14.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/ES|QL/14.ndjson)
+
+### 5. Flag
+<details>
+<summary>Spolier: Reveal Flag Details</summary>
+<p>
+
+`{ctf_wow_nice_job_finding_this_custom_id}`
 **Concept:** ES|QL Metadata - Flag found when adding Meta Data to the from section of the query
 
-Setup - Download and Import Saved Object: [15.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/ES|QL/15.ndjson)
+</p>
+</details>
+
+**Setup:** Download and Import Saved Object: [15.ndjson](https://github.com/nicpenning/kibana-ctf/blob/main/ES|QL/15.ndjson)
 
 API Call (Can be done in previous challenge (2))
 `PUT logs-windows.sysmon-default/_create/e2N0Zl93b3dfbmljZV9qb2JfZmluZGluZ190aGlzX2N1c3RvbV9pZH0`
