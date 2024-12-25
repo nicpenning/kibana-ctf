@@ -6,7 +6,7 @@ To Do:
 - [x] Document deploy/setup instructions
 - [ ] Create blind/self test mode to not reveal any flags or secrets during setup process
 - [ ] Automate setup with PowerShell 7 script
-- [ ] Add ability to randomize flags for unique experience every time
+- [ ] Add ability to randomize flags for unique flags every time
 - [ ] Share with community!
 
 ## Requirements
