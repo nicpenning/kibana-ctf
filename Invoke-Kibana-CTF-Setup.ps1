@@ -141,9 +141,9 @@ Begin {
             Write-Debug "Waiting for healthy cluster for 5 seconds. Then checking again."
             Start-Sleep -Seconds 5
         }
-        } until ("green" -eq $status.status)
+        } until ("yellow" -eq $status.status -or "green" -eq $status.status)
     
-        if ("green" -eq $status.status) {
+        if ("yellow" -eq $status.status -or "green" -eq $status.status) {
         Write-Host "Elastic cluster is $($status.status), continuing through the setup process." -ForegroundColor Green
         Start-Sleep -Seconds 2
         }
@@ -223,6 +223,35 @@ Begin {
         docker-compose down
         }
         Set-Location ..\
+    }
+
+    function Import-SavedObject {
+        Param (
+            $filename
+        )
+        
+        $importSavedObjectsURL = $kibanaURL+"/api/saved_objects/_import?overwrite=true"
+        $kibanaHeader = @{"kbn-xsrf" = "true"; "Authorization" = "$kibanaAuth"}
+        $savedObjectsFilePath =  Resolve-Path $filename
+    
+        $fileBytes = [System.IO.File]::ReadAllBytes($savedObjectsFilePath.path);
+        $fileEnc = [System.Text.Encoding]::GetEncoding('UTF-8').GetString($fileBytes);
+        $boundary = [System.Guid]::NewGuid().ToString(); 
+        $LF = "`r`n";
+    
+        $bodyLines = ( 
+            "--$boundary",
+            "Content-Disposition: form-data; name=`"file`"; filename=`"saved_object.ndjson`"",
+            "Content-Type: application/octet-stream$LF",
+            $fileEnc,
+            "--$boundary--$LF" 
+        ) -join $LF
+    
+        $result = Invoke-RestMethod -Method POST -Uri $importSavedObjectsURL -Headers $kibanaHeader -ContentType "multipart/form-data; boundary=`"$boundary`"" -Body $bodyLines -AllowUnencryptedAuthentication
+        if($result.errors -or $null -eq $result){
+            Write-Host "There was an error trying to import $filename"
+            $result.errors
+        }
     }
 
     $option1 = "1. Deploy CTFd"
@@ -535,7 +564,6 @@ Process {
                 $elasticsearchURL = $configurationSettings.elasticsearchURL
                 $elasticsearchAPIKey = $configurationSettings.elasticsearchAPIKey
                 $kibanaURL = $configurationSettings.kibanaURL
-                $tag = $configurationSettings.tag
                 $initializationComplete = $configurationSettings.initializedElasticStack
                      
                 # 3. Check to see if Elasticsearch is available for use.
@@ -543,7 +571,7 @@ Process {
                 
                 # Create API Key if not found in the config.
                 if ("" -eq $elasticsearchAPIKey){
-                    Write-Host "No API key found, going to generate a key for the helium indices nows."
+                    Write-Host "No API key found, going to generate a key for the ctf indices nows."
                     #POST _security/api_key
                     $apiKey = Get-Content ./setup/api_key_creation.json
                 
@@ -557,37 +585,39 @@ Process {
                 
                     $configurationSettings | Convertto-JSON | Out-File ./configuration.json -Force
                     } catch {
-                    Write-Host "Couldn't bootstrap helium index, likely because it already exists. Check kibana to see if the helium index exists."
+                    Write-Host "Couldn't bootstrap ctf index, likely because it already exists. Check kibana to see if the ctf index exists."
                     Write-Debug "$_"
                     }
                 }
                 
-                # Static and Constant core variables needed for initialization and usage of this product. 
-                # Please don't modify unless you know what you are doing.
-                $indexName = "helium-enriched"
-                $baseIndexName = "helium"
-                $pipelineName = "Helium_Enrichment"
-                
-                
-                # Bootstrap helium index
-                Write-Host "Bootstrapping helium index in preparation for data ingest." -ForegroundColor Blue
-                $bootstrapIndexURL = $elasticsearchURL+"/helium"
+                # Bootstrap ctf index
+                Write-Host "Bootstrapping ctf index in preparation for data ingest." -ForegroundColor Blue
+                $bootstrapIndexURL = $elasticsearchURL+"/logs-ctf"
                 try {
                     Invoke-RestMethod -Method PUT -Uri $bootstrapIndexURL -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck
                 } catch {
-                    Write-Host "Couldn't bootstrap helium index, likely because it already exists. Check kibana to see if the helium index exists." -ForegroundColor Yellow
+                    Write-Host "Couldn't bootstrap ctf index, likely because it already exists. Check kibana to see if the ctf index exists." -ForegroundColor Yellow
                     Write-Debug "$_"
                 }
                 
                 # The final step is to import the Visualizations and Dashboards
-                Write-Host "Last step! Importing saved visualizations and dashboard objects to visualize the data." -ForegroundColor DarkMagenta
-                Import-IndexPattern "./setup/dashboard_objects_helium.ndjson"
+                Write-Host "Last step! Importing saved objects to Kibana." -ForegroundColor DarkMagenta
+                Import-SavedObject "./Discover/1.ndjson"
+                Import-SavedObject "./Discover/2.ndjson"
+                Import-SavedObject "./Discover/3-4-7.ndjson"
+                Import-SavedObject "./Discover/5.ndjson"
+                Import-SavedObject "./Discover/8.ndjson"
+                Import-SavedObject "./ES|QL/11.ndjson"
+                Import-SavedObject "./ES|QL/12.ndjson"
+                Import-SavedObject "./ES|QL/13.ndjson"
+                Import-SavedObject "./ES|QL/14.ndjson"
+                Import-SavedObject "./ES|QL/15.ndjson"
                 
                 $configurationSettings.initializedElasticStack = "true"
                 $configurationSettings | Convertto-JSON | Out-File ./configuration.json -Force
                 
-                Write-Host "But first, please navigate to your Kibana dashboard to make sure you have some data.`nCopy and Paste the URL below to navigate to the dashboard that was created (ctrl-click might not work):" -ForegroundColor Yellow
-                Write-Host $kibanaUrl'/app/dashboards#/view/c61c6ad0-13cc-11ec-b374-9dc91dfe0453?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-4y,to:now))' -ForegroundColor DarkCyan
+                Write-Host "But first, please navigate to your Kibana instance to make sure you have some data.`nCopy and Paste the URL below to navigate to Kibana (ctrl-click might not work):" -ForegroundColor Yellow
+                Write-Host $kibanaUrl -ForegroundColor DarkCyan
                 Write-Host "Username : elastic`nPassword : $elasticsearchPassword"
 
                 $finished = $true
