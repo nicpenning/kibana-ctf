@@ -1,6 +1,5 @@
 {
-  "elasticsearchURL": "https://localhost:9200",
-  "elasticsearchAPIKey": "",
-  "kibanaURL": "http://localhost:5601",
+  "Elasticsearch_URL": "https://localhost:9200",
+  "Kibana_URL": "http://localhost:5601",
   "initializedElasticStack": "true"
 }

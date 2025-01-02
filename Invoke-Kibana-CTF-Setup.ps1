@@ -71,7 +71,7 @@ Begin {
     }
     
     function Get-Challenges-From-CTFd {
-        return Invoke-RestMethod -Method GET "$ctfd_url_api/challenges" -ContentType "application/json" -Headers $ctfd_auth
+        return Invoke-RestMethod -Method GET "$CTFd_URL_API/challenges" -ContentType "application/json" -Headers $ctfd_auth
     }
 
     function Get-CTFd-Admin-Token {
@@ -80,11 +80,11 @@ Begin {
 
         # Validate auth
         try{
-            $validate = Invoke-RestMethod -Method GET -Uri "$ctfd_url_api/pages"  -ContentType "application/json" -Headers $ctfd_auth
+            $validate = Invoke-RestMethod -Method GET -Uri "$CTFd_URL_API/pages"  -ContentType "application/json" -Headers $ctfd_auth
             if($validate){
                 Write-Host "Valid token provided!" -ForegroundColor Green
             }else{
-                Write-Host "Could not validate, try another token or checking your connection to $ctfd_url_api/pages endpoint."
+                Write-Host "Could not validate, try another token or checking your connection to $CTFd_URL_API/pages endpoint."
             }
         }catch{
             Write-Host "Could not validate token, exiting." -ForegroundColor Red
@@ -131,16 +131,17 @@ Begin {
         # Check for Elastic stack connectivity to a healthy cluster
         Write-Host "Waiting for Elastic stack to be accessible." -ForegroundColor Blue
     
-        $healthAPI = $elasticsearchURL+"/_cluster/health"
+        $healthAPI = $Elasticsearch_URL+"/_cluster/health"
         # Keep checking for a healthy cluster that can be used for the initialization process!
         do {
-        try {
-            Write-Debug "Checking to see if the cluster is accessible. Please wait."
-            $status = Invoke-RestMethod -Method Get -Uri $healthAPI -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck  
-        } catch {
-            Write-Debug "Waiting for healthy cluster for 5 seconds. Then checking again."
-            Start-Sleep -Seconds 5
-        }
+            try {
+                Write-Debug "Checking to see if the cluster is accessible. Please wait."
+                $status = Invoke-RestMethod -Method Get -Uri $healthAPI -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck  
+            } catch {
+                Write-Debug "Waiting for healthy cluster for 5 seconds. Then checking again."
+                $status
+                Start-Sleep -Seconds 5
+            }
         } until ("yellow" -eq $status.status -or "green" -eq $status.status)
     
         if ("yellow" -eq $status.status -or "green" -eq $status.status) {
@@ -230,7 +231,7 @@ Begin {
             $filename
         )
         
-        $importSavedObjectsURL = $kibanaURL+"/api/saved_objects/_import?overwrite=true"
+        $importSavedObjectsURL = $Kibana_URL+"/s/kibana-ctf/api/saved_objects/_import?overwrite=true"
         $kibanaHeader = @{"kbn-xsrf" = "true"; "Authorization" = "$kibanaAuth"}
         $savedObjectsFilePath =  Resolve-Path $filename
     
@@ -251,6 +252,46 @@ Begin {
         if($result.errors -or $null -eq $result){
             Write-Host "There was an error trying to import $filename"
             $result.errors
+        }else{
+            Write-Host "Imported $filename" -ForegroundColor Green
+        }
+    }
+
+    function Invoke-Create-Kibana-CTF-Space {
+        Param(
+            $Kibana_URL
+        )
+
+        $createKibanaCTFSpaceURL = $Kibana_URL+"/api/spaces/space"
+        $deleteKibanaCTFSpaceURL = $Kibana_URL+"/api/spaces/space/kibana-ctf"
+        $kibanaHeader = @{"kbn-xsrf" = "true"; "Authorization" = "$kibanaAuth"}
+
+        $spaceJSON = [PSCustomObject]@{
+            "id" = "kibana-ctf"
+            "name" = "Kibana CTF"
+            "color" = "#FFFFFF"
+            #"imageUrl" = "data:image/png;base64,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"
+            "initials" = "KC"
+            "description" = "This is the Kibana CTF Space! Let's go!!!"
+            "disabledFeatures"=  @("enterpriseSearch","logs","infrastructure","apm","inventory","uptime","observabilityCasesV2","slo","siem","securitySolutionCasesV2","dev_tools","advancedSettings","indexPatterns","filesManagement","filesSharedImage","savedObjectsManagement","savedQueryManagement","savedObjectsTagging","osquery","actions","generalCasesV2","guidedOnboardingFeature","rulesSettings","maintenanceWindow","stackAlerts","fleetv2","fleet","dataQuality","monitoring","canvas","maps","ml","dashboard")
+        } | ConvertTo-Json
+
+        # Create the space!
+        try{
+            $result = Invoke-RestMethod -Method POST -Uri $createKibanaCTFSpaceURL -Headers $kibanaHeader -ContentType "application/json" -Body $spaceJSON -AllowUnencryptedAuthentication
+        }catch{
+            # Delete and try again if Kibana CTF Space already exists.
+            Write-Host "Failed to create the Kibana CTF space. Going to delete it if it exists and try to create it again." -ForegroundColor Yellow
+            Invoke-RestMethod -Method DELETE -Uri $deleteKibanaCTFSpaceURL -Headers $kibanaHeader -ContentType "application/json" -AllowUnencryptedAuthentication
+            $result = Invoke-RestMethod -Method POST -Uri $createKibanaCTFSpaceURL -Headers $kibanaHeader -ContentType "application/json" -Body $spaceJSON -AllowUnencryptedAuthentication
+        }
+        $result = Invoke-RestMethod -Method POST -Uri $createKibanaCTFSpaceURL -Headers $kibanaHeader -ContentType "application/json" -Body $spaceJSON -AllowUnencryptedAuthentication
+
+        if($result.errors -or $null -eq $result){
+            Write-Host "There was an error trying to import the Kibana CTF Space." -ForegroundColor Yellow
+            $result.errors
+        }else{
+            Write-Host "Created Kibana CTF Space!" -ForegroundColor Green
         }
     }
 
@@ -281,12 +322,7 @@ Begin {
     }
 
     # CTFd Variables
-    $ctfd_url = "http://127.0.0.1:8000"
-    $ctfd_url_api = $ctfd_url+"/api/v1"
-
-    # Elastic Stack Variables
-    $elasticserach_url = "https://127.0.0.1:9200"
-    $kibana_url = "https://127.0.0.1:5601"
+    $CTFd_URL_API = $CTFd_URL+"/api/v1"
 }
 
 Process {
@@ -303,7 +339,7 @@ Process {
                 # 1. Deploy CTFd
 
                 git clone https://github.com/CTFd/CTFd.git
-                cd CTFd
+                Set-Location CTFd
                 docker compose up
 
                 $finished = $true
@@ -344,7 +380,7 @@ Process {
                     }
                     Write-Host "Importing challenge: $($_.name)"
                     try{
-                        $import_challenge = Invoke-RestMethod -Method POST "$ctfd_url_api/challenges" -ContentType "application/json" -Headers $ctfd_auth -Body $current_challenge
+                        $import_challenge = Invoke-RestMethod -Method POST "$CTFd_URL_API/challenges" -ContentType "application/json" -Headers $ctfd_auth -Body $current_challenge
                         Write-Host "Imported challenge $($current_challenge.name) - $($import_challenge.success)"
                     }catch{
                         Write-Host "Could not import challenge: $($current_challenge.name) - $($_.id)"
@@ -361,7 +397,7 @@ Process {
 
                     Write-Host "Importing flags for Challenge ID: $($_.challenge_id)"
                     try{
-                        $import_flag = Invoke-RestMethod -Method POST "$ctfd_url_api/flags" -ContentType "application/json" -Headers $ctfd_auth -Body $current_flag
+                        $import_flag = Invoke-RestMethod -Method POST "$CTFd_URL_API/flags" -ContentType "application/json" -Headers $ctfd_auth -Body $current_flag
                         Write-Host "Imported flag $($_.id) - $($import_flag.success)"
                     }catch{
                         Write-Host "Could not import flag: $($current_challenge.name) - $($_.id)"
@@ -378,7 +414,7 @@ Process {
 
                     Write-Host "Importing flags for Challenge ID: $($_.challenge_id)"
                     try{
-                        $import_hints = Invoke-RestMethod -Method POST "$ctfd_url_api/hints" -ContentType "application/json" -Headers $ctfd_auth -Body $current_hints
+                        $import_hints = Invoke-RestMethod -Method POST "$CTFd_URL_API/hints" -ContentType "application/json" -Headers $ctfd_auth -Body $current_hints
                         Write-Host "Imported flag $($_.id) - $($import_hints.success)"
                     }catch{
                         Write-Host "Could not import hint: $($_.id) for challenge id: $($_.challenge_id)"
@@ -395,7 +431,7 @@ Process {
 
                     Write-Host "Importing page: $($_.title)"
                     try{
-                        $import_pages = Invoke-RestMethod -Method POST "$ctfd_url_api/pages" -ContentType "application/json" -Headers $ctfd_auth -Body $current_pages
+                        $import_pages = Invoke-RestMethod -Method POST "$CTFd_URL_API/pages" -ContentType "application/json" -Headers $ctfd_auth -Body $current_pages
                         Write-Host "Imported page $($_.title) - $($import_pages.success)"
                     }catch{
                         Write-Host "Could not import page: $($_.title)"
@@ -412,7 +448,7 @@ Process {
 
                     Write-Host "Importing config option: $($_.key)"
                     try{
-                        $import_config = Invoke-RestMethod -Method POST "$ctfd_url_api/configs" -ContentType "application/json" -Headers $ctfd_auth -Body $current_config
+                        $import_config = Invoke-RestMethod -Method POST "$CTFd_URL_API/configs" -ContentType "application/json" -Headers $ctfd_auth -Body $current_config
                         Write-Host "Imported config option: $($_.key)- $($import_config.success)" -ForegroundColor Green
                     }catch{
                         Write-Host "Could not import config."
@@ -429,7 +465,7 @@ Process {
 
                     Write-Host "Importing file: $($_.location)"
                     try{
-                        $import_file = Invoke-RestMethod -Method POST "$ctfd_url_api/files" -ContentType "application/json" -Headers $ctfd_auth -Body $current_file
+                        $import_file = Invoke-RestMethod -Method POST "$CTFd_URL_API/files" -ContentType "application/json" -Headers $ctfd_auth -Body $current_file
                         Write-Host "Imported file: $($_.location)- $($import_file.success)" -ForegroundColor Green
                     }catch{
                         Write-Host "Could not import config."
@@ -453,10 +489,10 @@ Process {
                 $challenges.data | ForEach-Object {
                     # Get all challenge details per challenge
                     $id = $_.id
-                    $challenge_info = Invoke-RestMethod -Method Get "$ctfd_url_api/challenges/$id" -ContentType "application/json" -Headers $ctfd_auth
+                    $challenge_info = Invoke-RestMethod -Method Get "$CTFd_URL_API/challenges/$id" -ContentType "application/json" -Headers $ctfd_auth
                     Write-Host "Removing challenge: $($challenge_info.data.name)"
                     try{
-                        $remove_challenge = Invoke-RestMethod -Method Delete "$ctfd_url_api/challenges/$id" -ContentType "application/json" -Headers $ctfd_auth
+                        $remove_challenge = Invoke-RestMethod -Method Delete "$CTFd_URL_API/challenges/$id" -ContentType "application/json" -Headers $ctfd_auth
                         Write-Host "Removed challenge $($challenge_info.data.name) - $($remove_challenge.success)"
                     }catch{
                         Write-Host "Could not remove challenge: $($challenge_info.data.name) - $id"
@@ -561,38 +597,65 @@ Process {
                 # Extract custom settings from configuration.json
                 $configurationSettings = Get-Content ./configuration.json | ConvertFrom-Json
                 
-                $elasticsearchURL = $configurationSettings.elasticsearchURL
-                $elasticsearchAPIKey = $configurationSettings.elasticsearchAPIKey
-                $kibanaURL = $configurationSettings.kibanaURL
+                $Elasticsearch_URL = $configurationSettings.Elasticsearch_URL
+                $Kibana_URL = $configurationSettings.Kibana_URL
                 $initializationComplete = $configurationSettings.initializedElasticStack
                      
                 # 3. Check to see if Elasticsearch is available for use.
                 Invoke-CheckForElasticsearchStatus
                 
-                # Create API Key if not found in the config.
-                if ("" -eq $elasticsearchAPIKey){
-                    Write-Host "No API key found, going to generate a key for the ctf indices nows."
-                    #POST _security/api_key
-                    $apiKey = Get-Content ./setup/api_key_creation.json
+                $configurationSettings.initializedElasticStack = "true"
+                $configurationSettings | Convertto-JSON | Out-File ./configuration.json -Force
                 
-                    # API Key URL
-                    $apiKeyCreationIndexURL = $elasticsearchURL+"/_security/api_key"
-                    try {
-                    $apiKey = Invoke-RestMethod -Method POST -Uri $apiKeyCreationIndexURL -body $apiKey -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck
-                    
-                    # Store API key in Elastic
-                    $configurationSettings.elasticsearchAPIKey = $apiKey.encoded
-                
-                    $configurationSettings | Convertto-JSON | Out-File ./configuration.json -Force
-                    } catch {
-                    Write-Host "Couldn't bootstrap ctf index, likely because it already exists. Check kibana to see if the ctf index exists."
-                    Write-Debug "$_"
-                    }
+                Write-Host "But first, please navigate to your Kibana instance to make sure you can log in.`nCopy and Paste the URL below to navigate to Kibana (ctrl-click might not work):" -ForegroundColor Yellow
+                Write-Host $Kibana_URL -ForegroundColor DarkCyan
+                Write-Host "Username : elastic`nPassword : $elasticsearchPassword"
+
+                $finished = $true
+                break
+            }
+            '5' {
+                # 5. Import Objects and Index Documents for Elastic Stack
+                Write-Host "Option not quite ready, yet, proceed with caution."
+
+                # Extract custom settings from configuration.json if it exists
+                $configurationSettings = Get-Content ./configuration.json | ConvertFrom-Json
+                if($null -ne $configurationSettings.Elasticsearch_URL){
+                    Write-Host "Elasticsearch URL detected: $Elasticsearch_URL" -ForegroundColor Green
+                    $Elasticsearch_URL = $configurationSettings.Elasticsearch_URL
                 }
+                if($null -ne $configurationSettings.Kibana_URL){
+                    Write-Host "Kibana URL detected: $Kibana_URL" -ForegroundColor Green
+                    $Kibana_URL = $configurationSettings.Kibana_URL
+                }
+
+                if($null -eq $Elasticsearch_URL){
+                    Write-Host "Elasticearch URL required." -ForegroundColor Yellow
+                    $Elasticsearch_URL = Read-Host "Enter full Elasticsearch URL. Example: https://127.0.0.1:9200"
+                }
+
+                if($null -eq $Kibana_URL){
+                    Write-Host "Kibana URL required." -ForegroundColor Yellow
+                    $Kibana_URL = Read-Host "Enter full Kibana URL. Example: http://127.0.0.1:5601"
+                }
+
+
+                # Configure Elasticsearch credentials for importing saved objects into Kibana.
+                # Get elastic user credentials
+                Write-Host "Going to need the password for the elastic user." -ForegroundColor Yellow
+                $elasticCreds = Get-Credential elastic
+                
+                # Set passwords via automated configuration or manual input
+                # Base64 Encoded elastic:secure_password for Kibana auth
+                $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
+                $kibanaAuth = "Basic $elasticCredsBase64"
+                     
+                # 3. Check to see if Elasticsearch is available for use.
+                Invoke-CheckForElasticsearchStatus
                 
                 # Bootstrap ctf index
                 Write-Host "Bootstrapping ctf index in preparation for data ingest." -ForegroundColor Blue
-                $bootstrapIndexURL = $elasticsearchURL+"/logs-ctf"
+                $bootstrapIndexURL = $Elasticsearch_URL+"/logs-ctf"
                 try {
                     Invoke-RestMethod -Method PUT -Uri $bootstrapIndexURL -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck
                 } catch {
@@ -600,8 +663,11 @@ Process {
                     Write-Debug "$_"
                 }
                 
+                # Import Kibana CTF Space
+                Invoke-Create-Kibana-CTF-Space $Kibana_URL
+
                 # The final step is to import the Visualizations and Dashboards
-                Write-Host "Last step! Importing saved objects to Kibana." -ForegroundColor DarkMagenta
+                Write-Host "Last step! Importing saved objects to the Kibana CTF Space." -ForegroundColor DarkMagenta
                 Import-SavedObject "./Discover/1.ndjson"
                 Import-SavedObject "./Discover/2.ndjson"
                 Import-SavedObject "./Discover/3-4-7.ndjson"
@@ -613,19 +679,7 @@ Process {
                 Import-SavedObject "./ES|QL/14.ndjson"
                 Import-SavedObject "./ES|QL/15.ndjson"
                 
-                $configurationSettings.initializedElasticStack = "true"
-                $configurationSettings | Convertto-JSON | Out-File ./configuration.json -Force
-                
-                Write-Host "But first, please navigate to your Kibana instance to make sure you have some data.`nCopy and Paste the URL below to navigate to Kibana (ctrl-click might not work):" -ForegroundColor Yellow
-                Write-Host $kibanaUrl -ForegroundColor DarkCyan
-                Write-Host "Username : elastic`nPassword : $elasticsearchPassword"
-
-                $finished = $true
-                break
-            }
-            '5' {
-                # 5. Import Objects and Index Documents for Elastic Stack
-                Write-Host "Option not available, yet."
+                Write-Host "Object imported." -ForegroundColor Green
 
                 $finished = $true
                 break
@@ -702,7 +756,7 @@ $dynamic_challenge_details.PSObject.Members | Where-Object {$_.MemberType -eq "N
     $current_challenge = $current_challenge_object | ConvertTo-Json -Compress -Depth 10
 }
 try{
-    $test = Invoke-RestMethod -Method POST "$ctfd_url_api/challenges" -ContentType "application/json" -Headers $ctfd_auth -Body $current_challenge
+    $test = Invoke-RestMethod -Method POST "$CTFd_URL_API/challenges" -ContentType "application/json" -Headers $ctfd_auth -Body $current_challenge
 
 }catch{
     $_.Exception
