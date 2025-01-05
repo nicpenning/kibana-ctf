@@ -85,7 +85,7 @@
 
 **Setup:** API Call
 
-`POST logs-yams/_doc`
+`POST logs-kibana-ctf/_doc`
 ```json
 {
   "@timestamp" : "2025-11-28T02:02:09.241Z",
@@ -147,7 +147,7 @@ or
 
 **Setup:** API Call : (Run this 100 times)
 
-`POST logs-yams/_doc`
+`POST logs-kibana-ctf/_doc`
 ```json
 {
   "@timestamp" : "2024-11-27T02:02:09.241Z",
@@ -169,7 +169,7 @@ or
 </details>
 
 **Setup:** API Call:
-`POST logs-yams/_doc`
+`POST logs-kibana-ctf/_doc`
 ```json
 {
   "@timestamp" : "2024-12-01T16:02:09.241Z",
