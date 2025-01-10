@@ -369,9 +369,26 @@ Process {
             '1' {
                 # 1. Deploy CTFd
 
-                git clone https://github.com/CTFd/CTFd.git
-                Set-Location CTFd
-                docker compose up
+                # Check to see if CTFd has been deployed, and if not, ask to deploy.
+                if($null -ne (get-item CTFd)){
+                    $runCTFd = Read-host "CTFd directory detected! Would you like to run CTFd via docker? (y or n)"
+                    if($runCTFd -match "y"){
+                        Set-Location CTFd
+                        docker compose up
+                    }else{
+                        Write-Host "You said no, you do not wish to run CTFd, exiting." -ForegroundColor Yellow
+                    }
+                }else{
+                    $runCTFd = Read-host "CTFd directory not detected, would you like to download and run CTFd via docker? (y or n)"
+                    if($runCTFd -match "y"){
+                        git clone https://github.com/CTFd/CTFd.git
+                        Set-Location CTFds
+                        docker compose up
+                    }else{
+                        Write-Host "You said no, you do not wish to deploy and run CTFd, exiting." -ForegroundColor Yellow
+                    }
+                }
+
 
                 $finished = $true
                 break
@@ -647,7 +664,6 @@ Process {
             }
             '5' {
                 # 5. Import Objects and Index Documents for Elastic Stack
-                Write-Host "Option not quite ready, yet, proceed with caution."
 
                 # Extract custom settings from configuration.json if it exists
                 $configurationSettings = Get-Content ./configuration.json | ConvertFrom-Json
