@@ -46,7 +46,7 @@ Param (
     
     # CTFd URL. (default - https://127.0.0.1:8000)
     [Parameter(Mandatory=$false)]
-    $CTFd_URL = "https://127.0.0.1:8000",
+    $CTFd_URL = "http://127.0.0.1:8000",
 
     # CTF Start Date. (default - Now)
     [Parameter(Mandatory=$false)]
@@ -445,6 +445,17 @@ Process {
 
                     Write-Host "Importing flags for Challenge ID: $($_.challenge_id)"
                     try{
+                        # Adjust dynamic incident challenge
+                        if($current_flag -match '"content":"38"'){
+                            Write-Host "Incident Challenge detected, updating dynamic challenge answer."
+                            $days = $($($(Get-date)-$(Get-Date 2024-11-12T07:43:13.373Z) ).Days)
+                            $current_flag = $current_flag -replace '"content":"38"', $('"content":"'+"$($days-1)|$days|$($days+1)"+'"')
+                        } elseif ($current_flag -match 'ctf_38_days_since_last_incident'){
+                            Write-Host "Incident Challenge detected, updating dynamic challenge answer."
+                            $days = $($($(Get-date)-$(Get-Date 2024-11-12T07:43:13.373Z) ).Days)
+                            $current_flag = $current_flag -replace 'ctf_38_days_since_last_incident', $('ctf_('+"$($days-1)|$days|$($days+1)"+')_days_since_last_incident')
+                        }
+
                         $import_flag = Invoke-RestMethod -Method POST "$CTFd_URL_API/flags" -ContentType "application/json" -Headers $ctfd_auth -Body $current_flag
                         Write-Host "Imported flag $($_.id) - $($import_flag.success)"
                     }catch{
