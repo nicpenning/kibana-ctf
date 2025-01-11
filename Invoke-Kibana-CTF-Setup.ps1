@@ -42,7 +42,7 @@ Param (
 
     # Kibana URL. (default - https://127.0.0.1:5601)
     [Parameter(Mandatory=$false)]
-    $Kibana_URL = "https://127.0.0.1:5601",
+    $Kibana_URL = "http://127.0.0.1:5601",
     
     # CTFd URL. (default - https://127.0.0.1:8000)
     [Parameter(Mandatory=$false)]
@@ -374,6 +374,7 @@ Process {
                     $runCTFd = Read-host "CTFd directory detected! Would you like to run CTFd via docker? (y or n)"
                     if($runCTFd -match "y"){
                         Set-Location CTFd
+                        Write-Host "Bringing CTFd up. User to log in is: admin and pass is: kibanaCTF1!" -ForegroundColor Green
                         docker compose up
                     }else{
                         Write-Host "You said no, you do not wish to run CTFd, exiting." -ForegroundColor Yellow
@@ -383,6 +384,7 @@ Process {
                     if($runCTFd -match "y"){
                         git clone https://github.com/CTFd/CTFd.git
                         Set-Location CTFds
+                        Write-Host "Bringing CTFd up. User to log in is: admin and pass is: kibanaCTF1!" -ForegroundColor Green
                         docker compose up
                     }else{
                         Write-Host "You said no, you do not wish to deploy and run CTFd, exiting." -ForegroundColor Yellow
