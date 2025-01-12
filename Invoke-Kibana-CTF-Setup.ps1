@@ -505,6 +505,7 @@ Process {
                         Write-Host "Will try to update the current page."
                         try{
                             $update_pages = Invoke-RestMethod -Method PATCH "$CTFd_URL_API/pages/1" -ContentType "application/json" -Headers $ctfd_auth -Body $current_pages
+                            Write-Host "Pages updated: $($update_pages.success)"
                         }catch{
                             Write-Host "Could not import page: $($_.title)"
                             Write-Host "Note: This shouldn't impact the CTF platform if everything else worked."
@@ -810,7 +811,11 @@ Process {
 
                 Invoke-Ingest-Elasticsearch-Documents -documentToIngest $challenge5_12 -customUrl $ingestIndexIDURL
                 Invoke-Ingest-Elasticsearch-Documents -documentToIngest $challenge6
-                Invoke-Ingest-Elasticsearch-Documents -documentToIngest $challenge9
+                $count = 0
+                do{
+                    Invoke-Ingest-Elasticsearch-Documents -documentToIngest $challenge9
+                    $count++
+                }while($count = 10000)
                 Invoke-Ingest-Elasticsearch-Documents -documentToIngest $challenge10
 
                 
