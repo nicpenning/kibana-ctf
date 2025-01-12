@@ -25,11 +25,11 @@
 
     Variable Options
     -Elasticsearch_URL "https://127.0.0.1:9200"
-    -Kibana_URL "https://127.0.0.1:5601"
+    -Kibana_URL "http://127.0.0.1:5601"
     -CTFd_URL "http://127.0.0.1:8000"
-    -CTF_Start_Date "12/24/2024 12:00 PM" (default - Now)
-    -CTF_End_Date "12/24/2024 1:00 PM" (default - 1 hour from Start Date)
-    -CTFd_Randomize_Flags "False" (default False) # TO DO
+    -CTF_Start_Date "12/24/2024 12:00 PM" (default - Now) # To do
+    -CTF_End_Date "12/24/2024 1:00 PM" (default - 1 hour from Start Date) # To do
+    -CTFd_Randomize_Flags "False" (default False) # To do
 
 .EXAMPLE
    .\Invoke-Kibana-CTF-Setup.ps1 -Elasticsearch_URL "http://127.0.0.1:9200" -Kibana_URL "https://127.0.0.1:5601" -CTFd_URL "http://127.0.0.1:8000" -CTF_Start_Date "12/24/2024 12:00 PM" -CTF_End_date "12/24/2024 3:00PM"
@@ -56,7 +56,7 @@ Param (
     [Parameter(Mandatory=$false)]
     $CTF_End_Date = $([math]::Round(($((Get-Date).AddHours(1)).ToUniversalTime() - [datetime]'1970-01-01T00:00:00Z').TotalSeconds)),
 
-    # Random CTF flags to make answer unique everytime. (default - false To Do)
+    # Random CTF flags to make answer unique everytime. (default - false - To Do)
     [Parameter(Mandatory=$false)]
     $CTFd_Randomize_Flags = "false" 
 )
@@ -663,7 +663,6 @@ Process {
                 
                 $Elasticsearch_URL = $configurationSettings.Elasticsearch_URL
                 $Kibana_URL = $configurationSettings.Kibana_URL
-                $initializationComplete = $configurationSettings.initializedElasticStack
                      
                 # 3. Check to see if Elasticsearch is available for use.
                 Invoke-CheckForElasticsearchStatus
