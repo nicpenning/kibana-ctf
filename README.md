@@ -42,19 +42,19 @@ pwsh
 
 2. Deploy CTFd - Use Option 1
 a. Once deployed, go to the CTFd instance and navigate through the wizard with default settings (most of these will be overwritten later). Make sure to make note of your admin user/password combination and specify how long you want the CTF to last (this can easily be changed later if needed.)
-![CTFd First Start Page](image.png)
-![Step 2 Sample](image-1.png)
-![Step 3 Sample](image-2.png)
-![Step 4 Sample](image-4.png)
-![Step 5 Sample](image-5.png)
-![Step 6 - Set Start / End Date of Challenge](image-6.png)
-![Finish!](image-7.png)
+![CTFd First Start Page](./images/image.png)
+![Step 2 Sample](./images/image-1.png)
+![Step 3 Sample](./images/image-2.png)
+![Step 4 Sample](./images/image-4.png)
+![Step 5 Sample](./images/image-5.png)
+![Step 6 - Set Start / End Date of Challenge](./images/image-6.png)
+![Finish!](./images/image-7.png)
 
 b. Go to settings, create the API Access Token and copy for later since you will not be able to see them after dismissing that pop up window. (No worries if you forget, you can create one later.)
-![API Access Token](image-8.png)
-![Navigate to Access Token Page](image-9.png)
-![Generate Token](image-10.png)
-![Copy Token for Usage Later](image-11.png)
+![API Access Token](./images/image-8.png)
+![Navigate to Access Token Page](./images/image-9.png)
+![Generate Token](./images/image-10.png)
+![Copy Token for Usage Later](./images/image-11.png)
 
 3. Import CTFd Challenges/Flags/etc. - Use Option 2 (This will ask for you Access Token we had you copy from the previous step!)
 
