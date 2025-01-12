@@ -40,23 +40,23 @@ Param (
     [Parameter(Mandatory=$false)]
     $Elasticsearch_URL = "https://127.0.0.1:9200",
 
-    # Kibana URL. (default - https://127.0.0.1:5601)
+    # Kibana URL. (default - http://127.0.0.1:5601)
     [Parameter(Mandatory=$false)]
     $Kibana_URL = "http://127.0.0.1:5601",
     
-    # CTFd URL. (default - https://127.0.0.1:8000)
+    # CTFd URL. (default - http://127.0.0.1:8000)
     [Parameter(Mandatory=$false)]
     $CTFd_URL = "http://127.0.0.1:8000",
 
-    # CTF Start Date. (default - Now)
+    # CTF Start Date. (default - Now - To Do)
     [Parameter(Mandatory=$false)]
-    $CTF_Start_Date = "https://127.0.0.1:9200",
+    $CTF_Start_Date = $([Math]::Floor([System.DateTimeOffset]::Now.ToUnixTimeMilliseconds())),
 
-    # CTF End Date URL. (default - 1 hour from Start Date)
+    # CTF End Date URL. (default - 1 hour from Start Date - To Do)
     [Parameter(Mandatory=$false)]
-    $CTF_End_Date = "https://127.0.0.1:9200",
+    $CTF_End_Date = $([math]::Round(($((Get-Date).AddHours(1)).ToUniversalTime() - [datetime]'1970-01-01T00:00:00Z').TotalMilliSeconds)),
 
-    # Random CTF flags to make answer unique everytime. (default - false TO DO)
+    # Random CTF flags to make answer unique everytime. (default - false To Do)
     [Parameter(Mandatory=$false)]
     $CTFd_Randomize_Flags = "false" 
 )

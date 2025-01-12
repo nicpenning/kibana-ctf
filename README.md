@@ -4,15 +4,14 @@ To Do:
 - [x] Optimize challenge scores, play through ensure good flow
 - [x] Ensure all saved objects and elasticsearch docs can be replicated with ease.
 - [x] Document deploy/setup instructions
-- [ ] Create blind/self test mode to not reveal any flags or secrets during setup process
-- [ ] Automate setup with PowerShell 7 script
+- [x] Assisted setup with PowerShell 7 script
 - [ ] Add ability to randomize flags for unique flags every time
 - [ ] Share with community!
 
 ## Requirements
 - PowerShell 7+ (For Setup [Manual/Automated])
-- Elastic Stack (Kibana and Elasticsearch 8.16+)
-- CTFd (Latest)
+- Elastic Stack (Kibana and Elasticsearch 8.16+) -> Can be retrived using included script!
+- CTFd (Latest) -> Can be retrived using included script!
 
 ```
  ./Invoke-Kibana-CTF-Setup.ps1                                                                                                       
