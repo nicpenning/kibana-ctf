@@ -50,11 +50,11 @@ Param (
 
     # CTF Start Date. (default - Now - To Do)
     [Parameter(Mandatory=$false)]
-    $CTF_Start_Date = $([Math]::Floor([System.DateTimeOffset]::Now.ToUnixTimeMilliseconds())),
+    $CTF_Start_Date = $([Math]::Floor([System.DateTimeOffset]::Now.ToUnixTimeSeconds())),
 
     # CTF End Date URL. (default - 1 hour from Start Date - To Do)
     [Parameter(Mandatory=$false)]
-    $CTF_End_Date = $([math]::Round(($((Get-Date).AddHours(1)).ToUniversalTime() - [datetime]'1970-01-01T00:00:00Z').TotalMilliSeconds)),
+    $CTF_End_Date = $([math]::Round(($((Get-Date).AddHours(1)).ToUniversalTime() - [datetime]'1970-01-01T00:00:00Z').TotalSeconds)),
 
     # Random CTF flags to make answer unique everytime. (default - false To Do)
     [Parameter(Mandatory=$false)]
