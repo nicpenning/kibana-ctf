@@ -502,7 +502,14 @@ Process {
                         Write-Host "Imported page $($_.title) - $($import_pages.success)"
                     }catch{
                         Write-Host "Could not import page: $($_.title)"
-                        $_.Exception
+                        Write-Host "Will try to update the current page."
+                        try{
+                            $update_pages = Invoke-RestMethod -Method PATCH "$CTFd_URL_API/pages/1" -ContentType "application/json" -Headers $ctfd_auth -Body $current_pages
+                        }catch{
+                            Write-Host "Could not import page: $($_.title)"
+                            Write-Host "Note: This shouldn't impact the CTF platform if everything else worked."
+                            $_.Exception
+                        }
                     }
                 }
 
