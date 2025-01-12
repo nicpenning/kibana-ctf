@@ -201,6 +201,7 @@ Begin {
         if($composeVersion){
             Write-Debug '"docker compose detected"'
             docker compose up -d
+            Write-Host "Elastic Stack container started, navigate to $Kibana_URL to ensure it started okay.`nNote: It could a few minutes to get the Elastic stack running so be patient.)" -ForegroundColor Green
         }else{
             Throw '"docker compose" not detected, will now check for docker-compose'
         }
@@ -377,6 +378,7 @@ Process {
                         Write-Host "Bringing CTFd up! (Use docker compose down anytime from the CTFd directory to stop the container)" -ForegroundColor Green
                         docker compose up -d
                         Set-Location ../kibana-ctf/
+                        Write-Host "CTFd downloaded and began the process to bring it up. Navigate to $CTFd_URL to continue the setup process.`nNote: It could take a few minutes for the container to come up." -ForegroundColor Green
                     }else{
                         Write-Host "You said no, you do not wish to run CTFd, exiting." -ForegroundColor Yellow
                     }
@@ -389,6 +391,7 @@ Process {
                         Write-Host "Bringing CTFd up! (Use docker compose down anytime from the CTFd directory to stop the container)" -ForegroundColor Green
                         docker compose up -d
                         Set-Location ../kibana-ctf/
+                        Write-Host "CTFd downloaded and began the process to bring it up. Navigate to $CTFd_URL to continue the setup process.`nNote: It could take a few minutes for the container to come up." -ForegroundColor Green
                     }else{
                         Write-Host "You said no, you do not wish to deploy and run CTFd, exiting." -ForegroundColor Yellow
                     }
