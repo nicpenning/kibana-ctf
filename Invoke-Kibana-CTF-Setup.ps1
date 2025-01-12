@@ -200,23 +200,23 @@ Begin {
         $composeVersion = docker compose version
         if($composeVersion){
             Write-Debug '"docker compose detected"'
-            docker compose up &
+            docker compose up -d
         }else{
             Throw '"docker compose" not detected, will now check for docker-compose'
         }
         } catch {
-        Write-Debug "docker compose up failed - trying docker-compose up"
-        try {
-            $dockerComposeVersion = docker-compose version
-            if($dockerComposeVersion){
-            Write-Debug '"docker-compose detected"'
-            docker-compose up &
-            }else{
-            Throw '"docker-compose" not detected.'
+            Write-Debug "docker compose up -d failed - trying docker-compose up -d"
+            try {
+                $dockerComposeVersion = docker-compose version
+                if($dockerComposeVersion){
+                Write-Debug '"docker-compose detected"'
+                docker-compose up -d
+                }else{
+                Throw '"docker-compose" not detected.'
+                }
+            } catch {
+                Write-Host "docker compose up -d or docker-compose up -d did not work. Check that you have docker and docker composed installed."
             }
-        } catch {
-            Write-Host "docker compose up or docker-compose up did not work. Check that you have docker and docker composed installed."
-        }
         }
         Set-Location ..\
     }
@@ -374,8 +374,9 @@ Process {
                     $runCTFd = Read-host "CTFd directory detected! Would you like to run CTFd via docker? (y or n)"
                     if($runCTFd -match "y"){
                         Set-Location CTFd
-                        Write-Host "Bringing CTFd up. User to log in is: admin and pass is: kibanaCTF1!" -ForegroundColor Green
-                        docker compose up
+                        Write-Host "Bringing CTFd up! (Use docker compose down anytime from the CTFd directory to stop the container)" -ForegroundColor Green
+                        docker compose up -d
+                        Set-Location ..\
                     }else{
                         Write-Host "You said no, you do not wish to run CTFd, exiting." -ForegroundColor Yellow
                     }
@@ -383,9 +384,10 @@ Process {
                     $runCTFd = Read-host "CTFd directory not detected, would you like to download and run CTFd via docker? (y or n)"
                     if($runCTFd -match "y"){
                         git clone https://github.com/CTFd/CTFd.git
-                        Set-Location CTFds
-                        Write-Host "Bringing CTFd up. User to log in is: admin and pass is: kibanaCTF1!" -ForegroundColor Green
-                        docker compose up
+                        Set-Location CTFd
+                        Write-Host "Bringing CTFd up! (Use docker compose down anytime from the CTFd directoryto stop the container)" -ForegroundColor Green
+                        docker compose up -d
+                        Set-Location ..\
                     }else{
                         Write-Host "You said no, you do not wish to deploy and run CTFd, exiting." -ForegroundColor Yellow
                     }
@@ -627,7 +629,7 @@ Process {
                     if ($restartDocker -eq 1) {
                         Write-Host "Stopping current docker instances by bringing them down with docker compose down."
                         Invoke-StopDocker
-                        Write-Host "Starting docker containers back upw tih docker compose up &"
+                        Write-Host "Starting docker containers back up with docker compose up -d &"
                         Invoke-StartDocker
                     } else {
                         Write-Debug "Continuing with current docker instance running."
@@ -812,11 +814,11 @@ Process {
                 Import-SavedObject "./Discover/3-4-7.ndjson"
                 Import-SavedObject "./Discover/5.ndjson"
                 Import-SavedObject "./Discover/8.ndjson"
-                Import-SavedObject "./ES|QL/11.ndjson"
-                Import-SavedObject "./ES|QL/12.ndjson"
-                Import-SavedObject "./ES|QL/13.ndjson"
-                Import-SavedObject "./ES|QL/14.ndjson"
-                Import-SavedObject "./ES|QL/15.ndjson"
+                Import-SavedObject "./ES_QL/11.ndjson"
+                Import-SavedObject "./ES_QL/12.ndjson"
+                Import-SavedObject "./ES_QL/13.ndjson"
+                Import-SavedObject "./ES_QL/14.ndjson"
+                Import-SavedObject "./ES_QL/15.ndjson"
                 
                 Write-Host "Object imported." -ForegroundColor Green
 

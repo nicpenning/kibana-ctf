@@ -10,29 +10,59 @@ To Do:
 - [ ] Share with community!
 
 ## Requirements
-- CTFd (Latest)
+- PowerShell 7+ (For Setup [Manual/Automated])
 - Elastic Stack (Kibana and Elasticsearch 8.16+)
-- PowerShell 7+ (For Automated Setup)
+- CTFd (Latest)
 
-## How to get started
-1. Download and start CTFd (requires internet access, docker and docker compose)
-```bash
-git clone https://github.com/CTFd/CTFd.git
-cd CTFd
-docker compose up
+```
+ ./Invoke-Kibana-CTF-Setup.ps1                                                                                                       
+Welcome to the Kibana CTF Setup Script!
+What would you like to do?
+1. Deploy CTFd
+2. Import CTFd Challenges, Flags, etc.
+3. Reset CTFd
+4. Deploy Elastic Stack
+5. Import Objects and Index Documents for Elastic Stack
+6. Reset Elastic Stack
+7. Check for Requirements
+8. Deploy all from scratch
+Q. Quit
+Enter your choice: 
 ```
 
-2. Import CTF ([challenges](https://github.com/nicpenning/kibana-ctf/blob/main/CTFd_Events/Kibana%20CTF.2024-12-13_04_17_16.zip))
+## How to get started
+1. Ensure you have PowerShell 7+ installed then download this repo to get rolling!
 
-3. Download and start Elasticsearch / Kibana (requires internet access, docker and docker compose)
+```bash
+git clone https://github.com/nicpenning/kibana-ctf.git
+cd kibana-ctf
+pwsh
+./Invoke-Kibana-CTF-Setup.ps1
+```
 
-4. Create dedicated Kibana CTF space
+2. Deploy CTFd - Use Option 1
+a. Once deployed, go to the CTFd instance and navigate through the wizard with default settings (most of these will be overwritten later). Make sure to make note of your admin user/password combination and specify how long you want the CTF to last (this can easily be changed later if needed.)
+![CTFd First Start Page](image.png)
+![Step 2 Sample](image-1.png)
+![Step 3 Sample](image-2.png)
+![Step 4 Sample](image-4.png)
+![Step 5 Sample](image-5.png)
+![Step 6 - Set Start / End Date of Challenge](image-6.png)
+![Finish!](image-7.png)
 
-5. Import Kibana Saved Objects [(Searches / Data Views / Dashboards / Advanced Settings / etc.) ](https://github.com/nicpenning/kibana-ctf/tree/main/Discover)
+b. Go to settings, create the API Access Token and copy for later since you will not be able to see them after dismissing that pop up window. (No worries if you forget, you can create one later.)
+![API Access Token](image-8.png)
+![Navigate to Access Token Page](image-9.png)
+![Generate Token](image-10.png)
+![Copy Token for Usage Later](image-11.png)
 
-6. Import [Elasticsearch Docs](https://github.com/nicpenning/kibana-ctf/blob/main/CTFd_Events/solutions.md)
+3. Import CTFd Challenges/Flags/etc. - Use Option 2 (This will ask for you Access Token we had you copy from the previous step!)
 
-7. Configure new Space to not let participants access Saved Objects
+4. Download and start Elasticsearch / Kibana - Use Option 4
+
+5. Import Objects and Index Documents for Elastic Stack - Use Option 5
+
+6. Login to Kibana and go to the Kibana CTF space and good luck!
 
 #### Advanced Settings for CTFd access - Allow others on the network to access CTF
 Note: You can grab the Ubuntu IP by running this from your Ubuntu WSL2 host: `ip addr | grep eth0`:
@@ -50,4 +80,4 @@ Doing the step above then allows access to your computer from http://192.168.86.
 If you have a Windows Firewall enabled, you will need to allow the port used above (ie TCP 31337).
 
 #### Future Flow
-Run setup_script.ps1 -> Prompt for user/pass -> Script sets up Kibana CTF space, Import Saved Objects, Ingest Documents -> Setup Complete
+Run Invoke-Kibana-CTF-Setup.ps1 -> Prompt for credentials -> Script sets up CTFd, Kibana CTF space, Import Saved Objects, Ingest Documents -> Setup Complete
