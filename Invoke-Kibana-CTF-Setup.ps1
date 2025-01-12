@@ -370,24 +370,25 @@ Process {
                 # 1. Deploy CTFd
 
                 # Check to see if CTFd has been deployed, and if not, ask to deploy.
-                if($null -ne (get-item CTFd)){
+                if($null -ne (get-item ../CTFd)){
                     $runCTFd = Read-host "CTFd directory detected! Would you like to run CTFd via docker? (y or n)"
                     if($runCTFd -match "y"){
-                        Set-Location CTFd
+                        Set-Location ../CTFd
                         Write-Host "Bringing CTFd up! (Use docker compose down anytime from the CTFd directory to stop the container)" -ForegroundColor Green
                         docker compose up -d
-                        Set-Location ..\
+                        Set-Location ../kibana-ctf/
                     }else{
                         Write-Host "You said no, you do not wish to run CTFd, exiting." -ForegroundColor Yellow
                     }
                 }else{
                     $runCTFd = Read-host "CTFd directory not detected, would you like to download and run CTFd via docker? (y or n)"
                     if($runCTFd -match "y"){
+                        Set-Location ../
                         git clone https://github.com/CTFd/CTFd.git
-                        Set-Location CTFd
-                        Write-Host "Bringing CTFd up! (Use docker compose down anytime from the CTFd directoryto stop the container)" -ForegroundColor Green
+                        Set-Location ./CTFd/
+                        Write-Host "Bringing CTFd up! (Use docker compose down anytime from the CTFd directory to stop the container)" -ForegroundColor Green
                         docker compose up -d
-                        Set-Location ..\
+                        Set-Location ../kibana-ctf/
                     }else{
                         Write-Host "You said no, you do not wish to deploy and run CTFd, exiting." -ForegroundColor Yellow
                     }
