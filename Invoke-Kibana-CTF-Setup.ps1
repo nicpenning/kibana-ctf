@@ -784,12 +784,19 @@ Process {
 
                 # Configure Elasticsearch credentials for importing saved objects into Kibana.
                 # Get elastic user credentials
-                Write-Host "Going to need the password for the elastic user." -ForegroundColor Yellow
-                $elasticCreds = Get-Credential elastic
-                
+                Write-Host "Going to need the password for the elastic user. Checking for generated creds now." -ForegroundColor Yellow
+                $elasticCredsCheck = Invoke-CheckForEnv
                 # Set passwords via automated configuration or manual input
                 # Base64 Encoded elastic:secure_password for Kibana auth
-                $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
+                if($($elasticCredsCheck)[0]){
+                    $elasticPass = ConvertTo-SecureString -String $($($elasticCredsCheck)[1]) -AsPlainText -Force
+                    $elasticCreds = New-Object System.Management.Automation.PSCredential("elastic", $elasticPass)
+                    $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($("elastic:$($elasticPass)").ToString()))
+                }else{
+                    $elasticCreds = Get-Credential elastic
+                    $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
+                }
+                
                 $kibanaAuth = "Basic $elasticCredsBase64"
                      
                 # 3. Check to see if Elasticsearch is available for use.
@@ -802,7 +809,8 @@ Process {
 
                 $fakeCount = 0
                 do{
-                    Invoke-Ingest-Elasticsearch-Documents -documentToIngest Generate-FakeEvent
+                    $dummyDocument = Generate-FakeEvent
+                    Invoke-Ingest-Elasticsearch-Documents -documentToIngest $dummyDocument
                     $count++
                 }while($fakeCount -lt 2500)
                 
