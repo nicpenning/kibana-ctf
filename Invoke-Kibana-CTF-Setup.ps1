@@ -808,10 +808,11 @@ Process {
                 # Ingest Dummy Documents
 
                 $fakeCount = 0
+                Write-Host "Ingesting 2K documents, please wait. This could take a few minutes."
                 do{
                     $dummyDocument = Generate-FakeEvent
-                    Invoke-Ingest-Elasticsearch-Documents -documentToIngest $dummyDocument
-                    $count++
+                    $ingestDocs = Invoke-Ingest-Elasticsearch-Documents -documentToIngest $dummyDocument
+                    $fakeCount++
                 }while($fakeCount -lt 2500)
                 
                 # Challenge 5 & 12
