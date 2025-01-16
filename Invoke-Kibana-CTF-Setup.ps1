@@ -727,16 +727,15 @@ Process {
                     Write-Host "Elastic credentials detected! Going to use those for the setup process." -ForegroundColor Blue
                     $elasticsearchPasswordSecure = ConvertTo-SecureString -String "$elasticsearchPassword" -AsPlainText -Force
                     $elasticCreds = New-Object System.Management.Automation.PSCredential -ArgumentList "elastic", $elasticsearchPasswordSecure
-                    $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($("elastic:"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
                 } else {
                     Write-Host "No generated credentials were found! Going to need the password for the elastic user." -ForegroundColor Yellow
                     # When no passwords were generated, then prompt for credentials
                     $elasticCreds = Get-Credential elastic
-                    $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
-
                 }
                 
+                # Set passwords via automated configuration or manual input
                 # Base64 Encoded elastic:secure_password for Kibana auth
+                $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
                 $kibanaAuth = "Basic $elasticCredsBase64"
                 
                 # Extract custom settings from configuration.json
@@ -792,12 +791,11 @@ Process {
                 if($($elasticCredsCheck)[0]){
                     $elasticPass = ConvertTo-SecureString -String $($($elasticCredsCheck)[1]) -AsPlainText -Force
                     $elasticCreds = New-Object System.Management.Automation.PSCredential("elastic", $elasticPass)
-                    $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($("elastic:$($elasticPass)").ToString()))
                 }else{
                     $elasticCreds = Get-Credential elastic
-                    $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
                 }
-                
+                $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
+
                 $kibanaAuth = "Basic $elasticCredsBase64"
                      
                 # 3. Check to see if Elasticsearch is available for use.
