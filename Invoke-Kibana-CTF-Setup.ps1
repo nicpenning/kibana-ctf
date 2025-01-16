@@ -329,6 +329,75 @@ Begin {
         return $result
     }
 
+    function Generate-FakeEvent {
+        <#
+        .SYNOPSIS
+        Generates a fake event with nested fields for testing purposes. Compliments of ChatGPT.
+        
+        .DESCRIPTION
+        This function creates a fake event with nested fields such as '@timestamp',
+        'host' (with subfields 'name', 'ip', 'os'), and a 'message' field.
+        The '@timestamp' is a random value between 7 days ago and now, precise to milliseconds.
+    
+        .EXAMPLE
+        $event = Generate-FakeEvent
+        Write-Output $event
+        #>
+        param (
+            [string[]]$OSTypes = @(
+                "Linux Ubuntu",
+                "Mac OS X",
+                "Unix Solaris",
+                "Windows 10",
+                "iOS 14",
+                "Android 11"
+            ),
+            [string[]]$OSVersions = @("10.0", "11.0", "22.04", "Monterey", "9.0", "12.1", "7.1.2"),
+            [string[]]$Messages = @(
+                "User login successful.",
+                "File accessed.",
+                "System update completed.",
+                "Unauthorized access attempt detected.",
+                "Scheduled task executed."
+            )
+        )
+    
+        # Generate a random timestamp between 7 days ago and now
+        $startDate = (Get-Date).AddDays(-7).ToUniversalTime()
+        $endDate = (Get-Date).ToUniversalTime()
+    
+        # Calculate the random timestamp in milliseconds
+        $startMillis = $startDate.ToFileTimeUtc() / 10000
+        $endMillis = $endDate.ToFileTimeUtc() / 10000
+        $randomMillis = Get-Random -Minimum $startMillis -Maximum $endMillis
+        $randomTimestamp = ([DateTime]::FromFileTimeUtc($randomMillis * 10000))
+    
+        # Generate random values for host fields
+        $hostName = "host$(Get-Random -Minimum 1 -Maximum 1000)"
+        $hostIP = "$((Get-Random -Minimum 10 -Maximum 255)).$((Get-Random -Minimum 0 -Maximum 255)).$((Get-Random -Minimum 0 -Maximum 255)).$((Get-Random -Minimum 0 -Maximum 255))"
+        $hostOSName = $OSTypes | Get-Random
+        $hostOSVersion = $OSVersions | Get-Random
+        $message = $Messages | Get-Random
+    
+        # Create the event object with nested fields
+        $event = @{
+            '@timestamp' = $randomTimestamp.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+            'host' = @{
+                'name' = $hostName
+                'ip' = $hostIP
+                'os' = @{
+                    'name' = $hostOSName
+                    'type' = ($hostOSName -split " ")[0].ToLower() # Extract the base type (e.g., "Mac" -> "mac")
+                    'version' = $hostOSVersion
+                }
+            }
+            'message' = $message
+        }
+    
+        # Return the event as JSON
+        return $event | ConvertTo-JSON -Depth 2 -Compress
+    }
+
     $option1 = "1. Deploy CTFd"
     $option2 = "2. Import CTFd Challenges, Flags, etc."
     $option3 = "3. Reset CTFd"
@@ -728,6 +797,14 @@ Process {
                 
                 # Ingesting Documents
                 Write-Host "Ingesting documents for challenges" -ForegroundColor Blue
+
+                # Ingest Dummy Documents
+
+                $fakeCount = 0
+                do{
+                    Invoke-Ingest-Elasticsearch-Documents -documentToIngest Generate-FakeEvent
+                    $count++
+                }while($fakeCount -lt 2500)
                 
                 # Challenge 5 & 12
                 $dateNow = ($(Get-Date -AsUTC)).ToString("o")
