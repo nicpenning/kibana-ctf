@@ -815,7 +815,7 @@ Process {
                 do{
                     Invoke-Ingest-Elasticsearch-Documents -documentToIngest $challenge9
                     $count++
-                }while($count = 10000)
+                }while($count -lt 100)
                 Invoke-Ingest-Elasticsearch-Documents -documentToIngest $challenge10
 
                 
