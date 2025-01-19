@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "priority": 500,
+  "template": {
+    "settings": {
+      "index": {
+        "mode": "standard"
+      }
+    }
+  },
+  "index_patterns": [
+    "logs-kibana-ctf"
+  ],
+  "data_stream": {
+    "hidden": false,
+    "allow_custom_routing": false
+  },
+  "composed_of": [
+    "logs@mappings",
+    "logs@settings",
+    "ecs@mappings",
+    "logs@custom"
+  ],
+  "ignore_missing_component_templates": [
+    "logs@custom"
+  ],
+  "allow_auto_create": true,
+  "deprecated": false
+}
