@@ -6,6 +6,13 @@
       "index": {
         "mode": "standard"
       }
+    },
+    "mappings": {
+      "properties": {
+        "special": {
+          "type": "keyword"
+        }
+      }
     }
   },
   "index_patterns": [

@@ -67,7 +67,13 @@ Begin {
     $CTFd_URL_API = $CTFd_URL+"/api/v1"
 
     # Elasticsearch Variables
-    $ingestIndexURL = $Elasticsearch_URL+"/logs-kibna-ctf/_doc"
+    $ingestIndexURL = $Elasticsearch_URL+"/logs-kibana-ctf/_doc"
+    $indexTemplateURL = $Elasticsearch_URL+"/_index_template/logs-kibana-ctf"
+    $ctfUserRoleURL = $Elasticsearch_URL+"/_security/role/Kibana CTF"
+    $ctfUserCreateURL = $Elasticsearch_URL+"/_security/user/kibana-ctf"
+    $indexTemplate = Get-Content ./Elastic_Stack/index_template.json
+    $ctfUserRole = Get-Content ./Elastic_Stack/kibana_ctf_role.json
+    $ctfUserCreate = Get-Content ./Elastic_Stack/kibna_ctf_user.json
 
     function Get-CTFd-Creds {
         return Read-Host "Enter the token for the administrator account. Starts with ctfd_" -MaskInput
@@ -281,7 +287,7 @@ Begin {
             #"imageUrl" = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD4AAABACAYAAABC6cT1AAAGf0lEQVRoQ+3abYydRRUH8N882xYo0IqagEVjokQJKAiKBjXExC9G/aCkGowCIghCkRcrVSSKIu/FEiqgGL6gBIlAYrAqUTH6hZgQFVEMKlQFfItWoQWhZe8z5uzMLdvbfbkLxb13d+fbvfe588x/zpn/+Z9zJpmnI81T3BaAzzfLL1h8weLzZAcWXH2eGHo7zAWLL1h8nuzAjFw9G1N6Kzq8HnuM36MR8iibF3Fv4q+7cv8yDV6K13bYq2furSP8Ag8ncr/vnSnwRViJT2GfCV7yL1yHGxLb+l3EdM9lluNEnIC9xz+f2ZL4Er6Z2DrdXN3fZwp8CU7OfDHxggle8lTLbQ1nJ/7Z7yKmey5zYGZt4h2IzR8/trRc2PDlxJPTzfVcgJ+CC0wMPOa9F6cm7up3EVM9V9386MxliVdM8GwAv6hh/awCz/w7lY25OtF5ruBz4ZLP42NYNrDAFbC3YPWuILnMAfgq3oaRQQYea/stViV+sgssvjKzLvGySeaaNVfP4d7Btokgvxj/bblgpueuF1hmWcyTCmfE3J3M1lTcv0vMswM88zR+jpw4osu6me8kzkpsfLZWzxyRuabO22buxxOJ12FxnXfWgEe83pB5sOE47BsLymzscOoi7nw2JJfZreUjiUsTyzKPZm5NvBDvSuw268AzNzV8H5/Am+qCnsAXgpgSW2Zq9cyKlksbPlTd+te4quWNieMHBfiNDdciYnwsdI/MaOaWhnMTf54J8CqNj8x8JXFIZltYu+HqlmNT8YSBsHgAPw/vxvlVV4du/s0oaxbxg0TbL/jMni0nNcVjQq7+HZfgtpbzBg342TgQ63AkmsymxBW4IjE6A+D7Vzd/fyWxIM/VuCe+HzTgZ2Jpy/kNJ2FJLmLm24mPJ/42A+Bvrxt4SISwlhsaPodH26LZB8rVA3inwwebsrixJCZzX+KMxI/7AV61eVh3DV6Mx3EOvh4kN6jAg8nfUCXm4d1wE66OyxNPTQc+s3/o/MoXizL3JE5O3F3P/uBZPPF4Zr+Wi5uSO48ZPRdyCwn7YB/A35m5KhWNHox4fcNnIs0ddOCRSBxf8+cQG+Huf0l8NJVYP+nI7NXy2ar4QqIGm69JfKPOE2w/mBavCzwM11R2D+ChsUO7hyUfmwx55qDM1xJvqZ7y08TpifuGBfjeURVJnNIVGpkNiXNS0ds7jcySDitDCCWW56LJ10fRo8sNA+3qXUSZD2CtQlZh9T+1rB7h9oliembflnMbzqgSNZKbKGHdPm7OwXb1CvQ1metSETMpszmzvikCJNh/h5E5PHNl4qga/+/cxqrdeWDYgIe7X5L4cGJPJX2940lOX8pD41FnFnc4riluvQKbK0dcHJFi2IBHNTQSlguru4d2/wPOTNzRA3x5y+U1E1uqWDkETOT026XuUJzx6u7ReLhSYenQ7uHua0fKZmwfmcPqsQjxE5WVONcRxn7X89zgn/EKPMRMxOVQXmP18Mx3q3b/Y/0cQE/IhFtHESMsHFlZ1Ml3CH3DZPHImY+pxcKumNmYirtvqMBfhMuU6s3iqOQkTsMPe1tCQwO8Ajs0lxr7W+vnp1MJc9EgCNd/cy6x+9D4veXmprj5wxMw/3C4egW6zzgZOlYZzfwo3F2J7ael0pJamvlPKgWNKFft1AAcKotXoFEbD7kaoSoQPVKB35+5KHF0lai/rJo+up87jWEE/qqqwY+qrL21LWLm95lPJ16ppKw31XC3PXYPJauPEx7B6BHCgrSizRs18qiaRp8tlN3ueCTYPHH9RNaunjI8Z7wLYpT3jZSCYXQ8e9vTsRE/q+no3XMKeObgGtaintbb/AvXj4JDkNw/5hrwYPfIvlZFUbLn7G5q+eQIN09Vnho6cqvnM/Lt99RixH49wO8K0ZL41WTWHoQzvsNVkOheZqKhEGpsp3SzB+BBtZAYve7uOR9tuTaaB6l0XScdYfEQPpkTUyHEGP+XqyDBzu+NBCITUjNWHynkrbWKOuWFn1xKzqsyx0bdvS78odp0+N503Zao0uCsWuSIDku8/7EO60b41vN5+Ses9BKlTdvd8bhp9EBvJjWJAIn/vxwHe6b3tSk6JFPV4nq85oAOrx555v/x/rh3E6Lo+bnuNS4uB4Cuq0ZfvO8X1rM6q/+vnjLVqZq7v83onttc2oYF4HPJmv1gWbB4P7s0l55ZsPhcsmY/WBYs3s8uzaVn5q3F/wf70mRuBCtbjQAAAABJRU5ErkJggg=="
             "initials" = "KC"
             "description" = "This is the Kibana CTF Space! Let's go!!!"
-            "disabledFeatures"=  @("enterpriseSearch","logs","infrastructure","apm","inventory","uptime","observabilityCasesV2","slo","siem","securitySolutionCasesV2","dev_tools","advancedSettings","indexPatterns","filesManagement","filesSharedImage","savedObjectsManagement","savedQueryManagement","savedObjectsTagging","osquery","actions","generalCasesV2","guidedOnboardingFeature","rulesSettings","maintenanceWindow","stackAlerts","fleetv2","fleet","dataQuality","monitoring","canvas","maps","ml","dashboard")
+            "disabledFeatures"=  @("enterpriseSearch","logs","infrastructure","apm","inventory","uptime","observabilityCasesV2","slo","siem","securitySolutionCasesV2","dev_tools","advancedSettings","filesManagement","filesSharedImage","savedObjectsManagement","savedQueryManagement","savedObjectsTagging","osquery","actions","generalCasesV2","guidedOnboardingFeature","rulesSettings","maintenanceWindow","stackAlerts","fleetv2","fleet","dataQuality","monitoring","canvas","maps","ml","dashboard")
         } | ConvertTo-Json
 
         # Create the space!
@@ -300,6 +306,30 @@ Begin {
             $result.errors
         }else{
             Write-Host "Created Kibana CTF Space!" -ForegroundColor Green
+        }
+    }
+
+    function Invoke-Create-Kibana-CTF-User-Role {
+        try {
+            Write-Host "Creating role that will be applied to the kibana-ctf user during the user creation process following this step."
+            $result = Invoke-RestMethod -Method PUT -Uri $ctfUserRoleURL -Body $ctfUserRole -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck
+            Write-Host "Created CTF User Role: $($result.role.created)"
+        } catch {
+            Write-Host "Couldn't create role for CTF user. Check Kibana to see if the Kibana CTF role already exists." -ForegroundColor Yellow
+            Write-Host "$_"
+        }
+    }
+
+    function Invoke-Create-Kibana-CTF-User {
+        try {
+            Write-Host "Creating user that should be used to compete in the CTF with the Kibana CTF role mapping."
+            $result = Invoke-RestMethod -Method PUT -Uri $ctfUserCreateURL -Body $ctfUserCreate -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck
+            Write-Host "Created kibana-ctf user: $($result.created)"
+            Write-Host "Credentials for the Kibana CTF user are:`nusername: kibana-ctf`npassword: kibana-ctf--please-change-me" -ForegroundColor Green
+            Write-Host "If you wish to create more users, use the elastic account that the setup used before and create and number users you wish. `nJust make sure to add the Kibana CTF role to their account." -ForegroundColor Yellow
+        } catch {
+            Write-Host "Couldn't create kibana-ctf user. Check Kibana to see if the user already exists." -ForegroundColor Yellow
+            Write-Host "$_"
         }
     }
 
@@ -327,6 +357,17 @@ Begin {
         }
 
         return $result
+    }
+
+    function Invoke-Create-Index-Template {
+        try {
+            Write-Host "Creating Index Template for challeneges then setup will be complete."
+            $result = Invoke-RestMethod -Method PUT -Uri $indexTemplateURL -Body $indexTemplate -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck
+            Write-Host "Created Index Template: $($result.acknowledged)"
+        } catch {
+            Write-Host "Couldn't create Index Template for ctf data. Check Kibana to see if the Index Template already exists." -ForegroundColor Yellow
+            Write-Host "$_"
+        }
     }
 
     function Generate-FakeEvent {
@@ -754,6 +795,15 @@ Process {
                 Write-Host $Kibana_URL -ForegroundColor DarkCyan
                 Write-Host "Username : elastic`nPassword : $elasticsearchPassword"
 
+                # Creating Index Template for Challenges
+                Invoke-Create-Index-Template
+
+                # Creating Kibana CTF Role Mapping
+                Invoke-Create-Kibana-CTF-User-Role
+
+                # Creating kibana-ctf user with Kibana CTF Role Mapping
+                Invoke-Create-Kibana-CTF-User
+                
                 $finished = $true
                 break
             }
@@ -927,7 +977,27 @@ Process {
             }
             '6' {
                 # 6. Reset Elastic Stack
-                Write-Host "Option not available, yet."
+                $continue = Read-Host "This action is destructive and will remove all Elastic stack resources, if you wish to continue please type in: `nDELETE-KIBANA-CTF"
+                if($continue -ne "DELETE-KIBANA-CTF"){
+                    Write-Host "Proper response was not entered, exiting."
+                    $finished = $true
+                    break
+                }
+                Write-Host "Deleting all Elastic stack data now..." -ForegroundColor Yellow
+                Set-Location ./docker
+
+                # Bring down the stack
+                Write-Host "Bringing down Elastic stack."
+                docker compose down
+
+                # Delete Elastic Stack docker volumes
+                Write-Host "Removing Docker Volumes."
+                docker volume rm kibana-ctf_certs
+                docker volume rm kibana-ctf_esdata01
+                docker volume rm kibana-ctf_kibanadata
+
+                Write-Host "All data has been deleted."
+                Set-Location ../
 
                 $finished = $true
                 break

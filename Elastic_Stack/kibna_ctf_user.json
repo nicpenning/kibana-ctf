@@ -1,0 +1,11 @@
+{
+    "username": "kibana-ctf",
+    "roles": [
+      "Kibana CTF"
+    ],
+    "full_name": "Kibana CTF",
+    "email": "kibana@ctf.local",
+    "metadata": {},
+    "enabled": true,
+    "password": "kibana-ctf--please-change-me"
+}
