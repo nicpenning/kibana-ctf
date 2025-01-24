@@ -107,6 +107,79 @@ Begin {
         return $ctfd_auth
     }
 
+    function Invoke-Import-CTFd-Challenge {
+        param(
+            $challenge_file_path
+        )
+        $ctfd_challenge = Get-Content $challenge_file_path | ConvertFrom-Json -Depth 10
+        # Set connection info
+        $ctfd_challenge.connection_info = $ctfd_challenge.connection_info.Replace("http://127.0.0.1:5601",$Kibana_URL)
+
+        Write-Host "Importing challenge: $($ctfd_challenge.name)"
+        $current_challenge = $ctfd_challenge | ConvertTo-Json -Depth 10
+        try{
+            $import_challenge = Invoke-RestMethod -Method POST "$CTFd_URL_API/challenges" -ContentType "application/json" -Headers $ctfd_auth -Body $current_challenge
+            Write-Host "Imported challenge $($ctfd_challenge.name) - $($import_challenge.success)"
+        }catch{
+            Write-Host "Could not import challenge: $($ctfd_challenge.name) - $($ctfd_challenge.id)"
+            $_.Exception
+        }
+    }
+
+    function Invoke-Import-CTFd-Flag {
+        param(
+            $flag_file_path
+        )
+        $ctfd_flag = Get-Content $flag_file_path | ConvertFrom-Json -Depth 10
+    
+        # Customize Flag : To Do
+
+        $ctfd_flag | ForEach-Object {
+            # Get current flag
+            $current_flag = $_ | ConvertTo-Json -Compress
+
+            Write-Host "Importing flags for Challenge ID: $($ctfd_flag.challenge_id)"
+            try{
+                # Adjust dynamic incident challenge
+                if($current_flag -match '"content":"38"'){
+                    Write-Host "Incident Challenge detected, updating dynamic challenge answer."
+                    $days = $($($(Get-date)-$(Get-Date 2024-11-12T07:43:13.373Z) ).Days)
+                    $current_flag = $current_flag -replace '"content":"38"', $('"content":"'+"$($days-1)|$days|$($days+1)"+'"')
+                } elseif ($current_flag -match 'ctf_38_days_since_last_incident'){
+                    Write-Host "Incident Challenge detected, updating dynamic challenge answer."
+                    $days = $($($(Get-date)-$(Get-Date 2024-11-12T07:43:13.373Z) ).Days)
+                    $current_flag = $current_flag -replace 'ctf_38_days_since_last_incident', $('ctf_('+"$($days-1)|$days|$($days+1)"+')_days_since_last_incident')
+                }
+    
+                $import_flag = Invoke-RestMethod -Method POST "$CTFd_URL_API/flags" -ContentType "application/json" -Headers $ctfd_auth -Body $current_flag
+                Write-Host "Imported flag $($_.id) - $($import_flag.success)"
+            }catch{
+                Write-Host "Could not import flag: $($current_challenge.name) - $($_.id)"
+                $_.Exception
+            }
+        
+        }
+    }
+
+    function Invoke-Import-CTFd-Hint {
+        param(
+            $hint_file_path
+        )
+        $ctfd_hint = Get-Content $hint_file_path | ConvertFrom-Json -Depth 10
+
+        # Get current hint
+        $current_hint = $ctfd_hint | ConvertTo-Json -Compress
+
+        Write-Host "Importing hint for Challenge ID: $($ctfd_hint.challenge_id)"
+        try{
+            $import_hints = Invoke-RestMethod -Method POST "$CTFd_URL_API/hints" -ContentType "application/json" -Headers $ctfd_auth -Body $current_hint
+            Write-Host "Imported hint $($_.id) - $($import_hints.success)"
+        }catch{
+            Write-Host "Could not import hint: $($_.id) for challenge id: $($ctfd_hint.challenge_id)"
+            $_.Exception
+        }
+    }
+
     # Elastic Stack Setup Functions
     function Invoke-CheckForEnv {
         # Check for existing .env file for setup
@@ -440,17 +513,16 @@ Begin {
     }
 
     $option1 = "1. Deploy CTFd"
-    $option2 = "2. Import CTFd Challenges, Flags, etc."
-    $option3 = "3. Reset CTFd"
-    $option4 = "4. Deploy Elastic Stack"
-    $option5 = "5. Import Elastic Stack Challenges"
-    $option6 = "6. Reset Elastic Stack"
-    $option7 = "7. Check for Requirements"
-    $option8 = "8. Deploy all from scratch"
+    $option2 = "2. Deploy Elastic Stack"
+    $option3 = "3. Import Elastic Stack Challenges"
+    $option4 = "4. Reset CTFd"
+    $option5 = "5. Reset Elastic Stack"
+    $option6 = "6. Check for Requirements"
+    $option7 = "7. Deploy all from scratch"
 
-    $elastic_option0 = "0. All challenges."
-    $elastic_option1 = "1. Discover Challenges"
-    $elastic_option2 = "2. ES|QL Challenege"
+    $challenge_option0 = "0. All challenges."
+    $challenge_option1 = "1. Discover Challenges"
+    $challenge_option2 = "2. ES|QL Challenege"
 
     $quit = "Q. Quit"
 
@@ -469,11 +541,11 @@ Begin {
         Write-Host $quit
     }
 
-    function Show-Elastic-Challenges-Menu {
-        Write-Host "Which Elastic CTF Challenge Categories would you like to import?" -ForegroundColor Yellow
-        Write-Host $elastic_option0
-        Write-Host $elastic_option1
-        Write-Host $elastic_option2
+    function Show-CTF-Challenges-Menu {
+        Write-Host "Which Kibana CTF Challenge Categories would you like to import?`nNote: This will import CTFd challenges and required Elastic resources." -ForegroundColor Yellow
+        Write-Host $challenge_option0
+        Write-Host $challenge_option1
+        Write-Host $challenge_option2
 
         Write-Host $quit
     }
@@ -481,7 +553,6 @@ Begin {
 }
 
 Process {
-
     while ($true -ne $finished) {
         # Show Menu if script was not provided the choice on execution using the Option_Selected variable
         if ($null -eq $Option_Selected -or $Option_Selected) {
@@ -525,183 +596,6 @@ Process {
                 break
             }
             '2' {
-                # 2. Import CTFd Challenges, Flags, Hints, Config, Pages, and Files
-                # Setup up Auth header
-                $ctfd_auth = Get-CTFd-Admin-Token
-
-                # Retrieve challenges from challenges.json file and convert it into an object
-                $challenges_object = Get-Content './CTFd_Events/JSON Configuration Files/challenges.json' | ConvertFrom-Json -Depth 10
-                $dynamic_challenges_object = Get-Content './CTFd_Events/JSON Configuration Files/dynamic_challenge.json' | ConvertFrom-Json -Depth 10
-                $flags_object = Get-Content './CTFd_Events/JSON Configuration Files/flags.json' | ConvertFrom-Json -Depth 10
-                $hints_object = Get-Content './CTFd_Events/JSON Configuration Files/hints.json' | ConvertFrom-Json -Depth 10
-                $pages_object = Get-Content './CTFd_Events/JSON Configuration Files/pages.json' | ConvertFrom-Json -Depth 10
-                $config_object = Get-Content './CTFd_Events/JSON Configuration Files/config.json' | ConvertFrom-Json -Depth 10
-                $files_object = Get-Content './CTFd_Events/JSON Configuration Files/files.json' | ConvertFrom-Json -Depth 10
-
-                # Import Challenges 1 by 1
-                Write-Host "Importing $($challenges_object.results.count) challenges"
-                Pause
-                $challenges_object.results | Sort-Object -Property "next_id" | ForEach-Object {
-                    # Get current challenge
-                    $current_challenge_object = $_
-                    $current_challenge = $_ | ConvertTo-Json -Compress
-
-                    # Check for Dynamic Challenge
-                    if($_.type -eq "dynamic"){
-                        Write-Host "Dynamic challenge found! Adding additional details before import." -ForegroundColor Yellow
-                        # Find the dynamic challenge related to the current challenge being imported and add the details as needed.
-                        $dynamic_challenge_details = $dynamic_challenges_object.results | Where-Object {$_.id -eq $current_challenge_object.id}
-                        $dynamic_challenge_details.PSObject.Members | Where-Object {$_.MemberType -eq "NoteProperty" -and $_.Name -ne "id"} | ForEach-Object {
-                            $current_challenge_object | Add-Member -NotePropertyName $_.Name -NotePropertyValue $_.Value
-                        }
-                        # Convert new object to JSON and Import!
-                        $current_challenge = $current_challenge_object | ConvertTo-Json -Compress -Depth 10
-                    }
-                    Write-Host "Importing challenge: $($_.name)"
-                    try{
-                        $import_challenge = Invoke-RestMethod -Method POST "$CTFd_URL_API/challenges" -ContentType "application/json" -Headers $ctfd_auth -Body $current_challenge
-                        Write-Host "Imported challenge $($current_challenge.name) - $($import_challenge.success)"
-                    }catch{
-                        Write-Host "Could not import challenge: $($current_challenge.name) - $($_.id)"
-                        $_.Exception
-                    }
-                }
-
-                # Import Flags 1 by 1
-                Write-Host "Importing $($flags_object.results.count) flags"
-                Pause
-                $flags_object.results | ForEach-Object {
-                    # Get current flag
-                    $current_flag = $_ | ConvertTo-Json -Compress
-
-                    Write-Host "Importing flags for Challenge ID: $($_.challenge_id)"
-                    try{
-                        # Adjust dynamic incident challenge
-                        if($current_flag -match '"content":"38"'){
-                            Write-Host "Incident Challenge detected, updating dynamic challenge answer."
-                            $days = $($($(Get-date)-$(Get-Date 2024-11-12T07:43:13.373Z) ).Days)
-                            $current_flag = $current_flag -replace '"content":"38"', $('"content":"'+"$($days-1)|$days|$($days+1)"+'"')
-                        } elseif ($current_flag -match 'ctf_38_days_since_last_incident'){
-                            Write-Host "Incident Challenge detected, updating dynamic challenge answer."
-                            $days = $($($(Get-date)-$(Get-Date 2024-11-12T07:43:13.373Z) ).Days)
-                            $current_flag = $current_flag -replace 'ctf_38_days_since_last_incident', $('ctf_('+"$($days-1)|$days|$($days+1)"+')_days_since_last_incident')
-                        }
-
-                        $import_flag = Invoke-RestMethod -Method POST "$CTFd_URL_API/flags" -ContentType "application/json" -Headers $ctfd_auth -Body $current_flag
-                        Write-Host "Imported flag $($_.id) - $($import_flag.success)"
-                    }catch{
-                        Write-Host "Could not import flag: $($current_challenge.name) - $($_.id)"
-                        $_.Exception
-                    }
-                }
-
-                # Import Hints 1 by 1
-                Write-Host "Importing $($hints_object.results.count) hints"
-                Pause
-                $hints_object.results | ForEach-Object {
-                    # Get current flag
-                    $current_hints = $_ | ConvertTo-Json -Compress
-
-                    Write-Host "Importing flags for Challenge ID: $($_.challenge_id)"
-                    try{
-                        $import_hints = Invoke-RestMethod -Method POST "$CTFd_URL_API/hints" -ContentType "application/json" -Headers $ctfd_auth -Body $current_hints
-                        Write-Host "Imported flag $($_.id) - $($import_hints.success)"
-                    }catch{
-                        Write-Host "Could not import hint: $($_.id) for challenge id: $($_.challenge_id)"
-                        $_.Exception
-                    }
-                }
-
-                # Import Page(s) 1 by 1
-                Write-Host "Importing $($pages_object.results.count) page(s)"
-                Pause
-                $pages_object.results | ForEach-Object {
-                    # Get current flag
-                    $current_pages = $_ | ConvertTo-Json -Compress
-
-                    Write-Host "Importing page: $($_.title)"
-                    try{
-                        $import_pages = Invoke-RestMethod -Method POST "$CTFd_URL_API/pages" -ContentType "application/json" -Headers $ctfd_auth -Body $current_pages
-                        Write-Host "Imported page $($_.title) - $($import_pages.success)"
-                    }catch{
-                        Write-Host "Could not import page: $($_.title)"
-                        Write-Host "Will try to update the current page."
-                        try{
-                            $update_pages = Invoke-RestMethod -Method PATCH "$CTFd_URL_API/pages/1" -ContentType "application/json" -Headers $ctfd_auth -Body $current_pages
-                            Write-Host "Pages updated: $($update_pages.success)"
-                        }catch{
-                            Write-Host "Could not import page: $($_.title)"
-                            Write-Host "Note: This shouldn't impact the CTF platform if everything else worked."
-                            $_.Exception
-                        }
-                    }
-                }
-
-                # Import Config
-                Write-Host "Importing $($config_object.results.count) config option(s)"
-                Pause
-                $config_object.results | ForEach-Object {
-                    # Get current flag
-                    $current_config = $_ | ConvertTo-Json -Compress
-
-                    Write-Host "Importing config option: $($_.key)"
-                    try{
-                        $import_config = Invoke-RestMethod -Method POST "$CTFd_URL_API/configs" -ContentType "application/json" -Headers $ctfd_auth -Body $current_config
-                        Write-Host "Imported config option: $($_.key)- $($import_config.success)" -ForegroundColor Green
-                    }catch{
-                        Write-Host "Could not import config."
-                        $_.Exception
-                    }
-                }
-
-                # Import Files
-                Write-Host "Importing $($files_object.results.count) file(s)"
-                Pause
-                $files_object.results | ForEach-Object {
-                    # Get current flag
-                    $current_file = $_ | ConvertTo-Json -Compress
-
-                    Write-Host "Importing file: $($_.location)"
-                    try{
-                        $import_file = Invoke-RestMethod -Method POST "$CTFd_URL_API/files" -ContentType "application/json" -Headers $ctfd_auth -Body $current_file
-                        Write-Host "Imported file: $($_.location)- $($import_file.success)" -ForegroundColor Green
-                    }catch{
-                        Write-Host "Could not import config."
-                        $_.Exception
-                    }
-                }
-
-                $finished = $true
-                break
-            }
-            '3' {
-                # Reset CTFd
-                # Setup up Auth header
-                $ctfd_auth = Get-CTFd-Admin-Token
-
-                # Get Challenges
-                $challenges = Get-Challenges-From-CTFd
-
-                # Remove Challenges 1 by 1
-                Write-Host "Removing $($challenges.data.count) challenges"
-                $challenges.data | ForEach-Object {
-                    # Get all challenge details per challenge
-                    $id = $_.id
-                    $challenge_info = Invoke-RestMethod -Method Get "$CTFd_URL_API/challenges/$id" -ContentType "application/json" -Headers $ctfd_auth
-                    Write-Host "Removing challenge: $($challenge_info.data.name)"
-                    try{
-                        $remove_challenge = Invoke-RestMethod -Method Delete "$CTFd_URL_API/challenges/$id" -ContentType "application/json" -Headers $ctfd_auth
-                        Write-Host "Removed challenge $($challenge_info.data.name) - $($remove_challenge.success)"
-                    }catch{
-                        Write-Host "Could not remove challenge: $($challenge_info.data.name) - $id"
-                        $_.Exception
-                    }
-                }
-
-                $finished = $true
-                break
-            }
-            '4' {
                 # 4. Deploy Elastic Stack
                 
                 # Check to see if various parts of the project have already been configured to reduce the need for user input.
@@ -823,13 +717,17 @@ Process {
                 $finished = $true
                 break
             }
-            '5' {
-                # 5. Import Elastic Stack Challenges
+            '3' {
+                # Import CTFd and Elastic Stack Challenges
                 # Show Menu if script was not provided the choice on execution using the Option_Selected variable
-                if ($null -eq $Elastic_Option_Selected -or $Elastic_Option_Selected) {
-                    Show-Elastic-Challenges-Menu
-                    $Elastic_Option_Selected = Read-Host "Enter your choice"
+                
+                if ($null -eq $CTF_Options_Selected -or $CTF_Options_Selected) {
+                    Show-CTF-Challenges-Menu
+                    $CTF_Options_Selected = Read-Host "Enter your choice"
                 }
+
+                # Setup up Auth header
+                $ctfd_auth = Get-CTFd-Admin-Token
 
                 # Extract custom settings from configuration.json if it exists
                 $configurationSettings = Get-Content ./configuration.json | ConvertFrom-Json
@@ -877,7 +775,7 @@ Process {
                 Write-Host "Ingesting 2.5K documents, please wait. This could take a few minutes."
                 do{
                     $dummyDocument = Generate-FakeEvent
-                    $ingestDocs = Invoke-Ingest-Elasticsearch-Documents -documentToIngest $dummyDocument
+                    #$ingestDocs = Invoke-Ingest-Elasticsearch-Documents -documentToIngest $dummyDocument
                     $fakeCount++
                     if((500, 1000, 1500, 2000) -contains $fakeCount){
                         Write-Host "Total documents ingested: $fakeCount"
@@ -885,8 +783,37 @@ Process {
                 }while($fakeCount -lt 2500)
 
                 # Challenges Discover - Import
-                if((0, 1) -contains $Elastic_Option_Selected){
-                    # Import Challenges
+                if((0, 1) -contains $CTF_Options_Selected){
+                    # Import Challenges for CTFd
+                    Invoke-Import-CTFd-Challenge './challenges/Discover/1/ctfd_challenge.json'
+                    Invoke-Import-CTFd-Challenge './challenges/Discover/2/ctfd_challenge.json'
+                    Invoke-Import-CTFd-Challenge './challenges/Discover/4/ctfd_challenge.json'
+                    Invoke-Import-CTFd-Challenge './challenges/Discover/3/ctfd_challenge.json'
+                    Invoke-Import-CTFd-Challenge './challenges/Discover/5/ctfd_challenge.json'
+                    Invoke-Import-CTFd-Challenge './challenges/Discover/7/ctfd_challenge.json'
+                    Invoke-Import-CTFd-Challenge './challenges/Discover/6/ctfd_challenge.json'
+                    Invoke-Import-CTFd-Challenge './challenges/Discover/8/ctfd_challenge.json'
+                    Invoke-Import-CTFd-Challenge './challenges/Discover/9/ctfd_challenge.json'
+                    Invoke-Import-CTFd-Challenge './challenges/Discover/10/ctfd_challenge.json'
+
+                    # Import Flags for CTFd Challenges
+                    Invoke-Import-CTFd-Flag './challenges/Discover/1/ctfd_flag.json'
+                    Invoke-Import-CTFd-Flag './challenges/Discover/2/ctfd_flag.json'
+                    Invoke-Import-CTFd-Flag './challenges/Discover/3/ctfd_flag.json'
+                    Invoke-Import-CTFd-Flag './challenges/Discover/4/ctfd_flag.json'
+                    Invoke-Import-CTFd-Flag './challenges/Discover/5/ctfd_flag.json'
+                    Invoke-Import-CTFd-Flag './challenges/Discover/6/ctfd_flag.json'
+                    Invoke-Import-CTFd-Flag './challenges/Discover/7/ctfd_flag.json'
+                    Invoke-Import-CTFd-Flag './challenges/Discover/8/ctfd_flag.json'
+                    Invoke-Import-CTFd-Flag './challenges/Discover/9/ctfd_flag.json'
+                    Invoke-Import-CTFd-Flag './challenges/Discover/10/ctfd_flag.json'
+
+                    # Import Hints for CTFd Challenges
+                    Invoke-Import-CTFd-Hint './challenges/Discover/1/ctfd_hint.json'
+                    Invoke-Import-CTFd-Hint './challenges/Discover/7/ctfd_hint.json'
+                    Invoke-Import-CTFd-Hint './challenges/Discover/10/ctfd_hint.json'
+
+                    # Import Challenges for Elastic
                     . ./challenges/Discover/5/elastic_import_script.ps1; challenge
                     . ./challenges/Discover/6/elastic_import_script.ps1; challenge
                     . ./challenges/Discover/9/elastic_import_script.ps1; challenge
@@ -899,8 +826,23 @@ Process {
                     Import-SavedObject "./challenges/Discover/8/elastic_saved_objects.ndjson"
                 }
                 
-                if((0, 2) -contains $Elastic_Option_Selected){
-                    # Import Challenges
+                # Challenges ES|QL - Import
+                if((0, 2) -contains $CTF_Options_Selected){
+                    # Import Challenges for CTFd
+                    Invoke-Import-CTFd-Challenge './challenges/ES_QL/2/ctfd_challenge.json'
+                    Invoke-Import-CTFd-Challenge './challenges/ES_QL/1/ctfd_challenge.json'
+                    Invoke-Import-CTFd-Challenge './challenges/ES_QL/3/ctfd_challenge.json'
+                    Invoke-Import-CTFd-Challenge './challenges/ES_QL/4/ctfd_challenge.json'
+                    Invoke-Import-CTFd-Challenge './challenges/ES_QL/5/ctfd_challenge.json'
+                    
+                    # Import Flags for CTFd Cahllenges
+                    Invoke-Import-CTFd-Flag './challenges/ES_QL/1/ctfd_flag.json'
+                    Invoke-Import-CTFd-Flag './challenges/ES_QL/2/ctfd_flag.json'
+                    Invoke-Import-CTFd-Flag './challenges/ES_QL/3/ctfd_flag.json'
+                    Invoke-Import-CTFd-Flag './challenges/ES_QL/4/ctfd_flag.json'
+                    Invoke-Import-CTFd-Flag './challenges/ES_QL/5/ctfd_flag.json'
+
+                    # Import Challenges for Elastic
                     . ./challenges/ES_QL/2/elastic_import_script.ps1; challenge
 
                     Import-SavedObject "./challenges/ES_QL/1/elastic_saved_objects.ndjson"
@@ -910,11 +852,102 @@ Process {
                     Import-SavedObject "./challenges/ES_QL/5/elastic_saved_objects.ndjson"
                 }
 
+                # Retrieve challenges from challenges.json file and convert it into an object
+                $pages_object = Get-Content './CTFd_Events/JSON Configuration Files/pages.json' | ConvertFrom-Json -Depth 10
+                $config_object = Get-Content './CTFd_Events/JSON Configuration Files/config.json' | ConvertFrom-Json -Depth 10
+                $files_object = Get-Content './CTFd_Events/JSON Configuration Files/files.json' | ConvertFrom-Json -Depth 10
+
+                # Import Page(s) 1 by 1
+                Write-Host "Importing $($pages_object.results.count) page(s)"
+                Pause
+                $pages_object.results | ForEach-Object {
+                    # Get current flag
+                    $current_pages = $_ | ConvertTo-Json -Compress
+
+                    Write-Host "Importing page: $($_.title)"
+                    try{
+                        $import_pages = Invoke-RestMethod -Method POST "$CTFd_URL_API/pages" -ContentType "application/json" -Headers $ctfd_auth -Body $current_pages
+                        Write-Host "Imported page $($_.title) - $($import_pages.success)"
+                    }catch{
+                        Write-Host "Could not import page: $($_.title)"
+                        Write-Host "Will try to update the current page."
+                        try{
+                            $update_pages = Invoke-RestMethod -Method PATCH "$CTFd_URL_API/pages/1" -ContentType "application/json" -Headers $ctfd_auth -Body $current_pages
+                            Write-Host "Pages updated: $($update_pages.success)"
+                        }catch{
+                            Write-Host "Could not import page: $($_.title)"
+                            Write-Host "Note: This shouldn't impact the CTF platform if everything else worked."
+                            $_.Exception
+                        }
+                    }
+                }
+
+                # Import Config
+                Write-Host "Importing $($config_object.results.count) config option(s)"
+                Pause
+                $config_object.results | ForEach-Object {
+                    # Get current flag
+                    $current_config = $_ | ConvertTo-Json -Compress
+
+                    Write-Host "Importing config option: $($_.key)"
+                    try{
+                        $import_config = Invoke-RestMethod -Method POST "$CTFd_URL_API/configs" -ContentType "application/json" -Headers $ctfd_auth -Body $current_config
+                        Write-Host "Imported config option: $($_.key)- $($import_config.success)" -ForegroundColor Green
+                    }catch{
+                        Write-Host "Could not import config."
+                        $_.Exception
+                    }
+                }
+
+                # Import Files
+                Write-Host "Importing $($files_object.results.count) file(s)"
+                Pause
+                $files_object.results | ForEach-Object {
+                    # Get current flag
+                    $current_file = $_ | ConvertTo-Json -Compress
+
+                    Write-Host "Importing file: $($_.location)"
+                    try{
+                        $import_file = Invoke-RestMethod -Method POST "$CTFd_URL_API/files" -ContentType "application/json" -Headers $ctfd_auth -Body $current_file
+                        Write-Host "Imported file: $($_.location)- $($import_file.success)" -ForegroundColor Green
+                    }catch{
+                        Write-Host "Could not import config."
+                        $_.Exception
+                    }
+                }
+
                 $finished = $true
                 break
             }
-            '6' {
-                # 6. Reset Elastic Stack
+            '4' {
+                # Reset CTFd
+                # Setup up Auth header
+                $ctfd_auth = Get-CTFd-Admin-Token
+
+                # Get Challenges
+                $challenges = Get-Challenges-From-CTFd
+
+                # Remove Challenges 1 by 1
+                Write-Host "Removing $($challenges.data.count) challenges"
+                $challenges.data | ForEach-Object {
+                    # Get all challenge details per challenge
+                    $id = $_.id
+                    $challenge_info = Invoke-RestMethod -Method Get "$CTFd_URL_API/challenges/$id" -ContentType "application/json" -Headers $ctfd_auth
+                    Write-Host "Removing challenge: $($challenge_info.data.name)"
+                    try{
+                        $remove_challenge = Invoke-RestMethod -Method Delete "$CTFd_URL_API/challenges/$id" -ContentType "application/json" -Headers $ctfd_auth
+                        Write-Host "Removed challenge $($challenge_info.data.name) - $($remove_challenge.success)"
+                    }catch{
+                        Write-Host "Could not remove challenge: $($challenge_info.data.name) - $id"
+                        $_.Exception
+                    }
+                }
+
+                $finished = $true
+                break
+            }
+            '5' {
+                # 5. Reset Elastic Stack
                 $continue = Read-Host "This action is destructive and will remove all Elastic stack resources, if you wish to continue please type in: `nDELETE-KIBANA-CTF"
                 if($continue -ne "DELETE-KIBANA-CTF"){
                     Write-Host "Proper response was not entered, exiting."
@@ -940,8 +973,8 @@ Process {
                 $finished = $true
                 break
             }
-            '7' {
-                # 7. Check for Requirements
+            '6' {
+                # 6. Check for Requirements
                 Write-Host "Option not available, yet."
                 # Check for running Elastic Stack
                 # Check for running CTFd
@@ -949,7 +982,7 @@ Process {
                 $finished = $true
                 break
             }
-            '8' {
+            '7' {
                 # Deploy all from scratch!
                 Write-Host "Option not available, yet."
 

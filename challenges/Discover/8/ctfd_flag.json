@@ -1,0 +1,1 @@
+[{"id":8,"challenge_id":8,"type":"regex","content":"38","data":"case_insensitive"},{"id":9,"challenge_id":8,"type":"regex","content":"{ctf_38_days_since_last_incident}","data":"case_insensitive"}]

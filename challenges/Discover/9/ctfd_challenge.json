@@ -1,0 +1,19 @@
+{
+  "id": 9,
+  "name": "Patt Erns (Deprecated)",
+  "description": "Notice: This challenge requires a Platinum license of Elastic to solve.\r\n\r\nThere is a new guy in town and his name is Patt Erns. He claims there is an easy way to identify interesting arrangements of data, and he has only been here for the past **6 hours**. Is this something that you know how to do?\r\n\r\n![](https://wallpapersok.com/images/hd/doge-meme-faces-pattern-fqbgpvculd0224cz.jpg)",
+  "max_attempts": 0,
+  "value": 50,
+  "category": "(re)Discover",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [
+      8
+    ],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/discover",
+  "next_id": null,
+  "attribution": ""
+}

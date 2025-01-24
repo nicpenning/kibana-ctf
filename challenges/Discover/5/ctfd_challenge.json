@@ -1,0 +1,17 @@
+{
+  "id": 5,
+  "name": "Advanced Query",
+  "description": "Sometimes the queries I find are very hard to understand. Maybe if I slowed down to read through the query, then perhaps it will make sense!\r\n\r\n![](https://preview.redd.it/jfl6i8ch8kc41.jpg?auto=webp&s=a40ec06bb002b4b5d013dc9aea00e145f9a88899)",
+  "max_attempts": 0,
+  "value": 40,
+  "category": "(re)Discover",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/discover",
+  "next_id": null,
+  "attribution": ""
+}

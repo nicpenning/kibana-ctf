@@ -1,0 +1,17 @@
+{
+  "id": 14,
+  "name": "ES|QL + Lens",
+  "description": "You can create Lens visuals with ES|QL! Check out the sample ES|QL query that spawns a Lens visual. See if you can edit the lens visual and find the flag I hid in there :).\r\n\r\n![](https://media.tenor.com/ZCWrGGgfwowAAAAd/spongebob-squarepants-title.gif)",
+  "max_attempts": 0,
+  "value": 20,
+  "category": "ES|QL != SQL",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/r/s/Ayuvz",
+  "next_id": null,
+  "attribution": null
+}

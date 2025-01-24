@@ -1,0 +1,17 @@
+{
+  "id": 12,
+  "name": "Strange Activity",
+  "description": "I have been tracking this very unusual suspect and I am trying to get a good understanding of what in the world is going on. Please help me.\r\n\r\n![](https://media.tenor.com/rB8hWIin-2IAAAAM/hmm-suspect.gif)",
+  "max_attempts": 0,
+  "value": 20,
+  "category": "ES|QL != SQL",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/r/s/dJMRr",
+  "next_id": null,
+  "attribution": null
+}

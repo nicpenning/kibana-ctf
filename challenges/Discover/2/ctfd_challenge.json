@@ -1,0 +1,19 @@
+{
+  "id": 2,
+  "name": "I like a good query.",
+  "description": "Come to think of it, I think I had a gnarly saved query also, please find it for me!",
+  "max_attempts": 0,
+  "value": 20,
+  "category": "(re)Discover",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [
+      1
+    ],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/discover",
+  "next_id": null,
+  "attribution": null
+}

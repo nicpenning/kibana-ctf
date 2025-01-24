@@ -1,0 +1,19 @@
+{
+  "id": 4,
+  "name": "Ahh, that is quite the (Data) View [Bonus]",
+  "description": "Also, I am not a fan of these random IDs that get associated with my data views since it is a nightmare when figuring out what data view was applied to my searches or dashboards when they get removed, so I created my own muhahahah!\r\n\r\n![](https://cdn.crowdriff.com/in-use/34dfa25e-208e-a898-f577-d109adb6a053/1080.jpg)",
+  "max_attempts": 0,
+  "value": 50,
+  "category": "(re)Discover",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [
+      3
+    ],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/discover",
+  "next_id": null,
+  "attribution": ""
+}

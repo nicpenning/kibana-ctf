@@ -1,0 +1,19 @@
+{
+  "id": 3,
+  "name": "Ahh, that is quite the (Data) View",
+  "description": "Data views are great to narrow focus on a specific dataset. Thankfully I created the perfect data view for analyzing random events, but I forgot what events I was mapping these too, please help!\r\n\r\n![](https://cdn.crowdriff.com/in-use/88de5ecf-7fa6-8684-15b9-4ee9586f4633/1080.jpg)",
+  "max_attempts": 0,
+  "value": 30,
+  "category": "(re)Discover",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [
+      2
+    ],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/discover",
+  "next_id": 4,
+  "attribution": ""
+}
