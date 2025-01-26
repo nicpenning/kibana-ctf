@@ -518,7 +518,7 @@ Begin {
     $option4 = "4. Reset CTFd"
     $option5 = "5. Reset Elastic Stack"
     $option6 = "6. Check for Requirements"
-    $option7 = "7. Deploy all from scratch (Use with Caution as it Powers through the entire proess.)"
+    $option7 = "7. Deploy all from scratch (Use with Caution as it runs through the entire process.)"
 
     $challenge_option0 = "0. All challenges."
     $challenge_option1 = "1. Discover Challenges"
