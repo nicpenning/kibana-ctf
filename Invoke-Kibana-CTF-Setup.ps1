@@ -908,6 +908,54 @@ Begin {
             }
         }
     }
+
+    function Invoke-Reset-CTFd {
+        # Setup up Auth header
+        $ctfd_auth = Get-CTFd-Admin-Token
+
+        # Get Challenges
+        $challenges = Get-Challenges-From-CTFd
+
+        # Remove Challenges 1 by 1
+        Write-Host "Removing $($challenges.data.count) challenges"
+        $challenges.data | ForEach-Object {
+            # Get all challenge details per challenge
+            $id = $_.id
+            $challenge_info = Invoke-RestMethod -Method Get "$CTFd_URL_API/challenges/$id" -ContentType "application/json" -Headers $ctfd_auth
+            Write-Host "Removing challenge: $($challenge_info.data.name)"
+            try{
+                $remove_challenge = Invoke-RestMethod -Method Delete "$CTFd_URL_API/challenges/$id" -ContentType "application/json" -Headers $ctfd_auth
+                Write-Host "Removed challenge $($challenge_info.data.name) - $($remove_challenge.success)"
+            }catch{
+                Write-Host "Could not remove challenge: $($challenge_info.data.name) - $id"
+                $_.Exception
+            }
+        }
+    }
+
+    function Invoke-Reset-Elastic-Stack {
+        $continue = Read-Host "This action is destructive and will remove all Elastic stack resources, if you wish to continue please type in: `nDELETE-KIBANA-CTF"
+        if($continue -ne "DELETE-KIBANA-CTF"){
+            Write-Host "Proper response was not entered, exiting."
+            $finished = $true
+            break
+        }
+        Write-Host "Deleting all Elastic stack data now..." -ForegroundColor Yellow
+        Set-Location ./docker_elastic_stack
+
+        # Bring down the stack
+        Write-Host "Bringing down Elastic stack."
+        docker compose down
+
+        # Delete Elastic Stack docker volumes
+        Write-Host "Removing Docker Volumes."
+        docker volume rm kibana-ctf_certs
+        docker volume rm kibana-ctf_esdata01
+        docker volume rm kibana-ctf_kibanadata
+
+        Write-Host "All data has been deleted."
+        Set-Location ../
+    }
 }
 
 Process {
@@ -920,413 +968,36 @@ Process {
 
         switch ($Option_Selected) {
             '1' {
-                # 1. Deploy CTFd
-
-                # Check to see if CTFd has been deployed, and if not, ask to deploy.
-                if($null -ne (get-item ../CTFd)){
-                    $runCTFd = Read-host "CTFd directory detected! Would you like to run CTFd via docker? (y or n)"
-                    if($runCTFd -match "y"){
-                        Set-Location ../CTFd
-                        Write-Host "Bringing CTFd up! (Use docker compose down anytime from the CTFd directory to stop the container)" -ForegroundColor Green
-                        docker compose up -d
-                        Set-Location ../kibana-ctf/
-                        Write-Host "CTFd downloaded and began the process to bring it up. Navigate to $CTFd_URL to continue the setup process.`nNote: It could take a few minutes for the container to come up." -ForegroundColor Green
-                    }else{
-                        Write-Host "You said no, you do not wish to run CTFd, exiting." -ForegroundColor Yellow
-                    }
-                }else{
-                    $runCTFd = Read-host "CTFd directory not detected, would you like to download and run CTFd via docker? (y or n)"
-                    if($runCTFd -match "y"){
-                        Set-Location ../
-                        git clone https://github.com/CTFd/CTFd.git
-                        Set-Location ./CTFd/
-                        Write-Host "Bringing CTFd up! (Use docker compose down anytime from the CTFd directory to stop the container)" -ForegroundColor Green
-                        docker compose up -d
-                        Set-Location ../kibana-ctf/
-                        Write-Host "CTFd downloaded and began the process to bring it up. Navigate to $CTFd_URL to continue the setup process.`nNote: It could take a few minutes for the container to come up." -ForegroundColor Green
-                    }else{
-                        Write-Host "You said no, you do not wish to deploy and run CTFd, exiting." -ForegroundColor Yellow
-                    }
-                }
-
+                # Deploy CTFd
+                Invoke-CTFd-Deploy
 
                 $finished = $true
                 break
             }
             '2' {
-                # 4. Deploy Elastic Stack
-                
-                # Check to see if various parts of the project have already been configured to reduce the need for user input.
-                # 1. Check to see if .env file exists with credentials.
-                if ($(Invoke-CheckForEnv) -eq "False") {
-                    # Choose to use docker or not. If no .env is found, then ask.
-                    $dockerChoice = Read-Host "Would you like to use docker with this project? `
-                1. Yes, please generate a secure .env file. (Recommended) `
-                2. No thanks, I know what I am doing or I already have a .env file ready to go.`
-                Please Choose (1 or 2)"
-                
-                    if ($dockerChoice -eq "1") {
-                    # Generate a .env file with random passwords for Elasticsearch and Kibana. Also generate secure Kibana key for reporting funcationality.
-                    $env = Get-Content .\docker_elastic_stack\.env_template
-                    
-                    # Replace $elasticsearchPassword
-                    $elasticsearchPassword = $(-Join (@('0'..'9';'A'..'Z';'a'..'z';'!';'@';'#') | Get-Random -Count 32))
-                    $env = $env.Replace('$elasticsearchPassword', $elasticsearchPassword) 
-                    
-                    # Replace $kibanaPassword
-                    $kibanaPassword = $(-Join (@('0'..'9';'A'..'Z';'a'..'z';'!';'@';'#') | Get-Random -Count 32))
-                    $env = $env.Replace('$kibanaPassword', $kibanaPassword)
-                
-                    # Replace $kibanaEncryptionKey
-                    $kibanaEncryptionKey = $(-Join (@('0'..'9';'A'..'Z';'a'..'z';'!';'@';'#') | Get-Random -Count 32))
-                    $env = $env.Replace('$kibanaEncryptionKey', $kibanaEncryptionKey)
-                
-                    $env | Out-File .\docker_elastic_stack\.env
-                
-                    Write-Host "New file has been created (.env) and is ready for use." -ForegroundColor Green
-                    Write-Host "The following credentials will be used for setup and access to your Elastic stack so keep it close." -ForegroundColor Blue
-                    Write-Host "Username : elastic`nPassword : $elasticsearchPassword"
-                    Pause
-                    } else {
-                    Write-Debug "Did not choose to use docker so ignoring docker setup."
-                    }
-                } else {
-                    Write-Debug "Docker .env file already exists with password skipping to next section."
-                }
-                
-                # 2. Check to see if docker compose has been executed.
-                if (Invoke-CheckForDockerInUse -eq "False") {
-                    # Choose to start docker.
-                    $startStack = Read-Host "Would you like to start up the Elastic stack with docker? `
-                1. Yes, please run the docker commands to start the Elastic stack for me (Recommended) `
-                2. No thanks, I will get my cluster up and running without your help and then continue the process `
-                Please Choose (1 or 2)"
-                
-                    if ($startStack -eq "1") {
-                        Invoke-StartDocker
-                    } elseif ($startStack -eq "2") {
-                        Write-Debug "Skipping to next part of the process."
-                    } else {
-                        Write-Debug "Not a valid option. Exiting."
-                        exit
-                    }
-                } elseif (Invoke-CheckForDockerInUse -eq "True") {
-                    Write-Host "Docker found to be running. Would you like to stop and then start Docker?"
-                    $restartDocker = Read-Host "1. Yes, please restart Docker`n2. No, please leave it running.`nPlease Choose (1 or 2)"
-                    if ($restartDocker -eq 1) {
-                        Write-Host "Stopping current docker instances by bringing them down with docker compose down."
-                        Invoke-StopDocker
-                        Write-Host "Starting docker containers back up with docker compose up -d &"
-                        Invoke-StartDocker
-                    } else {
-                        Write-Debug "Continuing with current docker instance running."
-                    }
-                } else {
-                    Write-Host "Something is amiss, couldn't check to see if Docker was in use or not. Exiting." -ForegroundColor Yellow
-                    exit
-                }
-                
-                
-                # Configure Elasticsearch credentials for creating the Elasticsearch ingest pipelines and importing saved objects into Kibana.
-                # Force usage of elastic user by trying genereated creds first, then manual credential harvest
-                if ($elasticsearchPassword) {
-                    Write-Host "Elastic credentials detected! Going to use those for the setup process." -ForegroundColor Blue
-                    $elasticsearchPasswordSecure = ConvertTo-SecureString -String "$elasticsearchPassword" -AsPlainText -Force
-                    $elasticCreds = New-Object System.Management.Automation.PSCredential -ArgumentList "elastic", $elasticsearchPasswordSecure
-                } else {
-                    Write-Host "No generated credentials were found! Going to need the password for the elastic user." -ForegroundColor Yellow
-                    # When no passwords were generated, then prompt for credentials
-                    $elasticCreds = Get-Credential elastic
-                }
-                
-                # Set passwords via automated configuration or manual input
-                # Base64 Encoded elastic:secure_password for Kibana auth
-                $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
-                $kibanaAuth = "Basic $elasticCredsBase64"
-                
-                # Extract custom settings from configuration.json
-                $configurationSettings = Get-Content ./configuration.json | ConvertFrom-Json
-                
-                $Elasticsearch_URL = $configurationSettings.Elasticsearch_URL
-                $Kibana_URL = $configurationSettings.Kibana_URL
-                     
-                # 3. Check to see if Elasticsearch is available for use.
-                Invoke-CheckForElasticsearchStatus
-                
-                $configurationSettings.initializedElasticStack = "true"
-                $configurationSettings | Convertto-JSON | Out-File ./configuration.json -Force
-                
-                Write-Host "But first, please navigate to your Kibana instance to make sure you can log in.`nCopy and Paste the URL below to navigate to Kibana (ctrl-click might not work):" -ForegroundColor Yellow
-                Write-Host $Kibana_URL -ForegroundColor DarkCyan
-                Write-Host "Username : elastic`nPassword : $elasticsearchPassword"
-
-                # Creating Index Template for Challenges
-                Invoke-Create-Index-Template
-
-                # Import Kibana CTF Space
-                Invoke-Create-Kibana-CTF-Space $Kibana_URL
-
-                # Creating Kibana CTF Role Mapping
-                Invoke-Create-Kibana-CTF-User-Role
-
-                # Creating kibana-ctf user with Kibana CTF Role Mapping
-                Invoke-Create-Kibana-CTF-User
+                # Deploy Elastic Stack
+                Invoke-Elastic-Stack-Deploy
                 
                 $finished = $true
                 break
             }
             '3' {
-                # Import CTFd and Elastic Stack Challenges
-                # Show Menu if script was not provided the choice on execution using the Option_Selected variable
-                
-                if ($null -eq $CTF_Options_Selected -or $CTF_Options_Selected) {
-                    Show-CTF-Challenges-Menu
-                    $CTF_Options_Selected = Read-Host "Enter your choice"
-                }
-
-                # Setup up Auth header
-                $ctfd_auth = Get-CTFd-Admin-Token
-
-                # Extract custom settings from configuration.json if it exists
-                $configurationSettings = Get-Content ./configuration.json | ConvertFrom-Json
-                if($null -ne $configurationSettings.Elasticsearch_URL){
-                    Write-Host "Elasticsearch URL detected: $Elasticsearch_URL" -ForegroundColor Green
-                    $Elasticsearch_URL = $configurationSettings.Elasticsearch_URL
-                }
-                if($null -ne $configurationSettings.Kibana_URL){
-                    Write-Host "Kibana URL detected: $Kibana_URL" -ForegroundColor Green
-                    $Kibana_URL = $configurationSettings.Kibana_URL
-                }
-
-                if($null -eq $Elasticsearch_URL){
-                    Write-Host "Elasticearch URL required." -ForegroundColor Yellow
-                    $Elasticsearch_URL = Read-Host "Enter full Elasticsearch URL. Example: https://127.0.0.1:9200"
-                }
-
-                if($null -eq $Kibana_URL){
-                    Write-Host "Kibana URL required." -ForegroundColor Yellow
-                    $Kibana_URL = Read-Host "Enter full Kibana URL. Example: http://127.0.0.1:5601"
-                }
-
-                # Configure Elasticsearch credentials for importing saved objects into Kibana.
-                # Get elastic user credentials
-                Write-Host "Going to need the password for the elastic user. Checking for generated creds now." -ForegroundColor Yellow
-                $elasticCredsCheck = Invoke-CheckForEnv
-                # Set passwords via automated configuration or manual input
-                # Base64 Encoded elastic:secure_password for Kibana auth
-                if($($elasticCredsCheck)[0]){
-                    $elasticPass = ConvertTo-SecureString -String $($($elasticCredsCheck)[1]) -AsPlainText -Force
-                    $elasticCreds = New-Object System.Management.Automation.PSCredential("elastic", $elasticPass)
-                }else{
-                    $elasticCreds = Get-Credential elastic
-                }
-                $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
-
-                $kibanaAuth = "Basic $elasticCredsBase64"
-                     
-                # 3. Check to see if Elasticsearch is available for use.
-                Invoke-CheckForElasticsearchStatus
-
-                # Ingesting Dummy Documents
-                Write-Host "Ingesting documents for challenges" -ForegroundColor Blue
-                $fakeCount = 0
-                Write-Host "Ingesting 2.5K documents, please wait. This could take a few minutes."
-                do{
-                    $dummyDocument = Invoke-Generate-FakeEvent
-                    #$ingestDocs = Invoke-Ingest-Elasticsearch-Documents -documentToIngest $dummyDocument
-                    $fakeCount++
-                    if((500, 1000, 1500, 2000) -contains $fakeCount){
-                        Write-Host "Total documents ingested: $fakeCount"
-                    }
-                }while($fakeCount -lt 2500)
-
-                # Challenges Discover - Import
-                if((0, 1) -contains $CTF_Options_Selected){
-                    # Import Challenges for CTFd
-                    Invoke-Import-CTFd-Challenge './challenges/Discover/1/ctfd_challenge.json'
-                    Invoke-Import-CTFd-Challenge './challenges/Discover/2/ctfd_challenge.json'
-                    Invoke-Import-CTFd-Challenge './challenges/Discover/4/ctfd_challenge.json'
-                    Invoke-Import-CTFd-Challenge './challenges/Discover/3/ctfd_challenge.json'
-                    Invoke-Import-CTFd-Challenge './challenges/Discover/5/ctfd_challenge.json'
-                    Invoke-Import-CTFd-Challenge './challenges/Discover/7/ctfd_challenge.json'
-                    Invoke-Import-CTFd-Challenge './challenges/Discover/6/ctfd_challenge.json'
-                    Invoke-Import-CTFd-Challenge './challenges/Discover/8/ctfd_challenge.json'
-                    Invoke-Import-CTFd-Challenge './challenges/Discover/9/ctfd_challenge.json'
-                    Invoke-Import-CTFd-Challenge './challenges/Discover/10/ctfd_challenge.json'
-
-                    # Import Flags for CTFd Challenges
-                    Invoke-Import-CTFd-Flag './challenges/Discover/1/ctfd_flag.json'
-                    Invoke-Import-CTFd-Flag './challenges/Discover/2/ctfd_flag.json'
-                    Invoke-Import-CTFd-Flag './challenges/Discover/3/ctfd_flag.json'
-                    Invoke-Import-CTFd-Flag './challenges/Discover/4/ctfd_flag.json'
-                    Invoke-Import-CTFd-Flag './challenges/Discover/5/ctfd_flag.json'
-                    Invoke-Import-CTFd-Flag './challenges/Discover/6/ctfd_flag.json'
-                    Invoke-Import-CTFd-Flag './challenges/Discover/7/ctfd_flag.json'
-                    Invoke-Import-CTFd-Flag './challenges/Discover/8/ctfd_flag.json'
-                    Invoke-Import-CTFd-Flag './challenges/Discover/9/ctfd_flag.json'
-                    Invoke-Import-CTFd-Flag './challenges/Discover/10/ctfd_flag.json'
-
-                    # Import Hints for CTFd Challenges
-                    Invoke-Import-CTFd-Hint './challenges/Discover/1/ctfd_hint.json'
-                    Invoke-Import-CTFd-Hint './challenges/Discover/7/ctfd_hint.json'
-                    Invoke-Import-CTFd-Hint './challenges/Discover/10/ctfd_hint.json'
-
-                    # Import Challenges for Elastic
-                    . ./challenges/Discover/5/elastic_import_script.ps1; challenge
-                    . ./challenges/Discover/6/elastic_import_script.ps1; challenge
-                    . ./challenges/Discover/9/elastic_import_script.ps1; challenge
-                    . ./challenges/Discover/10/elastic_import_script.ps1; challenge
-
-                    Import-SavedObject "./challenges/Discover/1/elastic_saved_objects.ndjson"
-                    Import-SavedObject "./challenges/Discover/2/elastic_saved_objects.ndjson"
-                    Import-SavedObject "./challenges/Discover/3/elastic_saved_objects.ndjson"
-                    Import-SavedObject "./challenges/Discover/5/elastic_saved_objects.ndjson"
-                    Import-SavedObject "./challenges/Discover/8/elastic_saved_objects.ndjson"
-                }
-                
-                # Challenges ES|QL - Import
-                if((0, 2) -contains $CTF_Options_Selected){
-                    # Import Challenges for CTFd
-                    Invoke-Import-CTFd-Challenge './challenges/ES_QL/2/ctfd_challenge.json'
-                    Invoke-Import-CTFd-Challenge './challenges/ES_QL/1/ctfd_challenge.json'
-                    Invoke-Import-CTFd-Challenge './challenges/ES_QL/3/ctfd_challenge.json'
-                    Invoke-Import-CTFd-Challenge './challenges/ES_QL/4/ctfd_challenge.json'
-                    Invoke-Import-CTFd-Challenge './challenges/ES_QL/5/ctfd_challenge.json'
-                    
-                    # Import Flags for CTFd Cahllenges
-                    Invoke-Import-CTFd-Flag './challenges/ES_QL/1/ctfd_flag.json'
-                    Invoke-Import-CTFd-Flag './challenges/ES_QL/2/ctfd_flag.json'
-                    Invoke-Import-CTFd-Flag './challenges/ES_QL/3/ctfd_flag.json'
-                    Invoke-Import-CTFd-Flag './challenges/ES_QL/4/ctfd_flag.json'
-                    Invoke-Import-CTFd-Flag './challenges/ES_QL/5/ctfd_flag.json'
-
-                    # Import Challenges for Elastic
-                    . ./challenges/ES_QL/2/elastic_import_script.ps1; challenge
-
-                    Import-SavedObject "./challenges/ES_QL/1/elastic_saved_objects.ndjson"
-                    Import-SavedObject "./challenges/ES_QL/2/elastic_saved_objects.ndjson"
-                    Import-SavedObject "./challenges/ES_QL/3/elastic_saved_objects.ndjson"
-                    Import-SavedObject "./challenges/ES_QL/4/elastic_saved_objects.ndjson"
-                    Import-SavedObject "./challenges/ES_QL/5/elastic_saved_objects.ndjson"
-                }
-
-                # Retrieve challenges from challenges.json file and convert it into an object
-                $pages_object = Get-Content './CTFd_Events/JSON Configuration Files/pages.json' | ConvertFrom-Json -Depth 10
-                $config_object = Get-Content './CTFd_Events/JSON Configuration Files/config.json' | ConvertFrom-Json -Depth 10
-                $files_object = Get-Content './CTFd_Events/JSON Configuration Files/files.json' | ConvertFrom-Json -Depth 10
-
-                # Import Page(s) 1 by 1
-                Write-Host "Importing $($pages_object.results.count) page(s)"
-                Pause
-                $pages_object.results | ForEach-Object {
-                    # Get current flag
-                    $current_pages = $_ | ConvertTo-Json -Compress
-
-                    Write-Host "Importing page: $($_.title)"
-                    try{
-                        $import_pages = Invoke-RestMethod -Method POST "$CTFd_URL_API/pages" -ContentType "application/json" -Headers $ctfd_auth -Body $current_pages
-                        Write-Host "Imported page $($_.title) - $($import_pages.success)"
-                    }catch{
-                        Write-Host "Could not import page: $($_.title)"
-                        Write-Host "Will try to update the current page."
-                        try{
-                            $update_pages = Invoke-RestMethod -Method PATCH "$CTFd_URL_API/pages/1" -ContentType "application/json" -Headers $ctfd_auth -Body $current_pages
-                            Write-Host "Pages updated: $($update_pages.success)"
-                        }catch{
-                            Write-Host "Could not import page: $($_.title)"
-                            Write-Host "Note: This shouldn't impact the CTF platform if everything else worked."
-                            $_.Exception
-                        }
-                    }
-                }
-
-                # Import Config
-                Write-Host "Importing $($config_object.results.count) config option(s)"
-                Pause
-                $config_object.results | ForEach-Object {
-                    # Get current flag
-                    $current_config = $_ | ConvertTo-Json -Compress
-
-                    Write-Host "Importing config option: $($_.key)"
-                    try{
-                        $import_config = Invoke-RestMethod -Method POST "$CTFd_URL_API/configs" -ContentType "application/json" -Headers $ctfd_auth -Body $current_config
-                        Write-Host "Imported config option: $($_.key)- $($import_config.success)" -ForegroundColor Green
-                    }catch{
-                        Write-Host "Could not import config."
-                        $_.Exception
-                    }
-                }
-
-                # Import Files
-                Write-Host "Importing $($files_object.results.count) file(s)"
-                Pause
-                $files_object.results | ForEach-Object {
-                    # Get current flag
-                    $current_file = $_ | ConvertTo-Json -Compress
-
-                    Write-Host "Importing file: $($_.location)"
-                    try{
-                        $import_file = Invoke-RestMethod -Method POST "$CTFd_URL_API/files" -ContentType "application/json" -Headers $ctfd_auth -Body $current_file
-                        Write-Host "Imported file: $($_.location)- $($import_file.success)" -ForegroundColor Green
-                    }catch{
-                        Write-Host "Could not import config."
-                        $_.Exception
-                    }
-                }
+                # Import CTFd and Elastic Stack Challengess
+                Invoke-Elastic-and-CTFd-Challenges
 
                 $finished = $true
                 break
             }
             '4' {
                 # Reset CTFd
-                # Setup up Auth header
-                $ctfd_auth = Get-CTFd-Admin-Token
-
-                # Get Challenges
-                $challenges = Get-Challenges-From-CTFd
-
-                # Remove Challenges 1 by 1
-                Write-Host "Removing $($challenges.data.count) challenges"
-                $challenges.data | ForEach-Object {
-                    # Get all challenge details per challenge
-                    $id = $_.id
-                    $challenge_info = Invoke-RestMethod -Method Get "$CTFd_URL_API/challenges/$id" -ContentType "application/json" -Headers $ctfd_auth
-                    Write-Host "Removing challenge: $($challenge_info.data.name)"
-                    try{
-                        $remove_challenge = Invoke-RestMethod -Method Delete "$CTFd_URL_API/challenges/$id" -ContentType "application/json" -Headers $ctfd_auth
-                        Write-Host "Removed challenge $($challenge_info.data.name) - $($remove_challenge.success)"
-                    }catch{
-                        Write-Host "Could not remove challenge: $($challenge_info.data.name) - $id"
-                        $_.Exception
-                    }
-                }
+                Invoke-Reset-CTFd
 
                 $finished = $true
                 break
             }
             '5' {
-                # 5. Reset Elastic Stack
-                $continue = Read-Host "This action is destructive and will remove all Elastic stack resources, if you wish to continue please type in: `nDELETE-KIBANA-CTF"
-                if($continue -ne "DELETE-KIBANA-CTF"){
-                    Write-Host "Proper response was not entered, exiting."
-                    $finished = $true
-                    break
-                }
-                Write-Host "Deleting all Elastic stack data now..." -ForegroundColor Yellow
-                Set-Location ./docker_elastic_stack
-
-                # Bring down the stack
-                Write-Host "Bringing down Elastic stack."
-                docker compose down
-
-                # Delete Elastic Stack docker volumes
-                Write-Host "Removing Docker Volumes."
-                docker volume rm kibana-ctf_certs
-                docker volume rm kibana-ctf_esdata01
-                docker volume rm kibana-ctf_kibanadata
-
-                Write-Host "All data has been deleted."
-                Set-Location ../
+                # Reset Elastic Stack
+                Invoke-Reset-Elastic-Stack
 
                 $finished = $true
                 break
