@@ -157,6 +157,11 @@ Begin {
                 Write-Host "Could not import flag: $($current_challenge.name) - $($_.id)"
                 $_.Exception
             }
+
+            if($CTFd_Randomize_Flags -match "true"){
+                Write-Host "Randomizing the the last part of the flag."
+                Invoke-Random-Hex-String
+            }
         
         }
     }
@@ -512,6 +517,12 @@ Begin {
         return $event | ConvertTo-JSON -Depth 2 -Compress
     }
 
+    function Invoke-Random-Hex-String {
+        $chars = '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' 
+        $randomFlagExtension = -join (Get-Random -Count 5 -InputObject $chars)
+        return $randomFlagExtension
+    }
+    
     $option1 = "1. Deploy CTFd"
     $option2 = "2. Deploy Elastic Stack"
     $option3 = "3. Import Elastic Stack Challenges"
@@ -827,7 +838,7 @@ Begin {
             Invoke-Import-CTFd-Challenge './challenges/ES_QL/4/ctfd_challenge.json'
             Invoke-Import-CTFd-Challenge './challenges/ES_QL/5/ctfd_challenge.json'
             
-            # Import Flags for CTFd Cahllenges
+            # Import Flags for CTFd Challenges
             Invoke-Import-CTFd-Flag './challenges/ES_QL/1/ctfd_flag.json'
             Invoke-Import-CTFd-Flag './challenges/ES_QL/2/ctfd_flag.json'
             Invoke-Import-CTFd-Flag './challenges/ES_QL/3/ctfd_flag.json'
