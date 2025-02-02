@@ -592,6 +592,7 @@ Begin {
                 Set-Location ../kibana-ctf/
                 Write-Host "CTFd downloaded and began the process to bring it up. Navigate to $CTFd_URL to continue the setup process.`nNote: It could take a few minutes for the container to come up." -ForegroundColor Green
                 Write-Host "Refer to ReadMe `"How to get started`" for next steps. (https://github.com/nicpenning/kibana-ctf?tab=readme-ov-file#how-to-get-started)"
+                Write-Host "Once finished from the steps provided, run the script again and run option 2. to begin the setup for the Elastic Stack instance."
                 Pause
             }else{
                 Write-Host "You said no, you do not wish to deploy and run CTFd, exiting." -ForegroundColor Yellow
