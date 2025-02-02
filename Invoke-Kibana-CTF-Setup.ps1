@@ -915,6 +915,14 @@ Begin {
     }
 
     function Invoke-Reset-CTFd {
+        $continue = Read-Host "This action is destructive and will remove all CTFd resources such as the CTFd directory which in turn will lose all progress, users, flags, etc. Please backup your CTF using the UI if possible (https://docs.ctfd.io/docs/exports/ctfd-exports). If you wish to continue please type in: `nDELETE-CTFd-Instance"
+        if($continue -ne "DELETE-CTFd-Instance"){
+            Write-Host "Proper response was not entered, exiting."
+            $finished = $true
+            break
+        }
+        Write-Host "Deleting all CTFd data now..." -ForegroundColor Yellow
+
         # Setup up Auth header
         $ctfd_auth = Get-CTFd-Admin-Token
 
@@ -936,6 +944,15 @@ Begin {
                 $_.Exception
             }
         }
+
+        # Bringing down CTFd
+        Set-Location ../CTFd
+        docker compose down
+        Set-Location ../kibana-ctf
+        Remove-Item ../CTFd -Recurse
+
+        Write-Host "Finished removing CTFd files."
+
     }
 
     function Invoke-Reset-Elastic-Stack {
