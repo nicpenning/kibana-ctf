@@ -1,1 +1,2 @@
-docker_elastic_stack/.env
+setup/Elastic/docker_elastic_stack/.env
+configuration.json
