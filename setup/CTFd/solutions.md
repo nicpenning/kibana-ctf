@@ -1,8 +1,10 @@
+# Stop 🛑⚠️⚡⚠️ This page contains the solutions to the CTF do not proceed if you wish to be challenge by the CTF. This is for adminstrators only. ⚠️⚡⚠️🛑
+
 # (re)Discover
 
 ### 1. Flag:
 <details>
-<summary>Spolier: Reveal Flag Details</summary>
+<summary>Spoiler: Reveal Flag Details</summary>
 <p>
   
 `{ctf_one_search_to_rule_them_all}`
@@ -16,7 +18,7 @@
 
 ### 2. Flag:
 <details>
-<summary>Spolier: Reveal Flag Details</summary>
+<summary>Spoiler: Reveal Flag Details</summary>
 <p>
 
 `{ctf_one_query_to_find_them_all}`
@@ -30,7 +32,7 @@
 
 ### 3. Flag:
 <details>
-<summary>Spolier: Reveal Flag Details</summary>
+<summary>Spoiler: Reveal Flag Details</summary>
 <p>
 
 `{ctf_sweet_my_own_data_view}`
@@ -44,7 +46,7 @@
 
 ### 4. Flag:
 <details>
-<summary>Spolier: Reveal Flag Details</summary>
+<summary>Spoiler: Reveal Flag Details</summary>
 <p>
 
 `{ctf_sweet_my_own_data_view_id}`
@@ -59,7 +61,7 @@
 ### 5. Flag:
 
 <details>
-<summary>Spolier: Reveal Flag Details</summary>
+<summary>Spoiler: Reveal Flag Details</summary>
 <p>
 
 `{ctf_fancy_query_in_json}`
@@ -73,7 +75,7 @@
 
 ### 6. Flag:
 <details>
-<summary>Spolier: Reveal Flag Details</summary>
+<summary>Spoiler: Reveal Flag Details</summary>
 <p>
 
 `{ctf_where_we_goin_we_dont_need_roads}`
@@ -96,7 +98,7 @@
 
 ### 7. Flag:
 <details>
-<summary>Spolier: Reveal Flag Details</summary>
+<summary>Spoiler: Reveal Flag Details</summary>
 <p>
 
 `{ctf_meta_data_is_data_too}`
@@ -110,7 +112,7 @@
 
 ### 8. Flag:
 <details>
-<summary>Spolier: Reveal Flag Details</summary>
+<summary>Spoiler: Reveal Flag Details</summary>
 <p>
 
 `{ctf_X_days_since_last_incident}` or X - Dynamic
@@ -135,7 +137,7 @@ or
 
 ### 9. Flag:
 <details>
-<summary>Spolier: Reveal Flag Details</summary>
+<summary>Spoiler: Reveal Flag Details</summary>
 <p>
 
 `{ctf_hay_in_the_needle_stack}`
@@ -158,7 +160,7 @@ or
 
 ### 10. Flag:
 <details>
-<summary>Spolier: Reveal Flag Details</summary>
+<summary>Spoiler: Reveal Flag Details</summary>
 <p>
 
 `{ctf_images_everywhere}`
@@ -205,7 +207,7 @@ or
 
 ### 1. Flag
 <details>
-<summary>Spolier: Reveal Flag Details</summary>
+<summary>Spoiler: Reveal Flag Details</summary>
 <p>
 
 `{ctf_es|ql_is_not_sql_yay}`
@@ -237,7 +239,7 @@ ROW a = "ea2N0Zl9lc3aaxxbF9ap", b = "c19dub3Rfc3FsX3lheX0", c = "d2hvb3Bz", d = 
 
 ### 2. Flag
 <details>
-<summary>Spolier: Reveal Flag Details</summary>
+<summary>Spoiler: Reveal Flag Details</summary>
 <p>
 
 `{ctf_c2_with_powershell_is_fun}`
@@ -290,7 +292,7 @@ ROW a = "ea2N0Zl9lc3aaxxbF9ap", b = "c19dub3Rfc3FsX3lheX0", c = "d2hvb3Bz", d = 
 
 ### 3. Flag
 <details>
-<summary>Spolier: Reveal Flag Details</summary>
+<summary>Spoiler: Reveal Flag Details</summary>
 <p>
   
 `{ctf_comments_for_the_win}`
@@ -304,7 +306,7 @@ ROW a = "ea2N0Zl9lc3aaxxbF9ap", b = "c19dub3Rfc3FsX3lheX0", c = "d2hvb3Bz", d = 
 
 ### 4. Flag
 <details>
-<summary>Spolier: Reveal Flag Details</summary>
+<summary>Spoiler: Reveal Flag Details</summary>
 <p>
 
 `{ctf_creating_lens_from_es|ql_is_kinda_cool}`
@@ -318,7 +320,7 @@ ROW a = "ea2N0Zl9lc3aaxxbF9ap", b = "c19dub3Rfc3FsX3lheX0", c = "d2hvb3Bz", d = 
 
 ### 5. Flag
 <details>
-<summary>Spolier: Reveal Flag Details</summary>
+<summary>Spoiler: Reveal Flag Details</summary>
 <p>
 
 `{ctf_wow_nice_job_finding_this_custom_id}`

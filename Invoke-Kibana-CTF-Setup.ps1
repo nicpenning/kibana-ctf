@@ -71,9 +71,9 @@ Begin {
     $indexTemplateURL = $Elasticsearch_URL+"/_index_template/logs-kibana-ctf"
     $ctfUserRoleURL = $Elasticsearch_URL+"/_security/role/Kibana CTF"
     $ctfUserCreateURL = $Elasticsearch_URL+"/_security/user/kibana-ctf"
-    $indexTemplate = Get-Content ./Elastic_Stack/index_template.json
-    $ctfUserRole = Get-Content ./Elastic_Stack/kibana_ctf_role.json
-    $ctfUserCreate = Get-Content ./Elastic_Stack/kibana_ctf_user.json
+    $indexTemplate = Get-Content ./setup/Elastic/index_template.json
+    $ctfUserRole = Get-Content ./setup/Elastic/kibana_ctf_role.json
+    $ctfUserCreate = Get-Content ./setup/Elastic/kibana_ctf_user.json
 
     function Get-CTFd-Creds {
         return Read-Host "Enter the token for the administrator account. Starts with ctfd_" -MaskInput
@@ -189,9 +189,9 @@ Begin {
     function Invoke-CheckForEnv {
         # Check for existing .env file for setup
         # Get Elasticsearch password from .env file
-        if (Test-Path .\docker_elastic_stack\.env) {
+        if (Test-Path .\setup\Elastic\docker_elastic_stack\.env) {
             Write-Host "Docker .env file found! Which likely means you have configured docker for use. Going to extract password to perform initilization."
-            $env = Get-Content .\docker_elastic_stack\.env
+            $env = Get-Content .\setup\Elastic\docker_elastic_stack\.env
             $regExEnv = $env | Select-String -AllMatches -Pattern "ELASTIC_PASSWORD='(.*)'"
             $global:elasticsearchPassword = $regExEnv.Matches.Groups[1].Value
             if ($elasticsearchPassword) {
@@ -244,51 +244,51 @@ Begin {
     function Invoke-StartDocker {
         # Check to see if Linux to set VM Max Map Count to ensure Elasticsearch can start
         if($IsLinux) {
-        Write-Host "Linux OS detected, setting VM Max Map Count to 262144"
-        sudo sysctl -w vm.max_map_count=262144
+            Write-Host "Linux OS detected, setting VM Max Map Count to 262144"
+            sudo sysctl -w vm.max_map_count=262144
         }
         
         #Check to see if Docker on Windows
         if($IsWindows) {
-        $dockerWSL2 = docker info | Select-String "WSL2"
-    
-        #Check to see if Docker on Windows is using WSL2 and configure accordingly
-        if($dockerWSL2){
-            Write-Host "Docker install was detected using WSL2, so an additional setting needs to be configured for memory consumption."
-            $wslMaxMem = Read-Host "The following file will be created: "$ENV:USERPROFILE\.wslconfig" `nWould you like to continue?`n1. Yes`n2. No, exit`n(Enter 1 or 2)"
-            if($wslMaxMem -eq 1){
-            $maxmem = @"
-    [wsl2]
-    kernelCommandLine = "sysctl.vm.max_map_count=262144"
+            $dockerWSL2 = docker info | Select-String "WSL2"
+        
+            #Check to see if Docker on Windows is using WSL2 and configure accordingly
+            if($dockerWSL2){
+                Write-Host "Docker install was detected using WSL2, so an additional setting needs to be configured for memory consumption."
+                $wslMaxMem = Read-Host "The following file will be created: "$ENV:USERPROFILE\.wslconfig" `nWould you like to continue?`n1. Yes`n2. No, exit`n(Enter 1 or 2)"
+                if($wslMaxMem -eq 1){
+                $maxmem = @"
+        [wsl2]
+        kernelCommandLine = "sysctl.vm.max_map_count=262144"
 "@
-            Write-Host "Creating file $ENV:USERPROFILE\.wslconfig with the contents of:$maxmem"
-            try{
-                $maxmem | Out-File "$ENV:USERPROFILE\.wslconfig"
-                Write-Host "File created!" -ForegroundColor Green
-            }catch{
-                Write-Host "File could not be created." -ForegroundColor Red
-            }
+                Write-Host "Creating file $ENV:USERPROFILE\.wslconfig with the contents of:$maxmem"
+                try{
+                    $maxmem | Out-File "$ENV:USERPROFILE\.wslconfig"
+                    Write-Host "File created!" -ForegroundColor Green
+                }catch{
+                    Write-Host "File could not be created." -ForegroundColor Red
+                }
+                }else{
+                Write-Host "Required WSL file was not created, exiting."
+                Exit
+                }
             }else{
-            Write-Host "Required WSL file was not created, exiting."
-            Exit
+                Write-Host "Docker install was not detected using WSL2 so you might need to adjust your docker settings to allow additional RAM usage for this setup to work."
+                Write-Host "If Elasticsearch never gets working then check your Docker containers to see if they exited and if so, check the logs and see why the failed and fix accordingly."
             }
-        }else{
-            Write-Host "Docker install was not detected using WSL2 so you might need to adjust your docker settings to allow additional RAM usage for this setup to work."
-            Write-Host "If Elasticsearch never gets working then check your Docker containers to see if they exited and if so, check the logs and see why the failed and fix accordingly."
-        }
         }
         
         Write-Host "Starting up the Elastic stack with docker, please be patient as this can take over 10 minutes to download and deploy the entire stack if this is the first time you executed this step.`nOtherwise this will take just a couple of minutes."
-        Set-Location .\docker_elastic_stack
+        Set-Location .\setup\Elastic\docker_elastic_stack
         try {
-        $composeVersion = docker compose version
-        if($composeVersion){
-            Write-Debug '"docker compose detected"'
-            docker compose up -d
-            Write-Host "Elastic Stack container started, navigate to $Kibana_URL to ensure it started okay.`nNote: It could a few minutes to get the Elastic stack running so be patient.)" -ForegroundColor Green
-        }else{
-            Throw '"docker compose" not detected, will now check for docker-compose'
-        }
+            $composeVersion = docker compose version
+            if($composeVersion){
+                Write-Debug '"docker compose detected"'
+                docker compose up -d
+                Write-Host "Elastic Stack container started, navigate to $Kibana_URL to ensure it started okay.`nNote: It could a few minutes to get the Elastic stack running so be patient.)" -ForegroundColor Green
+            }else{
+                Throw '"docker compose" not detected, will now check for docker-compose'
+            }
         } catch {
             Write-Debug "docker compose up -d failed - trying docker-compose up -d"
             try {
@@ -303,19 +303,19 @@ Begin {
                 Write-Host "docker compose up -d or docker-compose up -d did not work. Check that you have docker and docker composed installed."
             }
         }
-        Set-Location ..\
+        Set-Location ..\..\..\
     }
     
     function Invoke-StopDocker {
         Write-Debug "Shutting down docker containers for the Elastic stack."
-        Set-Location .\docker_elastic_stack
+        Set-Location .\setup\Elastic\docker_elastic_stack
         try { 
-        docker compose down
+            docker compose down
         } catch {
-        Write-Host "Failed to use docker compose down, so trying docker-compose down."
-        docker-compose down
+            Write-Host "Failed to use docker compose down, so trying docker-compose down."
+            docker-compose down
         }
-        Set-Location ..\
+        Set-Location ..\..\..\
     }
 
     function Import-SavedObject {
@@ -613,7 +613,7 @@ Begin {
         
             if ($dockerChoice -eq "1") {
             # Generate a .env file with random passwords for Elasticsearch and Kibana. Also generate secure Kibana key for reporting funcationality.
-            $env = Get-Content .\docker_elastic_stack\.env_template
+            $env = Get-Content .\setup\Elastic\docker_elastic_stack\.env_template
             
             # Replace $elasticsearchPassword
             $elasticsearchPassword = $(-Join (@('0'..'9';'A'..'Z';'a'..'z';'!';'@';'#') | Get-Random -Count 32))
@@ -627,17 +627,17 @@ Begin {
             $kibanaEncryptionKey = $(-Join (@('0'..'9';'A'..'Z';'a'..'z';'!';'@';'#') | Get-Random -Count 32))
             $env = $env.Replace('$kibanaEncryptionKey', $kibanaEncryptionKey)
         
-            $env | Out-File .\docker_elastic_stack\.env
+            $env | Out-File .\setup\Elastic\docker_elastic_stack\.env
         
             Write-Host "New file has been created (.env) and is ready for use." -ForegroundColor Green
             Write-Host "The following credentials will be used for setup and access to your Elastic stack so keep it close." -ForegroundColor Blue
             Write-Host "Username : elastic`nPassword : $elasticsearchPassword"
             Pause
             } else {
-            Write-Debug "Did not choose to use docker so ignoring docker setup."
+                Write-Debug "Did not choose to use docker so ignoring docker setup."
             }
         } else {
-            Write-Debug "Docker .env file already exists with password skipping to next section."
+                Write-Debug "Docker .env file already exists with password skipping to next section."
         }
         
         # 2. Check to see if docker compose has been executed.
@@ -856,9 +856,8 @@ Begin {
         }
 
         # Retrieve challenges from challenges.json file and convert it into an object
-        $pages_object = Get-Content './CTFd_Events/JSON Configuration Files/pages.json' | ConvertFrom-Json -Depth 10
-        $config_object = Get-Content './CTFd_Events/JSON Configuration Files/config.json' | ConvertFrom-Json -Depth 10
-        $files_object = Get-Content './CTFd_Events/JSON Configuration Files/files.json' | ConvertFrom-Json -Depth 10
+        $pages_object = Get-Content './setup/CTFd/pages.json' | ConvertFrom-Json -Depth 10
+        $config_object = Get-Content './setup/CTFd/config.json' | ConvertFrom-Json -Depth 10
 
         # Import Page(s) 1 by 1
         Write-Host "Importing $($pages_object.results.count) page(s)"
@@ -902,22 +901,17 @@ Begin {
             }
         }
 
-        # Import Files
-        Write-Host "Importing $($files_object.results.count) file(s)"
+        # Import Logo
+        Write-Host "Importing logo for home page"
         Pause
-        $files_object.results | ForEach-Object {
-            # Get current flag
-            $current_file = $_ | ConvertTo-Json -Compress
-
-            Write-Host "Importing file: $($_.location)"
-            try{
-                $import_file = Invoke-RestMethod -Method POST "$CTFd_URL_API/files" -ContentType "application/json" -Headers $ctfd_auth -Body $current_file
-                Write-Host "Imported file: $($_.location)- $($import_file.success)" -ForegroundColor Green
-            }catch{
-                Write-Host "Could not import config."
-                $_.Exception
-            }
+        $form = @{
+            "page_id" = $pageID
+            "type" = "page"
+            "file" = Get-Item -Path "images/DALLE_Capture_The_Flag_logo.webp"
+            "location" = "9e66f558e02ce69471d071f5d9a049c0/DALLE_Capture_The_Flag_logo.webp"
         }
+        $response = Invoke-RestMethod -Method POST -Uri "$CTFd_URL_API/files" -Headers $ctfd_auth -Form $form
+        Write-Host "Imported $filePath`: $($response.success)"
     }
 
     function Invoke-Reset-CTFd {
@@ -952,7 +946,7 @@ Begin {
             break
         }
         Write-Host "Deleting all Elastic stack data now..." -ForegroundColor Yellow
-        Set-Location ./docker_elastic_stack
+        Set-Location ./setup/Elastic/docker_elastic_stack
 
         # Bring down the stack
         Write-Host "Bringing down Elastic stack."
