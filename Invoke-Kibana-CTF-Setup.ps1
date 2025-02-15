@@ -923,11 +923,12 @@ Begin {
         }
         Write-Host "Deleting all CTFd data now..." -ForegroundColor Yellow
 
+        <# Alternative method to cleaning up CTFd is deleting all challenges - For now, just try to remove the files.
         # Setup up Auth header
-        $ctfd_auth = Get-CTFd-Admin-Token
+        # $ctfd_auth = Get-CTFd-Admin-Token
 
         # Get Challenges
-        $challenges = Get-Challenges-From-CTFd
+        # $challenges = Get-Challenges-From-CTFd
 
         # Remove Challenges 1 by 1
         Write-Host "Removing $($challenges.data.count) challenges"
@@ -944,6 +945,7 @@ Begin {
                 $_.Exception
             }
         }
+        #>
 
         # Bringing down CTFd
         Set-Location ../CTFd
@@ -952,7 +954,6 @@ Begin {
         Remove-Item ../CTFd -Recurse
 
         Write-Host "Finished removing CTFd files."
-
     }
 
     function Invoke-Reset-Elastic-Stack {
