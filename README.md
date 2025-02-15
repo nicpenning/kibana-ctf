@@ -1,4 +1,4 @@
-To Do:
+Features:
 - [x] Discover challenges
 - [x] ES|QL challenges
 - [x] Optimize challenge scores, play through ensure good flow
@@ -18,13 +18,13 @@ To Do:
 Welcome to the Kibana CTF Setup Script!
 What would you like to do?
 1. Deploy CTFd
-2. Import CTFd Challenges, Flags, etc.
-3. Reset CTFd
-4. Deploy Elastic Stack
-5. Import Objects and Index Documents for Elastic Stack
-6. Reset Elastic Stack
-7. Check for Requirements
-8. Deploy all from scratch
+2. Deploy Elastic Stack
+3. Import Elastic Stack Challenges
+4. Reset CTFd
+5. Reset Elastic Stack
+6. Check for Requirements
+7. Deploy all from scratch (Use with Caution as it runs through the entire process.)
+
 Q. Quit
 Enter your choice: 
 ```
@@ -85,5 +85,15 @@ Doing the step above then allows access to your computer from http://192.168.86.
 
 If you have a Windows Firewall enabled, you will need to allow the port used above (ie TCP 31337).
 
-#### Future Flow
-Run Invoke-Kibana-CTF-Setup.ps1 -> Prompt for credentials -> Script sets up CTFd, Kibana CTF space, Import Saved Objects, Ingest Documents -> Setup Complete
+#### Modular Challenge Structure
+Challenges are stored in the `challenges` and each challenge is part of a category and contains files necessary to build the challenge in CTFd and the populate the challenge in the Elastic stack. Don't look at this files if you wish to challenge yourself! These challenges are modular so more can be added later or tweaked as needed. Inside of the challenges directory, there are files as follows:
+
+```
+Discover/
+├── (Challenge Number)/
+│   ├── ctfd_challenge.md ---> This is the shell of the challenge that includes the name, description, value, etc. which will be stored in CTFd. (Required)
+│   ├── ctfd_flag.json ---> This is the actual flag used in CTFd. (Required)
+│   ├── ctfd_hint.json ---> This is the hint for the challenge in CTFd. (Optional)
+│   ├── elastic_import_script.ps1 ---> This is a specialized PowerShell script used to create the contents for a challenge. (Optional)
+│   └── elastic_saved_objects.json ---> These are the saved objects that are imported into the Elastic stack for the challenge. (Optional)
+```
