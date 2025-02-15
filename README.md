@@ -1,8 +1,14 @@
 # 🔎Kibana-CTF🚩
 
-<img src="./images/DALLE_Capture_The_Flag_logo.webp" alt="drawing" width="275" align="right"/>
+<img src="./images/DALLE_Capture_The_Flag_logo.webp" alt="drawing" width="325" align="right"/>
 
 Kibana CTF is an open source Kibana CTF challenge simulation using the open source product [CTFd](https://ctfd.io/) and the Elastic stack. This project is designed to modularize challenges so new challenges can be add in the future. To date, there are 14 challenges. This project includes a script as you will see below that allows you to create a local CTFd instance and a local Elastic stack for trying out this CTF! In theory, the script can be used to import the challenges into your own CTFd instance or Elastic instance, but be warned that it could overwrite or cause undesired consequences to those instances if not careful. It is recommend that you use the script to spin up a unique localized instance using Docker and the steps below to perform this CTF. Please open any issues that you may find. Enjoy!
+
+Goal: Try to complete all 14 challenges within 1 hour.
+
+🎶 Here is a Spotify playlist that works great as a motivator and timer! 
+
+https://open.spotify.com/playlist/3Rax5ahJdZkq1xrgkqDqTX?si=ce0c2f33bb8c43d0
 
 _Features_:
 - [x] Discover challenges
