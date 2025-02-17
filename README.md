@@ -22,8 +22,8 @@ _Features_:
 
 ## Requirements
 - PowerShell 7+ (For Setup [Manual/Automated])
-- Elastic Stack (Kibana and Elasticsearch 8.16+) -> Can be retrived using included script!
-- CTFd (Latest) -> Can be retrived using included script!
+- Elastic Stack (Kibana and Elasticsearch 8.17+) -> Can be downloaded and set up using included script!
+- CTFd (Latest) -> Can be downloaded and set up using included script!
 
 ```
  ./Invoke-Kibana-CTF-Setup.ps1                                                                                                       
@@ -52,35 +52,43 @@ pwsh
 ```
 
 2. Deploy CTFd - Use Option 1
-
+   <details>
     a. Once deployed, go to the CTFd instance and navigate through the wizard with default settings (most of these will be overwritten later). Make sure to make note of your admin user/password combination and specify how long you want the CTF to last (this can easily be changed later if needed.)
 
-![CTFd First Start Page](./images/image.png)
-![Step 2 Sample](./images/image-1.png)
-![Step 3 Sample](./images/image-2.png)
-![Step 4 Sample](./images/image-4.png)
-![Step 5 Sample](./images/image-5.png)
-![Step 6 - Set Start / End Date of Challenge](./images/image-6.png)
-![Finish!](./images/image-7.png)
+   ![CTFd First Start Page](./images/image.png)
+   ![Step 2 Sample](./images/image-1.png)
+   ![Step 3 Sample](./images/image-2.png)
+   ![Step 4 Sample](./images/image-4.png)
+   ![Step 5 Sample](./images/image-5.png)
+   ![Step 6 - Set Start / End Date of Challenge](./images/image-6.png)
+   ![Finish!](./images/image-7.png)
 
     b. Go to settings, create the API Access Token and copy for later since you will not be able to see them after dismissing that pop up window. (No worries if you forget, you can create one later.)
 
-![API Access Token](./images/image-8.png)
-![Navigate to Access Token Page](./images/image-9.png)
-![Generate Token](./images/image-10.png)
-![Copy Token for Usage Later](./images/image-11.png)
+   ![API Access Token](./images/image-8.png)
+   ![Navigate to Access Token Page](./images/image-9.png)
+   ![Generate Token](./images/image-10.png)
+   ![Copy Token for Usage Later](./images/image-11.png)
+   </details>
+   
+3. Deploy Elastic Stack - User Option 2
 
-3. Import CTFd Challenges/Flags/etc. - Use Option 2 (This will ask for you Access Token we had you copy from the previous step!)
+4. Import Challenges (CTFd and Elastic Stack)- Use Option 3
 
-    a. Make sure to create a user in CTFd for doing the CTF instead of using the admin account. Navigate to http://127.0.0.1:8000/register to create your account.
+5. Login to Kibana and go to the Kibana CTF space and good luck!
 
-    b. Once the account is created go ahead and login. The setup for the CTF is complete, now you just need to get Elastic up and going by proceeding to the next step.
+#### Modular Challenge Structure
+Challenges are stored in the `challenges` and each challenge is part of a category and contains files necessary to build the challenge in CTFd and the populate the challenge in the Elastic stack. Don't look at this files if you wish to challenge yourself! These challenges are modular so more can be added later or tweaked as needed. Inside of the challenges directory, there are files as follows:
 
-4. Download and start Elasticsearch / Kibana - Use Option 4
-
-5. Import Objects and Index Documents for Elastic Stack - Use Option 5
-
-6. Login to Kibana and go to the Kibana CTF space and good luck!
+```
+Discover/
+├── (Challenge Number)/
+│   ├── ctfd_challenge.md ---> This is the shell of the challenge that includes the name, description, value, etc. which will be stored in CTFd. (Required)
+│   ├── ctfd_flag.json ---> This is the actual flag used in CTFd. (Required)
+│   ├── ctfd_hint.json ---> This is the hint for the challenge in CTFd. (Optional)
+│   ├── elastic_import_script.ps1 ---> This is a specialized PowerShell script used to create the contents for a challenge. (Optional)
+│   └── elastic_saved_objects.json ---> These are the saved objects that are imported into the Elastic stack for the challenge. (Optional)
+```
 
 #### Advanced Settings for CTFd access - Allow others on the network to access CTF
 Note: You can grab the Ubuntu IP by running this from your Ubuntu WSL2 host: `ip addr | grep eth0`:
@@ -96,16 +104,3 @@ netsh interface portproxy add v4tov4 listenport=31337 listenaddress=[Replace thi
 Doing the step above then allows access to your computer from http://192.168.86.90:31337 since it will forward any traffic from other devices to the WSL2 IP of 172.25.93.24:8000 (which you can access locally). Just becareful not to do this on public networks. Do this at your own risk.
 
 If you have a Windows Firewall enabled, you will need to allow the port used above (ie TCP 31337).
-
-#### Modular Challenge Structure
-Challenges are stored in the `challenges` and each challenge is part of a category and contains files necessary to build the challenge in CTFd and the populate the challenge in the Elastic stack. Don't look at this files if you wish to challenge yourself! These challenges are modular so more can be added later or tweaked as needed. Inside of the challenges directory, there are files as follows:
-
-```
-Discover/
-├── (Challenge Number)/
-│   ├── ctfd_challenge.md ---> This is the shell of the challenge that includes the name, description, value, etc. which will be stored in CTFd. (Required)
-│   ├── ctfd_flag.json ---> This is the actual flag used in CTFd. (Required)
-│   ├── ctfd_hint.json ---> This is the hint for the challenge in CTFd. (Optional)
-│   ├── elastic_import_script.ps1 ---> This is a specialized PowerShell script used to create the contents for a challenge. (Optional)
-│   └── elastic_saved_objects.json ---> These are the saved objects that are imported into the Elastic stack for the challenge. (Optional)
-```
