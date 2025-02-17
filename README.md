@@ -71,11 +71,11 @@ pwsh
    ![Copy Token for Usage Later](./images/image-11.png)
    </details>
    
-3. Deploy Elastic Stack - User Option 2
+3. Deploy Elastic Stack - Use Option 2
 
 4. Import Challenges (CTFd and Elastic Stack)- Use Option 3
 
-5. Login to Kibana and go to the Kibana CTF space and good luck!
+5. Login to Kibana and go to the Kibana CTF space and be ready to start the CTF. Now you need to create your CTFd user for completing the challenges. Open up CTFd and sign out of the admin account you created before and register your Kibana CTF user by going here: [Register](http://127.0.0.1:8000/register). Once that user is created you now have both the CTFd and Kibana users ready to fully participate in the CTF. Spin up Spotify in an extra tab, hit play then good luck and have fun!
 
 #### Modular Challenge Structure
 Challenges are stored in the `challenges` and each challenge is part of a category and contains files necessary to build the challenge in CTFd and the populate the challenge in the Elastic stack. Don't look at this files if you wish to challenge yourself! These challenges are modular so more can be added later or tweaked as needed. Inside of the challenges directory, there are files as follows:

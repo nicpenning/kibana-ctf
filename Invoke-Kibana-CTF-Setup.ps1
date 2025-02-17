@@ -190,7 +190,7 @@ Begin {
         # Check for existing .env file for setup
         # Get Elasticsearch password from .env file
         if (Test-Path .\setup\Elastic\docker_elastic_stack\.env) {
-            Write-Host "Docker .env file found! Which likely means you have configured docker for use. Going to extract password to perform initilization."
+            Write-Host "Docker .env file found! Which likely means you have configured docker for use. Going to extract password to perform initialization."
             $env = Get-Content .\setup\Elastic\docker_elastic_stack\.env
             $regExEnv = $env | Select-String -AllMatches -Pattern "ELASTIC_PASSWORD='(.*)'"
             $global:elasticsearchPassword = $regExEnv.Matches.Groups[1].Value
@@ -285,7 +285,7 @@ Begin {
             if($composeVersion){
                 Write-Debug '"docker compose detected"'
                 docker compose up -d
-                Write-Host "Elastic Stack container started, navigate to $Kibana_URL to ensure it started okay.`nNote: It could a few minutes to get the Elastic stack running so be patient.)" -ForegroundColor Green
+                Write-Host "Elastic Stack containers started, navigate to $Kibana_URL to ensure it started okay.`nNote: It could a few minutes to get the Elastic stack running so be patient.)" -ForegroundColor Green
             }else{
                 Throw '"docker compose" not detected, will now check for docker-compose'
             }
@@ -438,7 +438,7 @@ Begin {
 
     function Invoke-Create-Index-Template {
         try {
-            Write-Host "Creating Index Template for challeneges then setup will be complete."
+            Write-Host "Creating Index Template for challenges then setup will be complete."
             $result = Invoke-RestMethod -Method PUT -Uri $indexTemplateURL -Body $indexTemplate -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck
             Write-Host "Created Index Template: $($result.acknowledged)"
         } catch {
@@ -530,9 +530,9 @@ Begin {
     $option6 = "6. Check for Requirements"
     $option7 = "7. Deploy all from scratch (Use with Caution as it runs through the entire process.)"
 
-    $challenge_option0 = "0. All challenges."
+    $challenge_option0 = "0. All Challenges"
     $challenge_option1 = "1. Discover Challenges"
-    $challenge_option2 = "2. ES|QL Challenege"
+    $challenge_option2 = "2. ES|QL Challenge"
 
     $quit = "Q. Quit"
 
@@ -1005,7 +1005,7 @@ Process {
                 break
             }
             '3' {
-                # Import CTFd and Elastic Stack Challengess
+                # Import CTFd and Elastic Stack Challenges
                 Invoke-Elastic-and-CTFd-Challenges
 
                 $finished = $true
