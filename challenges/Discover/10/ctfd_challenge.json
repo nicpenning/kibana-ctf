@@ -18,7 +18,7 @@
     ],
     "anonymize": true
   },
-  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/r/s/38omE",
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/discover#/?_g=(filters:!(),refreshInterval:(pause:!t,value:60000),time:(from:now-30d%2Fd,to:now))&_a=(columns:!(message),dataSource:(dataViewId:'86402b2c-31dd-4ded-8628-2418eaf3e445',type:dataView),filters:!(),hideChart:!f,interval:auto,query:(language:kuery,query:'special%20:%20*%20and%20not%20tags%20:*'),sort:!(!('@timestamp',desc)),viewMode:documents)",
   "next_id": null,
   "attribution": null
 }
