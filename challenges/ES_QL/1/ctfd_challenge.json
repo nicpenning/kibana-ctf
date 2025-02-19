@@ -13,7 +13,7 @@
     ],
     "anonymize": true
   },
-  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/r/s/2K9Sp",
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/discover#/view/87df54e0-51ff-40df-b7aa-7dc057bab584",
   "next_id": null,
   "attribution": null
 }

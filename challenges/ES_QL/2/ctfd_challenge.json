@@ -11,7 +11,7 @@
     "prerequisites": [],
     "anonymize": true
   },
-  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/r/s/dJMRr",
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/discover#/view/db5cf7be-b0f5-4f15-8612-1105ee7f7366",
   "next_id": null,
   "attribution": null
 }
