@@ -75,7 +75,7 @@ pwsh
 
 4. Import Challenges (CTFd and Elastic Stack)- Use Option 3
 
-5. Login to Kibana and go to the Kibana CTF space and be ready to start the CTF. Now you need to create your CTFd user for completing the challenges. Open up CTFd and sign out of the admin account you created before and register your Kibana CTF user by going here: [Register](http://127.0.0.1:8000/register). Once that user is created you now have both the CTFd and Kibana users ready to fully participate in the CTF. Spin up Spotify in an extra tab, hit play then good luck and have fun!
+5. Login to Kibana and go to the Kibana CTF space and be ready to start the CTF. Now you need to create your CTFd user for completing the challenges. Open up CTFd and sign out of the admin account you created before and register your Kibana CTF user by going here: [Register](http://127.0.0.1:8000/register). Once that user is created and is logged into, you now have both the CTFd and Kibana users ready to fully participate in the CTF. Spin up Spotify in an extra tab, hit play then good luck and have fun!
 
 #### Modular Challenge Structure
 Challenges are stored in the `challenges` and each challenge is part of a category and contains files necessary to build the challenge in CTFd and the populate the challenge in the Elastic stack. Don't look at this files if you wish to challenge yourself! These challenges are modular so more can be added later or tweaked as needed. Inside of the challenges directory, there are files as follows:
@@ -90,7 +90,7 @@ Discover/
 │   └── elastic_saved_objects.json ---> These are the saved objects that are imported into the Elastic stack for the challenge. (Optional)
 ```
 
-#### Advanced Settings for CTFd access - Allow others on the network to access CTF
+#### Advanced Settings for CTFd access - Allow others on the network to access the CTF
 Note: You can grab the Ubuntu IP by running this from your Ubuntu WSL2 host: `ip addr | grep eth0`:
 ```bash
 2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000

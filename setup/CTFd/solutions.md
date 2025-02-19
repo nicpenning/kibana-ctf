@@ -1,4 +1,4 @@
-# Stop 🛑⚠️⚡⚠️ This page contains the solutions to the CTF do not proceed if you wish to be challenge by the CTF. This is for adminstrators only. ⚠️⚡⚠️🛑
+# Stop 🛑⚠️⚡⚠️ This page contains the solutions to the CTF do not proceed if you wish to be challenged by the CTF. This is for administrators only. ⚠️⚡⚠️🛑
 
 # (re)Discover
 
