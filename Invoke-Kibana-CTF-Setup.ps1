@@ -240,6 +240,26 @@ Begin {
         Start-Sleep -Seconds 2
         }
     }
+
+    function Invoke-CheckForInUsePorts {
+        $ports = @("9200", "5601")
+        Write-Host "Checking for Elasticsearch (9200) and Kibana (5601) ports being in use before starting docker."
+        $portsInUse = @()
+        foreach ($port in $ports) {
+            $testConnection = Test-Connection -TargetName "localhost" -TcpPort $port
+            if ($testConnection) {
+                Write-Debug "Port $port is in use."
+                $portsInUse += $port
+            } else {
+                Write-Debug "Port $port is not in use."
+            }
+        }
+        if($portsInUse){
+            return $portsInUse
+        }else{
+            return $false
+        }
+    }
     
     function Invoke-StartDocker {
         # Check to see if Linux to set VM Max Map Count to ensure Elasticsearch can start
@@ -284,7 +304,13 @@ Begin {
             $composeVersion = docker compose version
             if($composeVersion){
                 Write-Debug '"docker compose detected"'
-                docker compose up -d
+                $checkInUsePorts = Invoke-CheckForInUsePorts
+                if($checkInUsePorts){
+                    Write-Host "Ports detected already in use. Make sure these ports are available before continuing. Exiting."
+                    exit
+                }else{
+                    docker compose up -d
+                }
                 Write-Host "Elastic Stack containers started, navigate to $Kibana_URL to ensure it started okay.`nNote: It could a few minutes to get the Elastic stack running so be patient.)" -ForegroundColor Green
             }else{
                 Throw '"docker compose" not detected, will now check for docker-compose'
@@ -526,7 +552,7 @@ Begin {
     $option2 = "2. Deploy Elastic Stack"
     $option3 = "3. Import Elastic Stack Challenges"
     $option4 = "4. Reset CTFd"
-    $option5 = "5. Reset Elastic Stack"
+    $option5 = "5. Delete Elastic Stack"
     $option6 = "6. Check for Requirements"
     $option7 = "7. Deploy all from scratch (Use with Caution as it runs through the entire process.)"
 
@@ -546,7 +572,6 @@ Begin {
         Write-Host $option5
         Write-Host $option6
         Write-Host $option7
-        Write-Host $option8
 
         Write-Host $quit
     }
@@ -600,7 +625,7 @@ Begin {
     }
 
     function Invoke-Elastic-Stack-Deploy {
-        # 4. Deploy Elastic Stack
+        # 2. Deploy Elastic Stack
         
         # Check to see if various parts of the project have already been configured to reduce the need for user input.
         # 1. Check to see if .env file exists with credentials.
@@ -956,7 +981,7 @@ Begin {
         Write-Host "Finished removing CTFd files."
     }
 
-    function Invoke-Reset-Elastic-Stack {
+    function Invoke-Remove-Elastic-Stack {
         $continue = Read-Host "This action is destructive and will remove all Elastic stack resources, if you wish to continue please type in: `nDELETE-KIBANA-CTF"
         if($continue -ne "DELETE-KIBANA-CTF"){
             Write-Host "Proper response was not entered, exiting."
@@ -1019,8 +1044,8 @@ Process {
                 break
             }
             '5' {
-                # Reset Elastic Stack
-                Invoke-Reset-Elastic-Stack
+                # Remove Elastic Stack
+                Invoke-Remove-Elastic-Stack
 
                 $finished = $true
                 break
