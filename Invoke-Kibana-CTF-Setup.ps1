@@ -66,6 +66,12 @@ Begin {
     # CTFd Variables
     $CTFd_URL_API = $CTFd_URL+"/api/v1"
 
+    # Extract custom settings from configuration.json
+    $configurationSettings = Get-Content ./configuration.json | ConvertFrom-Json
+    
+    if($null -eq $Elasticsearch_URL){$Elasticsearch_URL = $configurationSettings.Elasticsearch_URL}
+    if($null -eq $Kibana_URL){ $Kibana_URL= $configurationSettings.Kibana_URL}
+
     # Elasticsearch Variables
     $ingestIndexURL = $Elasticsearch_URL+"/logs-kibana-ctf/_doc"
     $indexTemplateURL = $Elasticsearch_URL+"/_index_template/logs-kibana-ctf"
@@ -199,8 +205,8 @@ Begin {
                 return "True", $elasticsearchPassword
             }
         } else {
-        Write-Debug "No .env file detected in \docker\.env"
-        return "False"
+            Write-Debug "No .env file detected in \docker\.env"
+            return "False"
         }
     }
     
@@ -223,6 +229,7 @@ Begin {
         Write-Host "Waiting for Elastic stack to be accessible." -ForegroundColor Blue
     
         $healthAPI = $Elasticsearch_URL+"/_cluster/health"
+        Write-Debug "Using the URL: $healthAPI"
         # Keep checking for a healthy cluster that can be used for the initialization process!
         do {
             try {
@@ -230,6 +237,7 @@ Begin {
                 $status = Invoke-RestMethod -Method Get -Uri $healthAPI -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck  
             } catch {
                 Write-Debug "Waiting for healthy cluster for 5 seconds. Then checking again."
+                $_.Exception
                 $status
                 Start-Sleep -Seconds 5
             }
@@ -713,12 +721,7 @@ Begin {
         # Base64 Encoded elastic:secure_password for Kibana auth
         $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
         $kibanaAuth = "Basic $elasticCredsBase64"
-        
-        # Extract custom settings from configuration.json
-        $configurationSettings = Get-Content ./configuration.json | ConvertFrom-Json
-        
-        $Elasticsearch_URL = $configurationSettings.Elasticsearch_URL
-        $Kibana_URL = $configurationSettings.Kibana_URL
+
              
         # 3. Check to see if Elasticsearch is available for use.
         Invoke-CheckForElasticsearchStatus
@@ -759,13 +762,13 @@ Begin {
 
         # Extract custom settings from configuration.json if it exists
         $configurationSettings = Get-Content ./configuration.json | ConvertFrom-Json
-        if($null -ne $configurationSettings.Elasticsearch_URL){
-            Write-Host "Elasticsearch URL detected: $Elasticsearch_URL" -ForegroundColor Green
+        if("" -ne $configurationSettings.Elasticsearch_URL){
             $Elasticsearch_URL = $configurationSettings.Elasticsearch_URL
+            Write-Host "Elasticsearch URL detected: $Elasticsearch_URL" -ForegroundColor Green
         }
-        if($null -ne $configurationSettings.Kibana_URL){
-            Write-Host "Kibana URL detected: $Kibana_URL" -ForegroundColor Green
+        if("" -ne $configurationSettings.Kibana_URL){
             $Kibana_URL = $configurationSettings.Kibana_URL
+            Write-Host "Kibana URL detected: $Kibana_URL" -ForegroundColor Green
         }
 
         if($null -eq $Elasticsearch_URL){
@@ -784,7 +787,7 @@ Begin {
         $elasticCredsCheck = Invoke-CheckForEnv
         # Set passwords via automated configuration or manual input
         # Base64 Encoded elastic:secure_password for Kibana auth
-        if($($elasticCredsCheck)[0]){
+        if($($elasticCredsCheck)[0] -eq "True"){
             $elasticPass = ConvertTo-SecureString -String $($($elasticCredsCheck)[1]) -AsPlainText -Force
             $elasticCreds = New-Object System.Management.Automation.PSCredential("elastic", $elasticPass)
         }else{
