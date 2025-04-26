@@ -31,7 +31,7 @@ Welcome to the Kibana CTF Setup Script!
 What would you like to do?
 1. Deploy CTFd
 2. Deploy Elastic Stack
-3. Import Elastic Stack Challenges
+3. Import Flags (CTFd) + Challenges (Elastic Stack)
 4. Reset CTFd
 5. Reset Elastic Stack
 6. Check for Requirements
