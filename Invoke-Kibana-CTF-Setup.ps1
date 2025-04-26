@@ -21,7 +21,7 @@
         2. CTFd Instance (Token needs to be manually created and retrieved)
         3. Elasticsearch and Kibana Instance
 
-    Tested for Elastic Stack 8.17.0+ and CTFd 3.7.4+
+    Tested for Elastic Stack 8.17+/9.0+ and CTFd 3.7.4+
 
     Variable Options
     -Elasticsearch_URL "https://127.0.0.1:9200"
@@ -558,8 +558,8 @@ Begin {
     
     $option1 = "1. Deploy CTFd"
     $option2 = "2. Deploy Elastic Stack"
-    $option3 = "3. Import Elastic Stack Challenges"
-    $option4 = "4. Reset CTFd"
+    $option3 = "3. Import Flags (CTFd) + Challenges (Elastic Stack)"
+    $option4 = "4. Delete CTFd"
     $option5 = "5. Delete Elastic Stack"
     $option6 = "6. Check for Requirements"
     $option7 = "7. Deploy all from scratch (Use with Caution as it runs through the entire process.)"
@@ -598,7 +598,7 @@ Begin {
 
         # Check to see if CTFd has been deployed, and if not, ask to deploy.
         try{
-            $pathForCTFd = get-item ../CTFd -ErrorAction Ignore
+            $pathForCTFd = Get-Item ../CTFd -ErrorAction Ignore
         }catch{
             Write-Host "CTFd path does not exist."
         }
@@ -645,27 +645,27 @@ Begin {
         Please Choose (1 or 2)"
         
             if ($dockerChoice -eq "1") {
-            # Generate a .env file with random passwords for Elasticsearch and Kibana. Also generate secure Kibana key for reporting funcationality.
-            $env = Get-Content .\setup\Elastic\docker_elastic_stack\.env_template
+                # Generate a .env file with random passwords for Elasticsearch and Kibana. Also generate secure Kibana key for reporting funcationality.
+                $env = Get-Content .\setup\Elastic\docker_elastic_stack\.env_template
+                
+                # Replace $elasticsearchPassword
+                $elasticsearchPassword = $(-Join (@('0'..'9';'A'..'Z';'a'..'z';'!';'@';'#') | Get-Random -Count 32))
+                $env = $env.Replace('$elasticsearchPassword', $elasticsearchPassword) 
+                
+                # Replace $kibanaPassword
+                $kibanaPassword = $(-Join (@('0'..'9';'A'..'Z';'a'..'z';'!';'@';'#') | Get-Random -Count 32))
+                $env = $env.Replace('$kibanaPassword', $kibanaPassword)
             
-            # Replace $elasticsearchPassword
-            $elasticsearchPassword = $(-Join (@('0'..'9';'A'..'Z';'a'..'z';'!';'@';'#') | Get-Random -Count 32))
-            $env = $env.Replace('$elasticsearchPassword', $elasticsearchPassword) 
+                # Replace $kibanaEncryptionKey
+                $kibanaEncryptionKey = $(-Join (@('0'..'9';'A'..'Z';'a'..'z';'!';'@';'#') | Get-Random -Count 32))
+                $env = $env.Replace('$kibanaEncryptionKey', $kibanaEncryptionKey)
             
-            # Replace $kibanaPassword
-            $kibanaPassword = $(-Join (@('0'..'9';'A'..'Z';'a'..'z';'!';'@';'#') | Get-Random -Count 32))
-            $env = $env.Replace('$kibanaPassword', $kibanaPassword)
-        
-            # Replace $kibanaEncryptionKey
-            $kibanaEncryptionKey = $(-Join (@('0'..'9';'A'..'Z';'a'..'z';'!';'@';'#') | Get-Random -Count 32))
-            $env = $env.Replace('$kibanaEncryptionKey', $kibanaEncryptionKey)
-        
-            $env | Out-File .\setup\Elastic\docker_elastic_stack\.env
-        
-            Write-Host "New file has been created (.env) and is ready for use." -ForegroundColor Green
-            Write-Host "The following credentials will be used for setup and access to your Elastic stack so keep it close." -ForegroundColor Blue
-            Write-Host "Username : elastic`nPassword : $elasticsearchPassword"
-            Pause
+                $env | Out-File .\setup\Elastic\docker_elastic_stack\.env
+            
+                Write-Host "New file has been created (.env) and is ready for use." -ForegroundColor Green
+                Write-Host "The following credentials will be used for setup and access to your Elastic stack so keep it close." -ForegroundColor Blue
+                Write-Host "Username : elastic`nPassword : $elasticsearchPassword"
+                Pause
             } else {
                 Write-Debug "Did not choose to use docker so ignoring docker setup."
             }
@@ -722,7 +722,6 @@ Begin {
         $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
         $kibanaAuth = "Basic $elasticCredsBase64"
 
-             
         # 3. Check to see if Elasticsearch is available for use.
         Invoke-CheckForElasticsearchStatus
         
@@ -797,7 +796,7 @@ Begin {
 
         $kibanaAuth = "Basic $elasticCredsBase64"
                 
-        # 3. Check to see if Elasticsearch is available for use.
+        # Check to see if Elasticsearch is available for use.
         Invoke-CheckForElasticsearchStatus
 
         # Ingesting Dummy Documents
@@ -942,7 +941,7 @@ Begin {
         Write-Host "Imported $filePath`: $($response.success)"
     }
 
-    function Invoke-Reset-CTFd {
+    function Invoke-Remove-CTFd {
         $continue = Read-Host "This action is destructive and will remove all CTFd resources such as the CTFd directory which in turn will lose all progress, users, flags, etc. Please backup your CTF using the UI if possible (https://docs.ctfd.io/docs/exports/ctfd-exports). If you wish to continue please type in: `nDELETE-CTFd-Instance"
         if($continue -ne "DELETE-CTFd-Instance"){
             Write-Host "Proper response was not entered, exiting."
@@ -1033,15 +1032,15 @@ Process {
                 break
             }
             '3' {
-                # Import CTFd and Elastic Stack Challenges
+                # Import CTFd Flags and Elastic Stack Challenges
                 Invoke-Elastic-and-CTFd-Challenges
 
                 $finished = $true
                 break
             }
             '4' {
-                # Reset CTFd
-                Invoke-Reset-CTFd
+                # Remove CTFd
+                Invoke-Remove-CTFd
 
                 $finished = $true
                 break
