@@ -1,7 +1,7 @@
 {
   "id": 1,
   "name": "Back to the basics",
-  "description": "Discover, where it all began. I had an awesome custom search saved for searching on host information, but can't find it. Maybe you can help me?\r\n\r\n![old_kibana.jpg](https://www.timroes.de/static/634d0811df5e7f971ebccf819aaecd9e/3f8aa/discover-columns.png)",
+  "description": "Discover, where it all began. I had an awesome custom search/session saved for searching on host information, but can't find it. Maybe you can help me?\r\n\r\n![old_kibana.jpg](https://www.timroes.de/static/634d0811df5e7f971ebccf819aaecd9e/3f8aa/discover-columns.png)",
   "max_attempts": 0,
   "value": 10,
   "category": "(re)Discover",
