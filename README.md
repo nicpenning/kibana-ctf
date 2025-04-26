@@ -21,8 +21,8 @@ _Features_:
 - [ ] Share with community!
 
 ## Requirements
-- PowerShell 7+ (For Setup [Manual/Automated])
-- Elastic Stack (Kibana and Elasticsearch 8.17+) -> Can be downloaded and set up using included script!
+- PowerShell 7.4+ (For Setup [Manual/Automated])
+- Elastic Stack (Kibana and Elasticsearch 8.17+/9.0+) -> Can be downloaded and set up using included script!
 - CTFd (Latest) -> Can be downloaded and set up using included script!
 
 ```
@@ -98,9 +98,14 @@ Note: You can grab the Ubuntu IP by running this from your Ubuntu WSL2 host: `ip
 25: veth06010d4@if24: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-765cf15dc8a1 state UP group default
 ```
 
+Then from Powershell you can set up a port proxy to allow traffic to your system that is hosting the CTF and direct those to your internal setup by running this command (make sure to adjust to your IP addresses accordingly):
 ```Powershell
-netsh interface portproxy add v4tov4 listenport=31337 listenaddress=[Replace this with your local IP. Example == 192.168.86.90] connectport=8000 connectaddress=[Replace this with your WSL2 IP. Example == 172.25.93.23]
+$local_IP = "192.168.86.90" # Replace this with your local IP address
+$wsl2_IP = "172.25.93.23" # Replace this with your WSL2 IP address - See example above on how to obtain this
+netsh interface portproxy add v4tov4 listenport=31337 listenaddress=$local_IP connectport=8000 connectaddress=$wsl2_IP
 ```
-Doing the step above then allows access to your computer from http://192.168.86.90:31337 since it will forward any traffic from other devices to the WSL2 IP of 172.25.93.24:8000 (which you can access locally). Just becareful not to do this on public networks. Do this at your own risk.
+Doing the step above then allows access to your computer from http://192.168.86.90:31337 since it will forward any traffic from other devices to the WSL2 IP of 172.25.93.24:8000 (which you can access locally). 
+
+⚠️ Just becareful not to do this on public networks. Do this at your own risk.
 
 If you have a Windows Firewall enabled, you will need to allow the port used above (ie TCP 31337).
