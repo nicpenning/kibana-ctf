@@ -14,7 +14,7 @@
     seeing and not seeing the challenge solutions. With this, if you are hosting this CTF, it is possible for players
     to find this repo and reveal all solutions. Honesty is the best policy here. The plan is to randomize the flags to
     keep make it a bit harder to reveal the secrets, but that won't stop persistant users to reveal all flags and
-    solutions.
+    solutions. Plese don't spoil the fun!! :D
 
     Requirements:
         1. Internet Access (At least elastic.co & github.com)
