@@ -562,11 +562,11 @@ Begin {
     $option4 = "4. Delete CTFd"
     $option5 = "5. Delete Elastic Stack"
     $option6 = "6. Check for Requirements"
-    $option7 = "7. Deploy all from scratch (Recommended, just follow the on-screen instructions.)"
+    $option7 = "7. Deploy everything from scratch (Recommended - Performs Options 1, 2 & 3 in sequence)"
 
-    $challenge_option0 = "0. All Challenges"
-    $challenge_option1 = "1. Discover Challenges"
-    $challenge_option2 = "2. ES|QL Challenge"
+    $challenge_option0 = "0. All Challenges (Recommended)"
+    $challenge_option1 = "1. Discover Challenges Only"
+    $challenge_option2 = "2. ES|QL Challenge Only"
 
     $quit = "Q. Quit"
 
