@@ -562,7 +562,7 @@ Begin {
     $option4 = "4. Delete CTFd"
     $option5 = "5. Delete Elastic Stack"
     $option6 = "6. Check for Requirements"
-    $option7 = "7. Deploy all from scratch (Use with Caution as it runs through the entire process.)"
+    $option7 = "7. Deploy all from scratch (Recommended, just follow the on-screen instructions.)"
 
     $challenge_option0 = "0. All Challenges"
     $challenge_option1 = "1. Discover Challenges"
@@ -1047,9 +1047,32 @@ Process {
             }
             '6' {
                 # 6. Check for Requirements
-                Write-Host "Option not available, yet."
-                # Check for running Elastic Stack
-                # Check for running CTFd
+                Write-Host "Checking for correct versions of PowerShell and that Docker/Docker Compose exists"
+
+                # Check for PowerShell
+                if ($PSVersionTable.PSVersion.Major -lt 7 -or ($PSVersionTable.PSVersion.Major -eq 7 -and $PSVersionTable.PSVersion.Minor -lt 4)) {
+                    Write-Host "This script requires PowerShell 7.4 or newer. Current version: $($PSVersionTable.PSVersion)" -ForegroundColor "Yellow"
+                }else{
+                    Write-Host "PowerShell requirement met. This script requires PowerShell 7.4 or newer. Current version: $($PSVersionTable.PSVersion)" -ForegroundColor "Green"
+                }
+
+                # Check for Docker
+                if (-not (Get-Command "docker" -ErrorAction SilentlyContinue)) {
+                    Write-Host "Docker is not installed or not in PATH." -ForegroundColor "Yellow"
+                }else{
+                    Write-Host "Docker requirement met. This script requires docker and was found in PATH." -ForegroundColor "Green"
+                }
+
+                # Check for Docker Compose
+                $composeVersion = docker compose version
+                if($composeVersion){
+                    Write-Host "Docker Compose requirement met. $composeVersion detected" -ForegroundColor "Green"
+                }else{
+                    Write-Host "Docker Compose not detected, will now check for docker-compose" -ForegroundColor "Yellow"
+                }
+
+                # Check for running Elastic Stack (Future use case if needed)
+                # Check for running CTFd (Future use case if needed)
 
                 $finished = $true
                 break
