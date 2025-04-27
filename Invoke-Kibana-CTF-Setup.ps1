@@ -603,8 +603,8 @@ Begin {
             Write-Host "CTFd path does not exist."
         }
         if($null -ne ($pathForCTFd)){
-            $runCTFd = Read-host "CTFd directory detected! Would you like to run CTFd via docker? (y or n)"
-            if($runCTFd -match "y"){
+            $runCTFd = Read-host "CTFd directory detected! Would you like to run CTFd via docker? (Y/n)"
+            if($runCTFd -match "y" -or $null -eq $runCTFd){
                 Set-Location ../CTFd
                 Write-Host "Bringing CTFd up! (Use docker compose down anytime from the CTFd directory to stop the container)" -ForegroundColor Green
                 docker compose up -d
@@ -614,8 +614,8 @@ Begin {
                 Write-Host "You said no, you do not wish to run CTFd, exiting." -ForegroundColor Yellow
             }
         }else{
-            $runCTFd = Read-host "CTFd directory not detected, would you like to download and run CTFd via docker? (y or n)"
-            if($runCTFd -match "y"){
+            $runCTFd = Read-host "CTFd directory not detected, would you like to download and run CTFd via docker? (Y/n)"
+            if($runCTFd -match "y" -or $null -eq $runCTFd){
                 Set-Location ../
                 git clone https://github.com/CTFd/CTFd.git
                 Set-Location ./CTFd/
