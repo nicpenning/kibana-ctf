@@ -994,17 +994,11 @@ Begin {
         Set-Location ./setup/Elastic/docker_elastic_stack
 
         # Bring down the stack
-        Write-Host "Bringing down Elastic stack."
-        docker compose down
-
-        # Delete Elastic Stack docker volumes
-        Write-Host "Removing Docker Volumes."
-        docker volume rm kibana-ctf_certs
-        docker volume rm kibana-ctf_esdata01
-        docker volume rm kibana-ctf_kibanadata
+        Write-Host "Bringing down Elastic stack and removing all containers and data using: docker-compose down --volumes --rmi all --remove-orphans."
+        docker-compose down --volumes --rmi all --remove-orphans
 
         Write-Host "All data has been deleted."
-        Set-Location ../
+        Set-Location ../../../
     }
 }
 
