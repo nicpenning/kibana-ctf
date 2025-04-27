@@ -942,13 +942,13 @@ Begin {
     }
 
     function Invoke-Remove-CTFd {
-        $continue = Read-Host "This action is destructive and will remove all CTFd resources such as the CTFd directory which in turn will lose all progress, users, flags, etc. Please backup your CTF using the UI if possible (https://docs.ctfd.io/docs/exports/ctfd-exports). If you wish to continue please type in: `nDELETE-CTFd-Instance"
+        $continue = Read-Host "This action is destructive and will remove all CTFd resources such as the containers which in turn will lose all progress, users, flags, etc. Please backup your CTF using the UI if possible (https://docs.ctfd.io/docs/exports/ctfd-exports). If you wish to continue please type in: `nDELETE-CTFd-Instance"
         if($continue -ne "DELETE-CTFd-Instance"){
             Write-Host "Proper response was not entered, exiting."
             $finished = $true
             break
         }
-        Write-Host "Deleting all CTFd data now..." -ForegroundColor Yellow
+        Write-Host "Deleting all CTFd containers and data now using: docker compose down --volumes --rmi all --remove-orphans" -ForegroundColor Yellow
 
         <# Alternative method to cleaning up CTFd is deleting all challenges - For now, just try to remove the files.
         # Setup up Auth header
@@ -976,11 +976,10 @@ Begin {
 
         # Bringing down CTFd
         Set-Location ../CTFd
-        docker compose down
+        docker compose down --volumes --rmi all --remove-orphans
         Set-Location ../kibana-ctf
-        Remove-Item ../CTFd -Recurse
 
-        Write-Host "Finished removing CTFd files."
+        Write-Host "Finished removing CTFd containers. Feel free to delete the CTFd directory (requires Admin privileges) to fully clean CTFd from your system before re-deploying it again."
     }
 
     function Invoke-Remove-Elastic-Stack {
