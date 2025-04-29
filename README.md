@@ -32,17 +32,17 @@ What would you like to do?
 1. Deploy CTFd
 2. Deploy Elastic Stack
 3. Import Flags (CTFd) + Challenges (Elastic Stack)
-4. Reset CTFd
-5. Reset Elastic Stack
+4. Delete CTFd
+5. Delete Elastic Stack
 6. Check for Requirements
-7. Deploy all from scratch (Use with Caution as it runs through the entire process.)
+7. Deploy everything from scratch (Recommended - Performs Options 1, 2 & 3 in sequence)
 
 Q. Quit
 Enter your choice: 
 ```
 
 ## How to get started
-1. Ensure you have PowerShell 7+ installed then download this repo to get rolling!
+### 1. Ensure you have PowerShell 7+ installed then download this repo to get rolling!
 
 ```bash
 git clone https://github.com/nicpenning/kibana-ctf.git
@@ -51,7 +51,9 @@ pwsh
 ./Invoke-Kibana-CTF-Setup.ps1
 ```
 
-2. Deploy CTFd - Use Option 1
+_Note: Run Option 6. Check for Requirements, then proceed to the next step if your environment meets the requirements._
+
+### 2. Deploy everything from scratch - Use Option 7
    <details>
     a. Once deployed, go to the CTFd instance and navigate through the wizard with default settings (most of these will be overwritten later). Make sure to make note of your admin user/password combination and specify how long you want the CTF to last (this can easily be changed later if needed.)
 
@@ -71,11 +73,13 @@ pwsh
    ![Copy Token for Usage Later](./images/image-11.png)
    </details>
    
-3. Deploy Elastic Stack - Use Option 2
-
-4. Import Challenges (CTFd and Elastic Stack)- Use Option 3
-
-5. Login to Kibana and go to the Kibana CTF space and be ready to start the CTF. Now you need to create your CTFd user for completing the challenges. Open up CTFd and sign out of the admin account you created before and register your Kibana CTF user by going here: [Register](http://127.0.0.1:8000/register). Once that user is created and is logged into, you now have both the CTFd and Kibana users ready to fully participate in the CTF. Spin up Spotify in an extra tab, hit play then good luck and have fun!
+### 3. Login to Kibana!
+Go to the Kibana CTF space and be ready to start the CTF using the provided credentials from the setup:
+```
+user: kibana-ctf
+password: kibana-ctf--please-change-me
+```
+Now you need to create your CTFd user for completing the challenges. Open up CTFd and sign out of the admin account you created before and register your Kibana CTF user by going here: [http://127.0.0.1:8000/register](http://127.0.0.1:8000/register). Once that user is created and is logged into, you now have both the CTFd and Kibana users ready to fully participate in the CTF. Spin up 🎶 Spotify in an extra tab, hit play, then good luck and have fun!
 
 #### Modular Challenge Structure
 Challenges are stored in the `challenges` and each challenge is part of a category and contains files necessary to build the challenge in CTFd and the populate the challenge in the Elastic stack. Don't look at this files if you wish to challenge yourself! These challenges are modular so more can be added later or tweaked as needed. Inside of the challenges directory, there are files as follows:
