@@ -17,7 +17,7 @@ _Features_:
 - [x] Ensure all saved objects and elasticsearch docs can be replicated with ease.
 - [x] Document deploy/setup instructions
 - [x] Assisted setup with PowerShell 7 script
-- [ ] Share with community!
+- [x] Share with community!
 - [ ] Documentation on creating new challenges (Coming soon!)
 
 ## Requirements 🪚
