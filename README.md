@@ -13,9 +13,7 @@ https://open.spotify.com/playlist/3Rax5ahJdZkq1xrgkqDqTX?si=ce0c2f33bb8c43d0
 _Features_:
 - [x] Discover challenges
 - [x] ES|QL challenges
-- [x] Optimize challenge scores, play through ensure good flow
-- [x] Ensure all saved objects and elasticsearch docs can be replicated with ease.
-- [x] Document deploy/setup instructions
+- [x] Documented deploy/setup instructions
 - [x] Assisted setup with PowerShell 7 script
 - [x] Share with community!
 - [ ] Documentation on creating new challenges (Coming soon!)
