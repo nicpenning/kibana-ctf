@@ -80,7 +80,7 @@ password: kibana-ctf--please-change-me
 Now you need to create your CTFd user for completing the challenges. Open up CTFd and sign out of the admin account you created before and register your Kibana CTF user by going here: [http://127.0.0.1:8000/register](http://127.0.0.1:8000/register). Once that user is created and is logged into, you now have both the CTFd and Kibana users ready to fully participate in the CTF. Spin up 🎶 Spotify in an [extra tab](https://open.spotify.com/playlist/3Rax5ahJdZkq1xrgkqDqTX?si=ce0c2f33bb8c43d0), hit play, then good luck and have fun! 🚀
 
 ## Modular Challenge Structure 🏗️
-Challenges are stored in the `challenges` and each challenge is part of a category and contains files necessary to build the challenge in CTFd and the populate the challenge in the Elastic stack. Don't look at this files if you wish to challenge yourself! These challenges are modular so more can be added later or tweaked as needed. Inside of the challenges directory, there are files as follows:
+Challenges are stored in the `challenges` and each challenge is part of a category and contains files necessary to build the challenge in CTFd and the populate the challenge in the Elastic stack. Don't look at these files if you wish to challenge yourself! These challenges are modular so more can be added later or tweaked as needed. Inside of the challenges directory, there are files as follows:
 
 ```
 Discover/
