@@ -16,7 +16,7 @@ _Features_:
 - [x] Documented deploy/setup instructions
 - [x] Assisted setup with PowerShell 7 script
 - [x] Share with community!
-- [ ] Documentation on creating new challenges (Coming soon!)
+- [x] Documentation on [creating new challenges!](./documentation/Creating%20a%20Challenge.md)
 
 ## Requirements 🪚
 - PowerShell 7.4+ (For Setup [Manual/Automated])
@@ -91,6 +91,8 @@ Discover/
 │   ├── elastic_import_script.ps1 ---> This is a specialized PowerShell script used to create the contents for a challenge. (Optional)
 │   └── elastic_saved_objects.json ---> These are the saved objects that are imported into the Elastic stack for the challenge. (Optional)
 ```
+
+For more details on how challenges can be created, check out the [documentation](./documentation/Creating%20a%20Challenge.md).
 
 ## Thank you 🙏 
 **Thank you** to all those who took the time to try this out, work out the bugs, and make it what it is today before the public release. You know who you are! **Thank you!**
