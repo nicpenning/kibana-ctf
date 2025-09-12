@@ -56,7 +56,7 @@ Param (
     [Parameter(Mandatory=$false)]
     $CTF_End_Date = $([math]::Round(($((Get-Date).AddHours(1)).ToUniversalTime() - [datetime]'1970-01-01T00:00:00Z').TotalSeconds)),
 
-    # Random CTF flags to make answer unique everytime. (default - false - To Do)
+    # Random CTF flags to make answer unique everytime. (default - false - To Do - NOT USABLE)
     [Parameter(Mandatory=$false)]
     $CTFd_Randomize_Flags = "false" 
 )
