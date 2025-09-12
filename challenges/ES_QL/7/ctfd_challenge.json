@@ -1,0 +1,17 @@
+{
+  "id": 17,
+  "name": "Zippidy Do Da",
+  "description": "ES|QL supports advanced multivalued field operations! Your task: Figure out the `mv_zip` function and more to reveal the flag in this ridiculousy obfuscated search created, just for you!.\n\n![](https://dreamlandamusements.com/images/zipper.gif)",
+  "max_attempts": 10,
+  "value": 50,
+  "category": "ES|QL != SQL",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/discover#/view/mv-zip-id",
+  "next_id": null,
+  "attribution": null
+}

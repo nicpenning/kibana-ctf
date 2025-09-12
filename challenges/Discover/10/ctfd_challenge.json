@@ -2,7 +2,7 @@
   "id": 10,
   "name": "Data is more than what meets the eye",
   "description": "Allegedly Kibana can render more than just plain text in fields. I wonder if it can render images! Bonus points for the first one to figure this out!\r\n\r\n⚠️ Caution: This requires making changes that others will see, so once you figure it out, you may want to \"undo\" your changes :)\r\n\r\n![](https://y.yarn.co/a0a279b0-ab4f-43c2-82ce-ad3f6de61381_text.gif)",
-  "max_attempts": 0,
+  "max_attempts": 10,
   "value": 60,
   "category": "(re)Discover",
   "initial":60,

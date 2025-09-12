@@ -72,6 +72,9 @@ Create a file named `ctfd_flag.json` in the challenge directory. This file shoul
 }
 ```
 
+**Tip**
+For flags, try and use some techniques such as encoding in hex or base 64 to prevent the {ctf_**} from easily being queried or searched for.
+
 ### 4. (Optional) Create a Hint File
 If you want to provide hints for your challenge, create a file named `ctfd_hint.json`. This file can help participants if they get stuck. The format should be a JSON object with the following fields:
 

@@ -2,7 +2,7 @@
   "id": 11,
   "name": "Conjuction Junction",
   "description": "ES|QL is the new coolness so I have been dabbling into the new capabilities that this search provides. Try and find the hidden message in my query, have fun!\r\n\r\n![](https://shopabctv.com/cdn/shop/products/SHR-CJ_ABC_SchoolHouseRock_Delta11730_White_RO_1080x.jpg?v=1592229651)",
-  "max_attempts": 0,
+  "max_attempts": 10,
   "value": 40,
   "category": "ES|QL != SQL",
   "type": "standard",
@@ -13,7 +13,7 @@
     ],
     "anonymize": true
   },
-  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/discover#/view/87df54e0-51ff-40df-b7aa-7dc057bab584",
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/discover#/view/conjunction-junction-id",
   "next_id": null,
   "attribution": null
 }

@@ -2,7 +2,7 @@
   "id": 7,
   "name": "Context, please.",
   "description": "Every now and again I see fields that I am unsure of what they mean, especially in this weird future event. They should really have a description on those!",
-  "max_attempts": 0,
+  "max_attempts": 10,
   "value": 30,
   "category": "(re)Discover",
   "type": "standard",

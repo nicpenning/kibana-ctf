@@ -1,5 +1,5 @@
 function challenge {
-    $dateNow = ($(Get-Date -AsUTC)).ToString("o")
+    $dateNow = ($(Get-Date -AsUTC).AddHours(-2)).ToString("o")
     $challenge = [PSCustomObject]@{
         '@timestamp' = $dateNow
         message = "Just a regular event log, nothing to see here."

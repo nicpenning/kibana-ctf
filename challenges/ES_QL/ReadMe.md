@@ -1,1 +1,1 @@
-These are the changes for the ES|QL section.
+All ES|QL challenges live in this directory.

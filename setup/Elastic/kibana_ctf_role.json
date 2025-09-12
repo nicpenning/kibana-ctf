@@ -4,7 +4,7 @@
       {
         "names": [
           "random-*,test*,logs-*,customz*,es-random-data-stream-001*,es-random-data-stream-002*,es-random-data-stream-003*,es-random-data-stream-004*,es-random-data-stream-005*,{ctf_sweet_my_own_data_view}*",
-          "logs-*"
+          "logs-*","join-*"
         ],
         "privileges": [
           "read",
@@ -20,7 +20,9 @@
         "privileges": [
           "feature_discover.all",
           "feature_indexPatterns.all",
-          "feature_savedQueryManagement.all"
+          "feature_savedQueryManagement.all",
+          "feature_dashboard_v2.all",
+          "feature_visualize_v2.all"
         ],
         "resources": [
           "space:kibana-ctf"

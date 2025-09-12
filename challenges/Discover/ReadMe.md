@@ -1,1 +1,1 @@
-These are the changes for the Discover section.
+All Discover challenges live in this directory.

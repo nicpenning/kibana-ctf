@@ -1,5 +1,5 @@
 {
   "Elasticsearch_URL": "https://127.0.0.1:9200",
   "Kibana_URL": "http://127.0.0.1:5601",
-  "initializedElasticStack": "false"
+  "initializedElasticStack": "true"
 }

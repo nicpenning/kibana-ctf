@@ -146,17 +146,6 @@ Begin {
 
             Write-Host "Importing flags for Challenge ID: $($ctfd_flag.challenge_id)"
             try{
-                # Adjust dynamic incident challenge
-                if($current_flag -match '"content":"38"'){
-                    Write-Host "Incident Challenge detected, updating dynamic challenge answer."
-                    $days = $($($(Get-date)-$(Get-Date 2024-11-12T07:43:13.373Z) ).Days)
-                    $current_flag = $current_flag -replace '"content":"38"', $('"content":"'+"$($days-1)|$days|$($days+1)"+'"')
-                } elseif ($current_flag -match 'ctf_38_days_since_last_incident'){
-                    Write-Host "Incident Challenge detected, updating dynamic challenge answer."
-                    $days = $($($(Get-date)-$(Get-Date 2024-11-12T07:43:13.373Z) ).Days)
-                    $current_flag = $current_flag -replace 'ctf_38_days_since_last_incident', $('ctf_('+"$($days-1)|$days|$($days+1)"+')_days_since_last_incident')
-                }
-    
                 $import_flag = Invoke-RestMethod -Method POST "$CTFd_URL_API/flags" -ContentType "application/json" -Headers $ctfd_auth -Body $current_flag
                 Write-Host "Imported flag $($_.id) - $($import_flag.success)"
             }catch{
@@ -438,6 +427,7 @@ Begin {
             Write-Host "Created kibana-ctf user: $($result.created)"
             Write-Host "Credentials for the Kibana CTF user are:`nusername: kibana-ctf`npassword: kibana-ctf--please-change-me" -ForegroundColor Green
             Write-Host "If you wish to create more users, use the elastic account that the setup used before and create and number users you wish. `nJust make sure to add the Kibana CTF role to their account." -ForegroundColor Yellow
+            Write-Host "Test user credentials by navigating to $Kibana_URL/s/kibana-ctf/app/home#/ and logging in with the kibana-ctf user." -ForegroundColor Yellow
         } catch {
             Write-Host "Couldn't create kibana-ctf user. Check Kibana to see if the user already exists." -ForegroundColor Yellow
             Write-Host "$_"
@@ -729,22 +719,23 @@ Begin {
         $configurationSettings | Convertto-JSON | Out-File ./configuration.json -Force
         
         Write-Host "But first, please navigate to your Kibana instance to make sure you can log in.`nCopy and Paste the URL below to navigate to Kibana (ctrl-click might not work):" -ForegroundColor Yellow
-        Write-Host $Kibana_URL -ForegroundColor DarkCyan
+        Write-Host "Kibana instance up and runnin here --> $Kibana_URL" -ForegroundColor DarkCyan
         Write-Host "Username : elastic`nPassword : $elasticsearchPassword"
-        Write-Host "After making sure you can log into Kibana without any issues:"
+        Write-Host "Proceed once you have confirmed you can log in to Kibana with the elastic user." -ForegroundColor Yellow
         Pause
 
-        # Creating Index Template for Challenges
+        # Create Index Template for Challenges
         Invoke-Create-Index-Template
 
-        # Import Kibana CTF Space
+        # Create Kibana CTF Space
         Invoke-Create-Kibana-CTF-Space $Kibana_URL
 
-        # Creating Kibana CTF Role Mapping
+        # Create Kibana CTF Role Mapping
         Invoke-Create-Kibana-CTF-User-Role
 
-        # Creating kibana-ctf user with Kibana CTF Role Mapping
+        # Create kibana-ctf user with Kibana CTF Role Mapping
         Invoke-Create-Kibana-CTF-User
+
     }
 
     function Invoke-Elastic-and-CTFd-Challenges {
@@ -812,9 +803,13 @@ Begin {
             }
         }while($fakeCount -lt 2500)
 
+        # Import Kibana CTF Dashboard
+        Write-Host "Importing Kibana CTF Dashboard" -ForegroundColor Blue
+        Import-SavedObject "./setup/Elastic/kibana_dashboard.ndjson"
+
         # Challenges Discover - Import
         if((0, 1) -contains $CTF_Options_Selected){
-            # Import Challenges for CTFd
+            # Import Discover Challenges for CTFd
             Invoke-Import-CTFd-Challenge './challenges/Discover/1/ctfd_challenge.json'
             Invoke-Import-CTFd-Challenge './challenges/Discover/2/ctfd_challenge.json'
             Invoke-Import-CTFd-Challenge './challenges/Discover/4/ctfd_challenge.json'
@@ -826,7 +821,10 @@ Begin {
             Invoke-Import-CTFd-Challenge './challenges/Discover/9/ctfd_challenge.json'
             Invoke-Import-CTFd-Challenge './challenges/Discover/10/ctfd_challenge.json'
 
-            # Import Flags for CTFd Challenges
+            # Dynamically Generate Flags for Discover Challenges
+            . ./challenges/Discover/8/dynamic_flag.ps1; dynamic_flag
+
+            # Import Discover Challenge Flags for CTFd
             Invoke-Import-CTFd-Flag './challenges/Discover/1/ctfd_flag.json'
             Invoke-Import-CTFd-Flag './challenges/Discover/2/ctfd_flag.json'
             Invoke-Import-CTFd-Flag './challenges/Discover/3/ctfd_flag.json'
@@ -838,12 +836,12 @@ Begin {
             Invoke-Import-CTFd-Flag './challenges/Discover/9/ctfd_flag.json'
             Invoke-Import-CTFd-Flag './challenges/Discover/10/ctfd_flag.json'
 
-            # Import Hints for CTFd Challenges
+            # Import Discover Challenge Hints for CTFd
             Invoke-Import-CTFd-Hint './challenges/Discover/1/ctfd_hint.json'
             Invoke-Import-CTFd-Hint './challenges/Discover/7/ctfd_hint.json'
             Invoke-Import-CTFd-Hint './challenges/Discover/10/ctfd_hint.json'
 
-            # Import Challenges for Elastic
+            # Import Discover Challenges for Elastic
             . ./challenges/Discover/5/elastic_import_script.ps1; challenge
             . ./challenges/Discover/6/elastic_import_script.ps1; challenge
             . ./challenges/Discover/9/elastic_import_script.ps1; challenge
@@ -858,28 +856,54 @@ Begin {
         
         # Challenges ES|QL - Import
         if((0, 2) -contains $CTF_Options_Selected){
-            # Import Challenges for CTFd
+            # Import ES|QL Challenges for CTFd
             Invoke-Import-CTFd-Challenge './challenges/ES_QL/2/ctfd_challenge.json'
             Invoke-Import-CTFd-Challenge './challenges/ES_QL/1/ctfd_challenge.json'
             Invoke-Import-CTFd-Challenge './challenges/ES_QL/3/ctfd_challenge.json'
             Invoke-Import-CTFd-Challenge './challenges/ES_QL/4/ctfd_challenge.json'
             Invoke-Import-CTFd-Challenge './challenges/ES_QL/5/ctfd_challenge.json'
-            
-            # Import Flags for CTFd Challenges
+            Invoke-Import-CTFd-Challenge './challenges/ES_QL/6/ctfd_challenge.json'
+            Invoke-Import-CTFd-Challenge './challenges/ES_QL/7/ctfd_challenge.json'
+            Invoke-Import-CTFd-Challenge './challenges/ES_QL/8/ctfd_challenge.json'
+            Invoke-Import-CTFd-Challenge './challenges/ES_QL/9/ctfd_challenge.json'
+            Invoke-Import-CTFd-Challenge './challenges/ES_QL/10/ctfd_challenge.json'
+
+            # Import ES|QL Challenge Flags for CTFd
             Invoke-Import-CTFd-Flag './challenges/ES_QL/1/ctfd_flag.json'
             Invoke-Import-CTFd-Flag './challenges/ES_QL/2/ctfd_flag.json'
             Invoke-Import-CTFd-Flag './challenges/ES_QL/3/ctfd_flag.json'
             Invoke-Import-CTFd-Flag './challenges/ES_QL/4/ctfd_flag.json'
             Invoke-Import-CTFd-Flag './challenges/ES_QL/5/ctfd_flag.json'
+            Invoke-Import-CTFd-Flag './challenges/ES_QL/6/ctfd_flag.json'
+            Invoke-Import-CTFd-Flag './challenges/ES_QL/7/ctfd_flag.json'
+            Invoke-Import-CTFd-Flag './challenges/ES_QL/8/ctfd_flag.json'
+            Invoke-Import-CTFd-Flag './challenges/ES_QL/9/ctfd_flag.json'
+            Invoke-Import-CTFd-Flag './challenges/ES_QL/10/ctfd_flag.json'
 
-            # Import Challenges for Elastic
+            # Import ES|QL Challenge Hints for CTFd
+            Invoke-Import-CTFd-Hint './challenges/ES_QL/7/ctfd_hint.json'
+            Invoke-Import-CTFd-Hint './challenges/ES_QL/8/ctfd_hint.json'
+            Invoke-Import-CTFd-Hint './challenges/ES_QL/9/ctfd_hint.json'
+            Invoke-Import-CTFd-Hint './challenges/ES_QL/10/ctfd_hint.json'
+
+            # Import ES|QL Challenges for Elastic
             . ./challenges/ES_QL/2/elastic_import_script.ps1; challenge
+            . ./challenges/ES_QL/6/elastic_import_script.ps1; challenge
+            . ./challenges/ES_QL/8/elastic_import_script.ps1; challenge
+            . ./challenges/ES_QL/9/elastic_import_script.ps1; challenge
+            . ./challenges/ES_QL/10/elastic_import_script.ps1; challenge
 
             Import-SavedObject "./challenges/ES_QL/1/elastic_saved_objects.ndjson"
             Import-SavedObject "./challenges/ES_QL/2/elastic_saved_objects.ndjson"
             Import-SavedObject "./challenges/ES_QL/3/elastic_saved_objects.ndjson"
             Import-SavedObject "./challenges/ES_QL/4/elastic_saved_objects.ndjson"
             Import-SavedObject "./challenges/ES_QL/5/elastic_saved_objects.ndjson"
+            Import-SavedObject "./challenges/ES_QL/6/elastic_saved_objects.ndjson"
+            Import-SavedObject "./challenges/ES_QL/7/elastic_saved_objects.ndjson"
+            Import-SavedObject "./challenges/ES_QL/8/elastic_saved_objects.ndjson"
+            Import-SavedObject "./challenges/ES_QL/9/elastic_saved_objects.ndjson"
+            Import-SavedObject "./challenges/ES_QL/10/elastic_saved_objects.ndjson"
+
         }
 
         # Retrieve challenges from challenges.json file and convert it into an object
@@ -993,8 +1017,8 @@ Begin {
         Set-Location ./setup/Elastic/docker_elastic_stack
 
         # Bring down the stack
-        Write-Host "Bringing down Elastic stack and removing all containers and data using: docker-compose down --volumes --rmi all --remove-orphans."
-        docker-compose down --volumes --rmi all --remove-orphans
+        Write-Host "Bringing down Elastic stack and removing all containers and data using: docker compose down --volumes --rmi all --remove-orphans."
+        docker compose down --volumes --rmi all --remove-orphans
 
         Write-Host "All data has been deleted."
         Set-Location ../../../

@@ -1,0 +1,1 @@
+{"id":20,"challenge_id":20,"content":"Use the FORK command to process and correlate events from process and firewall logs for the same user. Try joining on the user field and filtering for suspicious activity.","type":"standard"}
