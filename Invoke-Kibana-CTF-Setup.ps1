@@ -906,6 +906,26 @@ Begin {
 
         }
 
+        #Challenges Dashboards - Import
+        if((0, 3) -contains $CTF_Options_Selected){
+            # Import Dashboard Challenges for CTFd
+            Invoke-Import-CTFd-Challenge './challenges/Dashboards/1/ctfd_challenge.json'
+
+            # Dynamically Generate Flags for Dashboard Challenges
+            # . ./challenges/Dashboards/X/dynamic_flag.ps1; dynamic_flag
+
+            # Import Dashboards Challenge Flags for CTFd
+            # Invoke-Import-CTFd-Flag './challenges/Dashboards/1/ctfd_flag.json'
+
+            # Import Dashboards Challenge Hints for CTFd
+            # Invoke-Import-CTFd-Hint './challenges/Dashboards/X/ctfd_hint.json'
+
+            # Import Dashboards Challenges for Elastic
+            # . ./challenges/Dashboards/1/elastic_import_script.ps1; challenge
+
+            Import-SavedObject "./challenges/Dashboards/1/elastic_saved_objects.ndjson"
+        }
+
         # Retrieve challenges from challenges.json file and convert it into an object
         $pages_object = Get-Content './setup/CTFd/pages.json' | ConvertFrom-Json -Depth 10
         $config_object = Get-Content './setup/CTFd/config.json' | ConvertFrom-Json -Depth 10

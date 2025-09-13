@@ -18,11 +18,11 @@
       {
         "application": "kibana-.kibana",
         "privileges": [
-          "feature_discover.all",
-          "feature_indexPatterns.all",
-          "feature_savedQueryManagement.all",
-          "feature_dashboard_v2.all",
-          "feature_visualize_v2.all"
+          "feature_discover.read",
+          "feature_indexPatterns.read",
+          "feature_savedQueryManagement.read",
+          "feature_dashboard_v2.read",
+          "feature_visualize_v2.read"
         ],
         "resources": [
           "space:kibana-ctf"

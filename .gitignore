@@ -1,2 +1,3 @@
 setup/Elastic/docker_elastic_stack/.env
 configuration.json
+challenges/Discover/8/ctfd_flag.json
