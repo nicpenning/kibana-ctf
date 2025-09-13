@@ -1,9 +1,10 @@
 @{
-    Name = "Conjuction Junction"
+    Name = "Strange Activity"
     Category = "ES|QL != SQL"
     RequiredFiles = @(
         "ctfd_challenge.json"
         "ctfd_flag.json"
+        "elastc_import_script.ps1"
         "elastic_saved_objects.ndjson"
     )
     Resources = @{

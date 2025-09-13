@@ -2,7 +2,7 @@ All Discover challenges live in this directory.
 
 Template for manifest files that contain useful information about the challenge such as name, category, and version of Kibana required to perform the challenge. These are not functional yet so are informational only at this point.
 
-```
+```PowerShell
 @{
     Name = "Title of the Challenge in CTFd"
     Category = "Category of challenge (Dashboards, Discover, ES_QL, etc)"
