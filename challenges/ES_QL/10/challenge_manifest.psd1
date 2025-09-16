@@ -4,7 +4,7 @@
     RequiredFiles = @(
         "ctfd_challenge.json"
         "ctfd_flag.json"
-        "ctfd_hint.txt"
+        "ctfd_hint.json"
         "elastic_import_script.ps1"
         "elastic_saved_objects.ndjson"
     )

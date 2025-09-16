@@ -1,10 +1,11 @@
 @{
-    Name = "Future"
+    Name = "Context, please."
     Category = "(re)Discover"
     RequiredFiles = @(
         "ctfd_challenge.json"
         "ctfd_flag.json"
-        "elastic_import_script.ps1"
+        "ctfd_hint.json"
+        "elastic_saved_objects.ndjson"
     )
     Resources = @{
         KibanaVersion = "^8.17.0"

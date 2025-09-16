@@ -1,5 +1,5 @@
 @{
-    Name = "Ahh, that is quite the (Data) View [Bonus]"
+    Name = "Ahh, that is quite the (Data) View"
     Category = "(re)Discover"
     RequiredFiles = @(
         "ctfd_challenge.json"

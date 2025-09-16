@@ -1,7 +1,7 @@
 {
   "id": 21,
-  "name": "Dashboard Challenge 1",
-  "description": "TBD \r\n\r\n![TBD](TBD)",
+  "name": "Welcome",
+  "description": "Dashboards in Kibana are awesome! You can add all sort of fun visualizations, but sometimes a simple text box can present a welcoming vibe. \r\n\r\n![Welcome!](https://media.tenor.com/96sQtTGIsPQAAAAM/simpsons-homer.gif)",
   "max_attempts": 10,
   "value": 10,
   "category": "Visualization Sensation",
@@ -11,7 +11,7 @@
     "prerequisites": [],
     "anonymize": true
   },
-  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/dashboards",
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/dashboards#/view/d766c46e-47e0-406c-abf9-0f21ef3dedc9",
   "next_id": null,
   "attribution": null
 }

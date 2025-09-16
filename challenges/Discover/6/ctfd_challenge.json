@@ -1,17 +1,19 @@
 {
-  "id": 6,
-  "name": "Future",
-  "description": "I have heard tales of computer systems so advanced that they predict (and log into) the future!\r\n\r\n![](https://media1.tenor.com/m/Vi0AbgoMvXAAAAAd/future-spongebob.gif)",
+  "id": 7,
+  "name": "Context, please.",
+  "description": "Every now and again I see fields that I am unsure of what they mean, especially in this weird future event. They should really have a description on those!",
   "max_attempts": 10,
   "value": 30,
   "category": "(re)Discover",
   "type": "standard",
   "state": "visible",
   "requirements": {
-    "prerequisites": [],
+    "prerequisites": [
+      6
+    ],
     "anonymize": true
   },
   "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/discover",
-  "next_id": 7,
+  "next_id": null,
   "attribution": null
 }

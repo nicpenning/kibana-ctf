@@ -5,7 +5,7 @@
   "max_attempts": 10,
   "value": 70,
   "category": "(re)Discover",
-  "type": "static",
+  "type": "standard",
   "state": "visible",
   "requirements": {
     "prerequisites": [

@@ -546,41 +546,60 @@ Begin {
         return $randomFlagExtension
     }
     
-    $option1 = "1. Deploy CTFd"
-    $option2 = "2. Deploy Elastic Stack"
-    $option3 = "3. Import Flags (CTFd) + Challenges (Elastic Stack)"
-    $option4 = "4. Delete CTFd"
-    $option5 = "5. Delete Elastic Stack"
-    $option6 = "6. Check for Requirements"
-    $option7 = "7. Deploy everything from scratch (Recommended - Performs Options 1, 2 & 3 in sequence)"
+    # Main menu options
+    $option1 = "[1] 🏁 Deploy CTFd"
+    $option2 = "[2] ⚙️  Deploy Elastic Stack"
+    $option3 = "[3] 🚩 Import Flags (CTFd) + Challenges (Elastic Stack)"
+    $option4 = "[4] 🗑️  Delete CTFd"
+    $option5 = "[5] 🗑️  Delete Elastic Stack"
+    $option6 = "[6] 🔍 Check for Requirements"
+    $option7 = "[7] 🤖 Deploy everything from scratch (Recommended)"
 
-    $challenge_option0 = "0. All Challenges (Recommended)"
-    $challenge_option1 = "1. Discover Challenges Only"
-    $challenge_option2 = "2. ES|QL Challenge Only"
+    # Challenge category options
+    $challenge_option0 = "[0] 🌀 All Challenges         (Recommended)"
+    $challenge_option1 = "[1] 🔎 Discover Challenges    (Kibana Discover focus)"
+    $challenge_option2 = "[2] 📊 ES|QL Challenges       (ES|QL query practice)"
+    $challenge_option3 = "[3] 📈 Dashboards             (Kibana dashboards only)"
+    #$challenge_option4 = "[4] 🎯 Hand-pick Challenges   (Choose specific ones)"
+    $quit              = "[Q] ❌ Quit"
 
     $quit = "Q. Quit"
 
     function Show-Menu {
-        Write-Host "Welcome to the Kibana CTF Setup Script!" -ForegroundColor Blue
+        Write-Host ""
+        Write-Host "====================================================" -ForegroundColor Cyan
+        Write-Host "   Welcome to the Kibana CTF Setup Script! 🚀" -ForegroundColor Green
+        Write-Host "====================================================" -ForegroundColor Cyan
         Write-Host "What would you like to do?" -ForegroundColor Yellow
-        Write-Host $option1
-        Write-Host $option2
-        Write-Host $option3
-        Write-Host $option4
-        Write-Host $option5
-        Write-Host $option6
-        Write-Host $option7
-
-        Write-Host $quit
+        Write-Host ""
+        Write-Host $option1 -ForegroundColor White
+        Write-Host $option2 -ForegroundColor White
+        Write-Host $option3 -ForegroundColor White
+        Write-Host $option4 -ForegroundColor White
+        Write-Host $option5 -ForegroundColor White
+        Write-Host $option6 -ForegroundColor White
+        Write-Host $option7 -ForegroundColor White
+        Write-Host ""
+        Write-Host $quit -ForegroundColor Red
+        Write-Host ""
     }
 
     function Show-CTF-Challenges-Menu {
-        Write-Host "Which Kibana CTF Challenge Categories would you like to import?`nNote: This will import CTFd challenges and required Elastic resources." -ForegroundColor Yellow
-        Write-Host $challenge_option0
-        Write-Host $challenge_option1
-        Write-Host $challenge_option2
-
-        Write-Host $quit
+        Write-Host ""
+        Write-Host "====================================================" -ForegroundColor Cyan
+        Write-Host "        🚩 Capture The Flag Challenge Import 🚩" -ForegroundColor Green
+        Write-Host "====================================================" -ForegroundColor Cyan
+        Write-Host "Which Kibana CTF Challenge Categories would you like to import?" -ForegroundColor Yellow
+        Write-Host "Note: This will import CTFd challenges and required Elastic resources." -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host $challenge_option0 -ForegroundColor White
+        Write-Host $challenge_option1 -ForegroundColor White
+        Write-Host $challenge_option2 -ForegroundColor White
+        Write-Host $challenge_option3 -ForegroundColor White
+        #Write-Host $challenge_option4 -ForegroundColor White
+        Write-Host ""
+        Write-Host $quit -ForegroundColor Red
+        Write-Host ""
     }
 
     function Invoke-CTFd-Deploy {
@@ -796,134 +815,106 @@ Begin {
         Write-Host "Ingesting 2.5K documents, please wait. This could take a few minutes."
         do{
             $dummyDocument = Invoke-Generate-FakeEvent
-            $ingestDocs = Invoke-Ingest-Elasticsearch-Documents -documentToIngest $dummyDocument
+            #$ingestDocs = Invoke-Ingest-Elasticsearch-Documents -documentToIngest $dummyDocument
             $fakeCount++
             if((500, 1000, 1500, 2000) -contains $fakeCount){
                 Write-Host "Total documents ingested: $fakeCount"
             }
         }while($fakeCount -lt 2500)
 
-        # Import Kibana CTF Dashboard
+        # Import Kibana CTF Dashboard Saved Object for all Dashboard Challenges
         Write-Host "Importing Kibana CTF Dashboard" -ForegroundColor Blue
         Import-SavedObject "./setup/Elastic/kibana_dashboard.ndjson"
 
-        # Challenges Discover - Import
-        if((0, 1) -contains $CTF_Options_Selected){
-            # Import Discover Challenges for CTFd
-            Invoke-Import-CTFd-Challenge './challenges/Discover/1/ctfd_challenge.json'
-            Invoke-Import-CTFd-Challenge './challenges/Discover/2/ctfd_challenge.json'
-            Invoke-Import-CTFd-Challenge './challenges/Discover/4/ctfd_challenge.json'
-            Invoke-Import-CTFd-Challenge './challenges/Discover/3/ctfd_challenge.json'
-            Invoke-Import-CTFd-Challenge './challenges/Discover/5/ctfd_challenge.json'
-            Invoke-Import-CTFd-Challenge './challenges/Discover/7/ctfd_challenge.json'
-            Invoke-Import-CTFd-Challenge './challenges/Discover/6/ctfd_challenge.json'
-            Invoke-Import-CTFd-Challenge './challenges/Discover/8/ctfd_challenge.json'
-            Invoke-Import-CTFd-Challenge './challenges/Discover/9/ctfd_challenge.json'
-            Invoke-Import-CTFd-Challenge './challenges/Discover/10/ctfd_challenge.json'
-
-            # Dynamically Generate Flags for Discover Challenges
-            . ./challenges/Discover/8/dynamic_flag.ps1; dynamic_flag
-
-            # Import Discover Challenge Flags for CTFd
-            Invoke-Import-CTFd-Flag './challenges/Discover/1/ctfd_flag.json'
-            Invoke-Import-CTFd-Flag './challenges/Discover/2/ctfd_flag.json'
-            Invoke-Import-CTFd-Flag './challenges/Discover/3/ctfd_flag.json'
-            Invoke-Import-CTFd-Flag './challenges/Discover/4/ctfd_flag.json'
-            Invoke-Import-CTFd-Flag './challenges/Discover/5/ctfd_flag.json'
-            Invoke-Import-CTFd-Flag './challenges/Discover/6/ctfd_flag.json'
-            Invoke-Import-CTFd-Flag './challenges/Discover/7/ctfd_flag.json'
-            Invoke-Import-CTFd-Flag './challenges/Discover/8/ctfd_flag.json'
-            Invoke-Import-CTFd-Flag './challenges/Discover/9/ctfd_flag.json'
-            Invoke-Import-CTFd-Flag './challenges/Discover/10/ctfd_flag.json'
-
-            # Import Discover Challenge Hints for CTFd
-            Invoke-Import-CTFd-Hint './challenges/Discover/1/ctfd_hint.json'
-            Invoke-Import-CTFd-Hint './challenges/Discover/7/ctfd_hint.json'
-            Invoke-Import-CTFd-Hint './challenges/Discover/10/ctfd_hint.json'
-
-            # Import Discover Challenges for Elastic
-            . ./challenges/Discover/5/elastic_import_script.ps1; challenge
-            . ./challenges/Discover/6/elastic_import_script.ps1; challenge
-            . ./challenges/Discover/9/elastic_import_script.ps1; challenge
-            . ./challenges/Discover/10/elastic_import_script.ps1; challenge
-
-            Import-SavedObject "./challenges/Discover/1/elastic_saved_objects.ndjson"
-            Import-SavedObject "./challenges/Discover/2/elastic_saved_objects.ndjson"
-            Import-SavedObject "./challenges/Discover/3/elastic_saved_objects.ndjson"
-            Import-SavedObject "./challenges/Discover/5/elastic_saved_objects.ndjson"
-            Import-SavedObject "./challenges/Discover/8/elastic_saved_objects.ndjson"
-        }
-        
-        # Challenges ES|QL - Import
-        if((0, 2) -contains $CTF_Options_Selected){
-            # Import ES|QL Challenges for CTFd
-            Invoke-Import-CTFd-Challenge './challenges/ES_QL/2/ctfd_challenge.json'
-            Invoke-Import-CTFd-Challenge './challenges/ES_QL/1/ctfd_challenge.json'
-            Invoke-Import-CTFd-Challenge './challenges/ES_QL/3/ctfd_challenge.json'
-            Invoke-Import-CTFd-Challenge './challenges/ES_QL/4/ctfd_challenge.json'
-            Invoke-Import-CTFd-Challenge './challenges/ES_QL/5/ctfd_challenge.json'
-            Invoke-Import-CTFd-Challenge './challenges/ES_QL/6/ctfd_challenge.json'
-            Invoke-Import-CTFd-Challenge './challenges/ES_QL/7/ctfd_challenge.json'
-            Invoke-Import-CTFd-Challenge './challenges/ES_QL/8/ctfd_challenge.json'
-            Invoke-Import-CTFd-Challenge './challenges/ES_QL/9/ctfd_challenge.json'
-            Invoke-Import-CTFd-Challenge './challenges/ES_QL/10/ctfd_challenge.json'
-
-            # Import ES|QL Challenge Flags for CTFd
-            Invoke-Import-CTFd-Flag './challenges/ES_QL/1/ctfd_flag.json'
-            Invoke-Import-CTFd-Flag './challenges/ES_QL/2/ctfd_flag.json'
-            Invoke-Import-CTFd-Flag './challenges/ES_QL/3/ctfd_flag.json'
-            Invoke-Import-CTFd-Flag './challenges/ES_QL/4/ctfd_flag.json'
-            Invoke-Import-CTFd-Flag './challenges/ES_QL/5/ctfd_flag.json'
-            Invoke-Import-CTFd-Flag './challenges/ES_QL/6/ctfd_flag.json'
-            Invoke-Import-CTFd-Flag './challenges/ES_QL/7/ctfd_flag.json'
-            Invoke-Import-CTFd-Flag './challenges/ES_QL/8/ctfd_flag.json'
-            Invoke-Import-CTFd-Flag './challenges/ES_QL/9/ctfd_flag.json'
-            Invoke-Import-CTFd-Flag './challenges/ES_QL/10/ctfd_flag.json'
-
-            # Import ES|QL Challenge Hints for CTFd
-            Invoke-Import-CTFd-Hint './challenges/ES_QL/7/ctfd_hint.json'
-            Invoke-Import-CTFd-Hint './challenges/ES_QL/8/ctfd_hint.json'
-            Invoke-Import-CTFd-Hint './challenges/ES_QL/9/ctfd_hint.json'
-            Invoke-Import-CTFd-Hint './challenges/ES_QL/10/ctfd_hint.json'
-
-            # Import ES|QL Challenges for Elastic
-            . ./challenges/ES_QL/2/elastic_import_script.ps1; challenge
-            . ./challenges/ES_QL/6/elastic_import_script.ps1; challenge
-            . ./challenges/ES_QL/8/elastic_import_script.ps1; challenge
-            . ./challenges/ES_QL/9/elastic_import_script.ps1; challenge
-            . ./challenges/ES_QL/10/elastic_import_script.ps1; challenge
-
-            Import-SavedObject "./challenges/ES_QL/1/elastic_saved_objects.ndjson"
-            Import-SavedObject "./challenges/ES_QL/2/elastic_saved_objects.ndjson"
-            Import-SavedObject "./challenges/ES_QL/3/elastic_saved_objects.ndjson"
-            Import-SavedObject "./challenges/ES_QL/4/elastic_saved_objects.ndjson"
-            Import-SavedObject "./challenges/ES_QL/5/elastic_saved_objects.ndjson"
-            Import-SavedObject "./challenges/ES_QL/6/elastic_saved_objects.ndjson"
-            Import-SavedObject "./challenges/ES_QL/7/elastic_saved_objects.ndjson"
-            Import-SavedObject "./challenges/ES_QL/8/elastic_saved_objects.ndjson"
-            Import-SavedObject "./challenges/ES_QL/9/elastic_saved_objects.ndjson"
-            Import-SavedObject "./challenges/ES_QL/10/elastic_saved_objects.ndjson"
-
-        }
-
         #Challenges Dashboards - Import
-        if((0, 3) -contains $CTF_Options_Selected){
+        if((0, 1, 2, 3) -contains $CTF_Options_Selected){
             # Import Dashboard Challenges for CTFd
-            Invoke-Import-CTFd-Challenge './challenges/Dashboards/1/ctfd_challenge.json'
+            $rootManifestPath = "./challenges/challenge_categories.psd1"
 
-            # Dynamically Generate Flags for Dashboard Challenges
-            # . ./challenges/Dashboards/X/dynamic_flag.ps1; dynamic_flag
+            if (-not (Test-Path $rootManifestPath)) {
+                Write-Host "❌ Root manifest not found at $rootManifestPath. Cannot determine challenge categories." -ForegroundColor Red
+                return
+            }
 
-            # Import Dashboards Challenge Flags for CTFd
-            # Invoke-Import-CTFd-Flag './challenges/Dashboards/1/ctfd_flag.json'
+            try {
+                $rootManifest = Import-PowerShellDataFile -Path $rootManifestPath
+                $allCategories = $rootManifest.Categories
+            } catch {
+                Write-Host "❌ Failed to load $rootManifestPath. Ensure it is a valid PSD1 file." -ForegroundColor Red
+                return
+            }
 
-            # Import Dashboards Challenge Hints for CTFd
-            # Invoke-Import-CTFd-Hint './challenges/Dashboards/X/ctfd_hint.json'
+            # Map user choice → categories to import
+            switch ($CTF_Options_Selected) {
+                0 { $challengeTypes = $allCategories }            # All
+                1 { $challengeTypes = @("Discover") }             # Discover only
+                2 { $challengeTypes = @("ES_QL") }                # ES|QL only
+                3 { $challengeTypes = @("Dashboards") }           # Dashboards only
+                default { 
+                    Write-Host "⚠️ Invalid choice: '$CTF_Options_Selected'" -ForegroundColor Yellow
+                    Write-Host "👉 Please enter a valid option (0–3) to continue." -ForegroundColor Cyan
+                    $challengeTypes = @()   # prevent accidental imports
+                }
+            }
+            
+            foreach ($type in $challengeTypes) {
+                Write-Host ""
+                Write-Host "=== Importing $type Challenges ===" -ForegroundColor Cyan
 
-            # Import Dashboards Challenges for Elastic
-            # . ./challenges/Dashboards/1/elastic_import_script.ps1; challenge
+                $challengeRoot = "./challenges/$type/"
+                if (-not (Test-Path $challengeRoot)) {
+                    Write-Warning "⚠️ No $type challenges found at $challengeRoot. Skipping..."
+                    continue
+                }
 
-            Import-SavedObject "./challenges/Dashboards/1/elastic_saved_objects.ndjson"
+                $challenges = Get-ChildItem -Directory $challengeRoot | Sort-Object { [int]$_.Name } 
+                foreach ($challenge in $challenges) {
+                    $challengePath = $challenge.FullName
+                    $manifestPath = Join-Path $challengePath "challenge_manifest.psd1"
+
+                    if (-not (Test-Path $manifestPath)) {
+                        Write-Host "❌ Required challenge_manifest.psd1 not found in $challengePath" -ForegroundColor Red
+                        continue
+                    }
+
+                    try {
+                        $manifest = Import-PowerShellDataFile -Path $manifestPath
+                    } catch {
+                        Write-Host "❌ Failed to load $manifestPath. Ensure it is a valid PSD1 file." -ForegroundColor Red
+                        continue
+                    }
+
+                    if (-not $manifest.ContainsKey("RequiredFiles")) {
+                        Write-Warning "❌ No RequiredFiles entry in manifest for $type challenge at $challengePath"
+                        continue
+                    }
+
+                    $requiredFiles = $manifest.RequiredFiles
+                    $actualFiles   = Get-ChildItem -Path $challengePath -File | Select-Object -ExpandProperty Name
+                    $missingFiles  = $requiredFiles | Where-Object { $_ -notin $actualFiles }
+
+                    if ($missingFiles.Count -eq 0) {
+                        Write-Host "✅ All required files found. Importing Challenge: $($manifest.Name)" -ForegroundColor Green
+
+                        $actualFiles | Where-Object { $_ -ne "challenge_manifest.psd1" } | ForEach-Object {
+                            $file = $_
+                            Write-Host " - $file" -ForegroundColor Green
+
+                            switch ($file) {
+                                "ctfd_challenge.json"      { Invoke-Import-CTFd-Challenge "$challengePath/$file" }
+                                "ctfd_flag.json"           { Invoke-Import-CTFd-Flag "$challengePath/$file" }
+                                "ctfd_hint.json"           { Invoke-Import-CTFd-Hint "$challengePath/$file" }
+                                "elastic_import_script.ps1"{ . "$challengePath/$file"; challenge }
+                                "elastic_saved_objects.ndjson" { Import-SavedObject "$challengePath/$file" }
+                                "dynamic_flag.ps1"         { . "$challengePath/$file"; dynamic_flag }
+                            }
+                        }
+                    } else {
+                        Write-Host "⚠️ Missing required files for $type challenge. Import skipped." -ForegroundColor Yellow
+                        $missingFiles | ForEach-Object { Write-Host " - $_" -ForegroundColor Red }
+                    }
+                }
+            }
         }
 
         # Retrieve challenges from challenges.json file and convert it into an object
@@ -934,7 +925,7 @@ Begin {
         Write-Host "Importing $($pages_object.results.count) page(s)"
         Pause
         $pages_object.results | ForEach-Object {
-            # Get current flag
+            # Get current page
             $current_pages = $_ | ConvertTo-Json -Compress
 
             Write-Host "Importing page: $($_.title)"
@@ -959,7 +950,7 @@ Begin {
         Write-Host "Importing $($config_object.results.count) config option(s)"
         Pause
         $config_object.results | ForEach-Object {
-            # Get current flag
+            # Get current config
             $current_config = $_ | ConvertTo-Json -Compress
 
             Write-Host "Importing config option: $($_.key)"
