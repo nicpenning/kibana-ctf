@@ -1,7 +1,0 @@
-{
-  "id": 8,
-  "challenge_id": 8,
-  "type": "regex",
-  "content": "(?:38|\\{ctf_(?:38)_days_since_last_incident\\})",
-  "data": "case_insensitive"
-}
