@@ -73,8 +73,10 @@ Begin {
     if($null -eq $Kibana_URL){ $Kibana_URL= $configurationSettings.Kibana_URL}
 
     # Elasticsearch Variables
-    $ingestIndexURL = $Elasticsearch_URL+"/logs-kibana-ctf/_doc"
-    $indexTemplateURL = $Elasticsearch_URL+"/_index_template/logs-kibana-ctf"
+    $indexName = "logs-kibana-ctf"
+    $ingestIndexURL = $Elasticsearch_URL+"/$indexName/_doc"
+    $ingestBulkIndexURL = $Elasticsearch_URL+"/$indexName/_bulk"
+    $indexTemplateURL = $Elasticsearch_URL+"/_index_template/$indexName"
     $ctfUserRoleURL = $Elasticsearch_URL+"/_security/role/Kibana CTF"
     $ctfUserCreateURL = $Elasticsearch_URL+"/_security/user/kibana-ctf"
     $indexTemplate = Get-Content ./setup/Elastic/index_template.json
@@ -101,13 +103,13 @@ Begin {
         try{
             $validate = Invoke-RestMethod -Method GET -Uri "$CTFd_URL_API/pages" -ContentType "application/json" -Headers $ctfd_auth
             if($validate){
-                Write-Host "Valid token provided!" -ForegroundColor Green
+                Write-Host "✅ Valid token provided!" -ForegroundColor Green
             }else{
-                Write-Host "Could not validate, try another token or checking your connection to $CTFd_URL_API/pages endpoint."
+                Write-Host "❌ Could not validate, try another token or checking your connection to $CTFd_URL_API/pages endpoint."
             }
         }catch{
             Write-Host "Could not validate token, exiting." -ForegroundColor Red
-            $_.Exception
+            Write-Debug $_.Exception
             exit
         }
         return $ctfd_auth
@@ -121,14 +123,14 @@ Begin {
         # Set connection info
         $ctfd_challenge.connection_info = $ctfd_challenge.connection_info.Replace("http://127.0.0.1:5601",$Kibana_URL)
 
-        Write-Host "Importing challenge: $($ctfd_challenge.name)"
+        Write-Debug "Importing challenge: $($ctfd_challenge.name)"
         $current_challenge = $ctfd_challenge | ConvertTo-Json -Depth 10
         try{
             $import_challenge = Invoke-RestMethod -Method POST "$CTFd_URL_API/challenges" -ContentType "application/json" -Headers $ctfd_auth -Body $current_challenge
-            Write-Host "Imported challenge $($ctfd_challenge.name) - $($import_challenge.success)"
+            Write-Host "✅ Imported challenge $($ctfd_challenge.name) - $($import_challenge.success)"
         }catch{
-            Write-Host "Could not import challenge: $($ctfd_challenge.name) - $($ctfd_challenge.id)"
-            $_.Exception
+            Write-Host "❌ Could not import challenge: $($ctfd_challenge.name) - $($ctfd_challenge.id)"
+            Write-Debug $_.Exception
         }
     }
 
@@ -144,13 +146,13 @@ Begin {
             # Get current flag
             $current_flag = $_ | ConvertTo-Json -Compress
 
-            Write-Host "Importing flags for Challenge ID: $($ctfd_flag.challenge_id)"
+            Write-Debug "Importing flags for Challenge ID: $($ctfd_flag.challenge_id)"
             try{
                 $import_flag = Invoke-RestMethod -Method POST "$CTFd_URL_API/flags" -ContentType "application/json" -Headers $ctfd_auth -Body $current_flag
-                Write-Host "Imported flag $($_.id) - $($import_flag.success)"
+                Write-Debug "✅ Imported flag $($_.id) - $($import_flag.success)"
             }catch{
-                Write-Host "Could not import flag: $($current_challenge.name) - $($_.id)"
-                $_.Exception
+                Write-Host "❌ Could not import flag: $($current_challenge.name) - $($_.id)"
+                Write-Debug $_.Exception
             }
 
             if($CTFd_Randomize_Flags -match "true"){
@@ -170,13 +172,13 @@ Begin {
         # Get current hint
         $current_hint = $ctfd_hint | ConvertTo-Json -Compress
 
-        Write-Host "Importing hint for Challenge ID: $($ctfd_hint.challenge_id)"
+        Write-Debug "Importing hint for Challenge ID: $($ctfd_hint.challenge_id)"
         try{
             $import_hints = Invoke-RestMethod -Method POST "$CTFd_URL_API/hints" -ContentType "application/json" -Headers $ctfd_auth -Body $current_hint
-            Write-Host "Imported hint $($_.id) - $($import_hints.success)"
+            Write-Debug "✅ Imported hint $($_.id) - $($import_hints.success)"
         }catch{
-            Write-Host "Could not import hint: $($_.id) for challenge id: $($ctfd_hint.challenge_id)"
-            $_.Exception
+            Write-Host "❌ Could not import hint: $($_.id) for challenge id: $($ctfd_hint.challenge_id)"
+            Write-Debug $_.Exception
         }
     }
 
@@ -226,7 +228,7 @@ Begin {
                 $status = Invoke-RestMethod -Method Get -Uri $healthAPI -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck  
             } catch {
                 Write-Debug "Waiting for healthy cluster for 5 seconds. Then checking again."
-                $_.Exception
+                Write-Debug $_.Exception
                 $status
                 Start-Sleep -Seconds 5
             }
@@ -365,10 +367,10 @@ Begin {
     
         $result = Invoke-RestMethod -Method POST -Uri $importSavedObjectsURL -Headers $kibanaHeader -ContentType "multipart/form-data; boundary=`"$boundary`"" -Body $bodyLines -AllowUnencryptedAuthentication
         if($result.errors -or $null -eq $result){
-            Write-Host "There was an error trying to import $filename"
+            Write-Host "❌ There was an error trying to import $filename"
             $result.errors
         }else{
-            Write-Host "Imported $filename" -ForegroundColor Green
+            Write-Debug "✅ Imported $filename"
         }
     }
 
@@ -402,10 +404,10 @@ Begin {
         }
 
         if($result.errors -or $null -eq $result){
-            Write-Host "There was an error trying to import the Kibana CTF Space." -ForegroundColor Yellow
+            Write-Host " ❌There was an error trying to import the Kibana CTF Space." -ForegroundColor Yellow
             $result.errors
         }else{
-            Write-Host "Created Kibana CTF Space!" -ForegroundColor Green
+            Write-Host "✅ Created Kibana CTF Space!"
         }
     }
 
@@ -437,27 +439,69 @@ Begin {
     function Invoke-Ingest-Elasticsearch-Documents {
         Param (
             $documentToIngest,
-            $customUrl
+            $customUrl,
+            [int]$batchSize = 1
         )
 
-        # Check for custom URL and if it exists, use the PUT, otherwise, ingest a single doc
-        if($null -ne $customUrl){
+        # Case 1: Custom URL (always use PUT)
+        if ($null -ne $customUrl) {
             try {
-                $result = Invoke-RestMethod -Method PUT -Uri $customUrl -Body $documentToIngest -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck
-            } catch {
-                Write-Host "Couldn't ingest CTF data. Check Kibana to see if the ctf data already exists, if it does, this is okay." -ForegroundColor Yellow
-                Write-Debug "$_"
+                $result = Invoke-RestMethod -Method PUT -Uri $customUrl -Body $documentToIngest -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck -ErrorAction Stop
+                return
             }
-        }else{
+            catch {
+                $errMsg = $_.ErrorDetails.Message
+
+                if ($errMsg -match '"type": "version_conflict_engine_exception"') {
+                    Write-Debug "ℹ️ Document already exists at $customUrl. Proceeding as normal."
+                }
+                else {
+                    Write-Host "❌ Unexpected error ingesting $customUrl" -ForegroundColor Red
+                    Write-Host $errMsg -ForegroundColor DarkRed
+                    throw  # re-throw so the pipeline breaks on real issues
+                }
+            }
+        }
+
+        # Case 2: Bulk ingest
+        if ($batchSize -gt 1) {
+            $docs = if ($documentToIngest -is [System.Collections.IEnumerable]) { $documentToIngest } else { @($documentToIngest) }
+            $count = 0
+
+            foreach ($batch in ($docs | ForEach-Object -Begin { $tmp=@() } -Process {
+                $tmp += $_
+                if ($tmp.Count -ge $batchSize) { ,$tmp; $tmp=@() }
+            } -End { if ($tmp.Count) { ,$tmp } })) {
+
+                $bulkPayload = New-Object System.Text.StringBuilder
+                foreach ($doc in $batch) {
+                    [void]$bulkPayload.AppendLine("{""create"":{""_index"":""$indexName""}}")
+                    [void]$bulkPayload.AppendLine($doc)
+                    $count++
+                }
+
+                try {
+                    $result = Invoke-RestMethod -Method POST -Uri "$ingestBulkIndexURL" -Body $bulkPayload.ToString() -ContentType "application/x-ndjson" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck
+                    if ($count % 1000 -eq 0 -or $count -eq $docs.Count) { Write-Host "📦 Ingested $count / $($docs.Count) docs into [$indexName]" }
+                } catch {
+                    Write-Host "⚠️ Couldn't bulk ingest CTF data into [$indexName]." -ForegroundColor Yellow
+                    Write-Debug "$_"
+                }
+            }
+            return
+        }
+
+        # Case 3: Single doc ingest
+        if (1 -le $batchSize -and $null -eq $customUrl) {
             try {
-                $result = Invoke-RestMethod -Method POST -Uri $ingestIndexURL -Body $documentToIngest -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck
+                $result = Invoke-RestMethod -Method POST -Uri "$ingestIndexURL" -Body $documentToIngest -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck
             } catch {
-                Write-Host "Couldn't ingest CTF data. Check Kibana to see if the ctf data already exists, if it does, this is okay." -ForegroundColor Yellow
+                Write-Host "Couldn't ingest CTF data into [$indexName]. If it already exists, this is okay." -ForegroundColor Yellow
                 Write-Debug "$_"
             }
         }
 
-        return $result
+        return
     }
 
     function Invoke-Create-Index-Template {
@@ -548,10 +592,10 @@ Begin {
     
     # Main menu options
     $option1 = "[1] 🏁 Deploy CTFd"
-    $option2 = "[2] ⚙️  Deploy Elastic Stack"
+    $option2 = "[2] ⚙️ Deploy Elastic Stack"
     $option3 = "[3] 🚩 Import Flags (CTFd) + Challenges (Elastic Stack)"
-    $option4 = "[4] 🗑️  Delete CTFd"
-    $option5 = "[5] 🗑️  Delete Elastic Stack"
+    $option4 = "[4] 🗑️ Delete CTFd"
+    $option5 = "[5] 🗑️ Delete Elastic Stack"
     $option6 = "[6] 🔍 Check for Requirements"
     $option7 = "[7] 🤖 Deploy everything from scratch (Recommended)"
 
@@ -811,16 +855,30 @@ Begin {
 
         # Ingesting Dummy Documents
         Write-Host "Ingesting documents for challenges" -ForegroundColor Blue
-        $fakeCount = 0
-        Write-Host "Ingesting 2.5K documents, please wait. This could take a few minutes."
-        do{
-            $dummyDocument = Invoke-Generate-FakeEvent
-            #$ingestDocs = Invoke-Ingest-Elasticsearch-Documents -documentToIngest $dummyDocument
-            $fakeCount++
-            if((500, 1000, 1500, 2000) -contains $fakeCount){
-                Write-Host "Total documents ingested: $fakeCount"
-            }
-        }while($fakeCount -lt 2500)
+        $docCount = 25000
+        $batchSize = 2500
+        Write-Host "Ingesting $docCount documents in batches of $batchSize...this should take about a minute."
+
+        # Pre-generate fake docs
+        $spinner = @('|','/','-','\')
+        $i = 0
+
+        Write-Host "⏳ Generating $docCount fake documents..." -ForegroundColor Cyan
+
+        $dummyDocs = foreach ($n in 1..$docCount) {
+            # Show spinner and progress
+            Write-Host -NoNewline "`r$($spinner[$i % $spinner.Length]) Generating doc $n of $docCount..."
+            $i++
+
+            # Call your function sequentially
+            Invoke-Generate-FakeEvent
+        }
+
+        # Clear spinner and show done
+        Write-Host "`r✅ Generated $($dummyDocs.Count) fake documents." -ForegroundColor Green
+
+        # Ingest via bulk mode
+        Invoke-Ingest-Elasticsearch-Documents -documentToIngest $dummyDocs -batchSize $batchSize
 
         # Import Kibana CTF Dashboard Saved Object for all Dashboard Challenges
         Write-Host "Importing Kibana CTF Dashboard" -ForegroundColor Blue
@@ -894,11 +952,11 @@ Begin {
                     $missingFiles  = $requiredFiles | Where-Object { $_ -notin $actualFiles }
 
                     if ($missingFiles.Count -eq 0) {
-                        Write-Host "✅ All required files found. Importing Challenge: $($manifest.Name)" -ForegroundColor Green
+                        Write-Debug "✅ All required files found. Importing Challenge: $($manifest.Name)"
 
                         $actualFiles | Where-Object { $_ -ne "challenge_manifest.psd1" } | ForEach-Object {
                             $file = $_
-                            Write-Host " - $file" -ForegroundColor Green
+                            Write-Debug " - $file"
 
                             switch ($file) {
                                 "ctfd_challenge.json"      { Invoke-Import-CTFd-Challenge "$challengePath/$file" }
@@ -922,8 +980,7 @@ Begin {
         $config_object = Get-Content './setup/CTFd/config.json' | ConvertFrom-Json -Depth 10
 
         # Import Page(s) 1 by 1
-        Write-Host "Importing $($pages_object.results.count) page(s)"
-        Pause
+        Write-Debug "Importing $($pages_object.results.count) page(s)"
         $pages_object.results | ForEach-Object {
             # Get current page
             $current_pages = $_ | ConvertTo-Json -Compress
@@ -931,41 +988,39 @@ Begin {
             Write-Host "Importing page: $($_.title)"
             try{
                 $import_pages = Invoke-RestMethod -Method POST "$CTFd_URL_API/pages" -ContentType "application/json" -Headers $ctfd_auth -Body $current_pages
-                Write-Host "Imported page $($_.title) - $($import_pages.success)"
+                Write-Host "✅ Imported page $($_.title) - $($import_pages.success)"
             }catch{
-                Write-Host "Could not import page: $($_.title)"
+                Write-Host "⚠️ Could not import page."
                 Write-Host "Will try to update the current page."
                 try{
                     $update_pages = Invoke-RestMethod -Method PATCH "$CTFd_URL_API/pages/1" -ContentType "application/json" -Headers $ctfd_auth -Body $current_pages
-                    Write-Host "Pages updated: $($update_pages.success)"
+                    Write-Host "✅ Pages updated: $($update_pages.success)"
                 }catch{
-                    Write-Host "Could not import page: $($_.title)"
-                    Write-Host "Note: This shouldn't impact the CTF platform if everything else worked."
-                    $_.Exception
+                    Write-Host "❌ Could not import page: $($_.title)"
+                    Write-Host "⚠️ Note: This shouldn't impact the CTF platform if everything else worked."
+                    Write-Debug $_.Exception
                 }
             }
         }
 
         # Import Config
-        Write-Host "Importing $($config_object.results.count) config option(s)"
-        Pause
+        Write-Debug "Importing $($config_object.results.count) config option(s)"
         $config_object.results | ForEach-Object {
             # Get current config
             $current_config = $_ | ConvertTo-Json -Compress
 
-            Write-Host "Importing config option: $($_.key)"
+            Write-Debug "Importing config option: $($_.key)"
             try{
                 $import_config = Invoke-RestMethod -Method POST "$CTFd_URL_API/configs" -ContentType "application/json" -Headers $ctfd_auth -Body $current_config
-                Write-Host "Imported config option: $($_.key)- $($import_config.success)" -ForegroundColor Green
+                Write-Host "✅ Imported config option: $($_.key) - $($import_config.success)"
             }catch{
                 Write-Host "Could not import config."
-                $_.Exception
+                Write-Debug $_.Exception
             }
         }
 
         # Import Logo
-        Write-Host "Importing logo for home page"
-        Pause
+        Write-Debug "Importing logo for home page"
         $form = @{
             "page_id" = 1
             "type" = "page"
@@ -973,7 +1028,7 @@ Begin {
             "location" = "9e66f558e02ce69471d071f5d9a049c0/DALLE_Capture_The_Flag_logo.webp"
         }
         $response = Invoke-RestMethod -Method POST -Uri "$CTFd_URL_API/files" -Headers $ctfd_auth -Form $form
-        Write-Host "Imported $filePath`: $($response.success)"
+        Write-Host "✅ Imported logo file`: $($response.success)"
     }
 
     function Invoke-Remove-CTFd {
@@ -1004,7 +1059,7 @@ Begin {
                 Write-Host "Removed challenge $($challenge_info.data.name) - $($remove_challenge.success)"
             }catch{
                 Write-Host "Could not remove challenge: $($challenge_info.data.name) - $id"
-                $_.Exception
+                Write-Debug $_.Exception
             }
         }
         #>

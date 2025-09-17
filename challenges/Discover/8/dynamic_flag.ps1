@@ -10,7 +10,5 @@ function dynamic_flag {
     }
     # Create new flag file with new dynamic date
     $ctfd_flag | ConvertTo-Json -Depth 10 | Out-File -FilePath $flag_file_path
-    return Write-Host "Challenge 8 Dynamic Flag Created." -ForegroundColor Green
+    return Write-Debug "✅ elastic_import_script.ps1 executed"
 }
-
-

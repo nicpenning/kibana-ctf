@@ -12,5 +12,5 @@ function challenge {
         $count++
     }while($count -lt 100)
 
-    return Write-Host "Challenge 9 imported." -ForegroundColor Green
+    return Write-Debug "✅ elastic_import_script.ps1 executed"
 }

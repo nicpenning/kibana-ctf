@@ -62,5 +62,5 @@ function challenge {
     } | ConvertTo-Json
     $result = Invoke-Ingest-Elasticsearch-Documents -documentToIngest $benignEvent
 
-    Write-Host "FORK challenge data imported." -ForegroundColor Green
+    return Write-Debug "✅ elastic_import_script.ps1 executed"
 }

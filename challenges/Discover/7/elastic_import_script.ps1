@@ -8,5 +8,5 @@ function challenge {
     
     $result = Invoke-Ingest-Elasticsearch-Documents -documentToIngest $challenge
 
-    return Write-Host "Challenge 6 imported." -ForegroundColor Green
+    return Write-Debug "✅ elastic_import_script.ps1 executed"
 }

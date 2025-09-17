@@ -24,5 +24,5 @@ function challenge {
     } | ConvertTo-Json
     $result = Invoke-Ingest-Elasticsearch-Documents -documentToIngest $expandMe
 
-    Write-Host "MV EXPAND challenge data imported." -ForegroundColor Green
+    return Write-Debug "✅ elastic_import_script.ps1 executed"
 }

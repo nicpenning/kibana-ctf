@@ -21,7 +21,19 @@ function challenge {
     $result = Invoke-Ingest-Elasticsearch-Documents -documentToIngest $docA2
 
     # Create join-threat-data lookup index
-    $result = Invoke-RestMethod -Method PUT -Uri "$Elasticsearch_URL/join-threat-data" -Body $lookupSettings -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck
+    try {
+        $result = Invoke-RestMethod -Method PUT -Uri "$Elasticsearch_URL/join-threat-data" -Body $lookupSettings -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck -ErrorAction Stop
+        Write-Host "✅ Index [join-threat-data] created successfully." -ForegroundColor Green
+    }
+    catch {
+        $errMsg = $_.ErrorDetails.Message
+        if ($errMsg -match '"type": "resource_already_exists_exception"') {
+            Write-Host "ℹ️ Index [join-threat-data] already exists. Skipping creation." -ForegroundColor Yellow
+        }
+        else {
+            Write-Host "❌ Unexpected error: $errMsg" -ForegroundColor Red
+        }
+    }
 
     # Create logs-join-b index and add threat-related documents
     $docB1 = [PSCustomObject]@{
@@ -41,5 +53,5 @@ function challenge {
     
     $result = Invoke-Ingest-Elasticsearch-Documents -documentToIngest $docB1 -customUrl "$Elasticsearch_URL/join-threat-data/_doc/1"
     $result = Invoke-Ingest-Elasticsearch-Documents -documentToIngest $docB2 -customUrl "$Elasticsearch_URL/join-threat-data/_doc/2"
-    Write-Host "Join challenge data imported." -ForegroundColor Green
+    return Write-Debug "✅ elastic_import_script.ps1 executed"
 }
