@@ -187,12 +187,12 @@ Begin {
         # Check for existing .env file for setup
         # Get Elasticsearch password from .env file
         if (Test-Path .\setup\Elastic\docker_elastic_stack\.env) {
-            Write-Host "Docker .env file found! Which likely means you have configured docker for use. Going to extract password to perform initialization."
+            Write-Host "🐳 Docker .env file detected. Extracting credentials for intialization."
             $env = Get-Content .\setup\Elastic\docker_elastic_stack\.env
             $regExEnv = $env | Select-String -AllMatches -Pattern "ELASTIC_PASSWORD='(.*)'"
             $global:elasticsearchPassword = $regExEnv.Matches.Groups[1].Value
             if ($elasticsearchPassword) {
-                Write-Host "Password for user elastic has been found and will be used." -ForegroundColor Green
+                Write-Host "🔐 Password for user elastic has been found and will be used." -ForegroundColor Green
                 return "True", $elasticsearchPassword
             }
         } else {
@@ -217,7 +217,7 @@ Begin {
     
     function Invoke-CheckForElasticsearchStatus {
         # Check for Elastic stack connectivity to a healthy cluster
-        Write-Host "Waiting for Elastic stack to be accessible." -ForegroundColor Blue
+        Write-Debug "Waiting for Elastic stack to be accessible."
     
         $healthAPI = $Elasticsearch_URL+"/_cluster/health"
         Write-Debug "Using the URL: $healthAPI"
@@ -235,8 +235,8 @@ Begin {
         } until ("yellow" -eq $status.status -or "green" -eq $status.status)
     
         if ("yellow" -eq $status.status -or "green" -eq $status.status) {
-        Write-Host "Elastic cluster is $($status.status), continuing through the setup process." -ForegroundColor Green
-        Start-Sleep -Seconds 2
+            Write-Host "⚙️ Elastic cluster is $($status.status), continuing through the setup process."
+            Start-Sleep -Seconds 2
         }
     }
 
@@ -817,11 +817,11 @@ Begin {
         $configurationSettings = Get-Content ./configuration.json | ConvertFrom-Json
         if("" -ne $configurationSettings.Elasticsearch_URL){
             $Elasticsearch_URL = $configurationSettings.Elasticsearch_URL
-            Write-Host "Elasticsearch URL detected: $Elasticsearch_URL" -ForegroundColor Green
+            Write-Host "🔎 Elasticsearch URL detected: $Elasticsearch_URL" -ForegroundColor Green
         }
         if("" -ne $configurationSettings.Kibana_URL){
             $Kibana_URL = $configurationSettings.Kibana_URL
-            Write-Host "Kibana URL detected: $Kibana_URL" -ForegroundColor Green
+            Write-Host "📊 Kibana URL detected: $Kibana_URL" -ForegroundColor Green
         }
 
         if($null -eq $Elasticsearch_URL){
@@ -836,7 +836,7 @@ Begin {
 
         # Configure Elasticsearch credentials for importing saved objects into Kibana.
         # Get elastic user credentials
-        Write-Host "Going to need the password for the elastic user. Checking for generated creds now." -ForegroundColor Yellow
+        Write-Debug "Going to need the password for the elastic user. Checking for generated creds now."
         $elasticCredsCheck = Invoke-CheckForEnv
         # Set passwords via automated configuration or manual input
         # Base64 Encoded elastic:secure_password for Kibana auth
@@ -854,10 +854,10 @@ Begin {
         Invoke-CheckForElasticsearchStatus
 
         # Ingesting Dummy Documents
-        Write-Host "Ingesting documents for challenges" -ForegroundColor Blue
+        Write-Debug "Ingesting documents for challenges"
         $docCount = 25000
         $batchSize = 2500
-        Write-Host "Ingesting $docCount documents in batches of $batchSize...this should take about a minute."
+        Write-Host "Ingesting $docCount documents in batches of $batchSize..."
 
         # Pre-generate fake docs
         $spinner = @('|','/','-','\')
@@ -881,7 +881,7 @@ Begin {
         Invoke-Ingest-Elasticsearch-Documents -documentToIngest $dummyDocs -batchSize $batchSize
 
         # Import Kibana CTF Dashboard Saved Object for all Dashboard Challenges
-        Write-Host "Importing Kibana CTF Dashboard" -ForegroundColor Blue
+        Write-Host "📥 Importing Kibana CTF Dashboard"
         Import-SavedObject "./setup/Elastic/kibana_dashboard.ndjson"
 
         #Challenges Dashboards - Import
