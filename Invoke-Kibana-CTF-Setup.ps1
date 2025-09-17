@@ -985,13 +985,13 @@ Begin {
             # Get current page
             $current_pages = $_ | ConvertTo-Json -Compress
 
-            Write-Host "Importing page: $($_.title)"
+            Write-Debug "Importing page: $($_.title)"
             try{
                 $import_pages = Invoke-RestMethod -Method POST "$CTFd_URL_API/pages" -ContentType "application/json" -Headers $ctfd_auth -Body $current_pages
                 Write-Host "✅ Imported page $($_.title) - $($import_pages.success)"
             }catch{
-                Write-Host "⚠️ Could not import page."
-                Write-Host "Will try to update the current page."
+                Write-Debug "⚠️ Could not import page."
+                Write-Debug "Will try to update the current page."
                 try{
                     $update_pages = Invoke-RestMethod -Method PATCH "$CTFd_URL_API/pages/1" -ContentType "application/json" -Headers $ctfd_auth -Body $current_pages
                     Write-Host "✅ Pages updated: $($update_pages.success)"
@@ -1029,6 +1029,23 @@ Begin {
         }
         $response = Invoke-RestMethod -Method POST -Uri "$CTFd_URL_API/files" -Headers $ctfd_auth -Form $form
         Write-Host "✅ Imported logo file`: $($response.success)"
+
+        Write-Host "`n✅ Setup complete! Your CTF environment is now live and ready to roll!" -ForegroundColor Green
+        Write-Host "------------------------------------------------------------"
+        Write-Host "🌐 CTFd Platform:"
+        Write-Host "   👉 Navigate to $CTFd_URL"
+        Write-Host "   👉 Register your player account and start solving challenges!"
+        Write-Host ""
+        Write-Host "📊 Kibana CTF Playground:"
+        Write-Host "   👉 Navigate to $Kibana_URL"
+        Write-Host "   👉 Log in with the dedicated CTF account:"
+        Write-Host "       username: kibana-ctf"
+        Write-Host "       password: kibana-ctf--please-change-me" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "🚀 You’re all set — challenges are waiting and flags are hidden!"
+        Write-Host "Sharpen your skills, dive deep into Kibana, and hunt those 🎯 flags!"
+        Write-Host "------------------------------------------------------------"
+        Write-Host "🔥 Happy Hunting, and may the best analyst win! 🚩" -ForegroundColor Green
     }
 
     function Invoke-Remove-CTFd {

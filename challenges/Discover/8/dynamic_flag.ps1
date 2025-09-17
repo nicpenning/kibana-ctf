@@ -4,7 +4,7 @@ function dynamic_flag {
 
     # Adjust dynamic incident challenge
     if ($ctfd_flag.content -match '38'){
-        Write-Host "Incident Challenge detected, updating dynamic challenge answer."
+        Write-Debug "Incident Challenge detected, updating dynamic challenge answer."
         $days = $($($(Get-date)-$(Get-Date 2024-11-12T07:43:13.373Z)).Days)
         $ctfd_flag.content = $ctfd_flag.content -replace '38', "$($days-1)|$days|$($days+1)"
     }
