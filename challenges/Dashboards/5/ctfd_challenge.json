@@ -1,0 +1,21 @@
+{
+  "id": 3005,
+  "name": "sudo rm -rf /",
+  "description": "Let's talk about formating. Wait no, formats. I hope you get the reference, as that may or may not help you navigate the dotted line over time! \r\n\r\n![line_chart](https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExcTl1MHpzZTBqMHdlcDRsZjNnY2JjYTdnY3N6Z291YjEydHd4dXMwcyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/IhCzUdnSvrTaymIofq/giphy.gif)",
+  "max_attempts": 10,
+  "value": 20,
+  "category": "Visualization Sensation",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [
+      3001,
+      3002,
+      3003
+    ],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/dashboards#/view/4426fd7d-6500-4a3c-be8f-1530810571c7",
+  "next_id": null,
+  "attribution": null
+}

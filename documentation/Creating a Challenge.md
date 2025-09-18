@@ -6,10 +6,31 @@ Creating a new challenge for the Kibana CTF involves setting up several files th
 ## Step-by-Step Instructions
 
 ### 1. Choose a Category and Challenge Number
-Decide on a category for your challenge (e.g., Discover, ES|QL) and assign a unique challenge number. The structure should look like this:
+
+#### Challenge ID Reference Cheat Sheet
+
+To keep things consistent, all challenge IDs follow a **category-based scheme**. Use this as a quick lookup when creating new challenges:
+
+| Category     | ID Range   | Example IDs   |
+|--------------|------------|---------------|
+| **Discover**   | `1000+`    | 1001, 1002, 1003 … |
+| **ES\_QL**     | `2000+`    | 2001, 2002, 2003 … |
+| **Dashboards** | `3000+`    | 3001, 3002, 3003 … |
+
+👉 Each challenge, flag, and hint **must share the same ID** (e.g., Challenge 1001 → Flag 1001 → Hint 1001). If you need more than 1 flag or hint, add another digit at the end to the challenge ID and increment accordingly. Using the example above, the first hint ID would be 1001, and the second 10010, the third, 10011, etc.
+
+Decide on a category for your challenge (e.g., Discover, ES|QL) and assign the next available number. This directory number is simply an easy way to see how many challenges are in a category. It is not used for anything else. The structure should look like this:
 ```
-challenges/[category]/[challenge-number]/
+challenges/[category]/[number]/
 ```
+
+or in practice:
+
+```
+challenges/Discover/11/
+```
+
+The key is making sure that the IDs for challenges, flags, hints, etc, are all unique. To determine the next available ID, you can look at the lastly created challenge's ID.
 
 ### 2. Create the Manifest File (Required)
 
@@ -27,7 +48,7 @@ This manifest declares which files belong to the challenge so the setup script c
 **Schema:**
 ```powershell
 @{
-    Name          = "Back to the basics"
+    Name = "Back to the basics"
     RequiredFiles = @(
         "ctfd_challenge.json"
         "ctfd_flag.json"
@@ -44,7 +65,7 @@ Create a file named `ctfd_challenge.json` in the challenge directory. This file 
 
 | Field            | Type      | Description                                                                                   |
 |------------------|-----------|-----------------------------------------------------------------------------------------------|
-| id               | integer   | Unique challenge ID (should be unique within your set of challenges).                         |
+| id               | integer   | Unique challenge ID (must follow category-based scheme).                         |
 | name             | string    | The title of the challenge.                                                                   |
 | description      | string    | A detailed explanation of the challenge, can include Markdown and image links.                |
 | max_attempts     | integer   | Maximum number of attempts allowed (0 for unlimited).                                         |
@@ -60,7 +81,7 @@ Create a file named `ctfd_challenge.json` in the challenge directory. This file 
 **Example:**
 ```json
 {
-  "id": 1,
+  "id": 1001,
   "name": "Back to the basics",
   "description": "Discover, where it all began. I had an awesome custom search/session saved for searching on host information, but can't find it. Maybe you can help me?\r\n\r\n![old_kibana.jpg](https://www.timroes.de/static/634d0811df5e7f971ebccf819aaecd9e/3f8aa/discover-columns.png)",
   "max_attempts": 0,
@@ -92,7 +113,7 @@ Create a file named `ctfd_flag.json` in the challenge directory. This file shoul
 
 | Field         | Type     | Description                                                      |
 |---------------|----------|------------------------------------------------------------------|
-| id            | integer  | Unique flag ID.                                                  |
+| id            | integer  | Unique flag ID (should match the challenge ID).                                                  |
 | challenge_id  | integer  | The ID of the challenge this flag belongs to.                    |
 | type          | string   | The flag type, usually "static".                                 |
 | content       | string   | The flag value participants must submit.                         |
@@ -101,8 +122,8 @@ Create a file named `ctfd_flag.json` in the challenge directory. This file shoul
 **Example:**
 ```json
 {
-  "id": 1,
-  "challenge_id": 1,
+  "id": 1001,
+  "challenge_id": 1001,
   "type": "static",
   "content": "{ctf_one_search_to_rule_them_all}",
   "data": "case_insensitive"
@@ -118,7 +139,7 @@ If you want to provide hints for your challenge, create a file named `ctfd_hint.
 
 | Field         | Type     | Description                                                      |
 |---------------|----------|------------------------------------------------------------------|
-| id            | integer  | Unique hint ID.                                                  |
+| id            | integer  | Unique hint ID (should match the challenge ID).                                                  |
 | type          | string   | Hint type, usually "standard".                                   |
 | challenge_id  | integer  | The ID of the challenge this hint belongs to.                    |
 | content       | string   | The hint text, can include Markdown and images.                  |
@@ -128,9 +149,9 @@ If you want to provide hints for your challenge, create a file named `ctfd_hint.
 **Example:**
 ```json
 {
-  "id": 3,
+  "id": 1003,
   "type": "standard",
-  "challenge_id": 1,
+  "challenge_id": 1001,
   "content": "Not the data!\n\n![](https://media1.giphy.com/media/qN9x0UIc0Rhg4/200w.gif?cid=6c09b952q6k3us6dh9m3dgek4fnqmti482nhgbfgmdk0r3mg&ep=v1_gifs_search&rid=200w.gif&ct=g)\n\nCheck out the saved search/session itself (not the queries, not the results).",
   "cost": 0,
   "requirements": {
@@ -237,10 +258,8 @@ Use the [Resetting the Instance](https://docs.ctfd.io/tutorials/configuration/re
 ---
 
 ## Conclusion
-By following these steps, you can create a new challenge for the Kibana CTF. Make sure to test your challenge thoroughly and consider sharing it with the community!
+By following these steps, you can create a new challenge for the Kibana CTF.  Make sure to test your challenge thoroughly and consider sharing it with the community!
 
-## Conclusion
-By following these steps, you can create a new challenge for the Kibana CTF.  
 With the manifest model, the setup script will automatically:  
 - Discover your challenge  
 - Validate the required files  

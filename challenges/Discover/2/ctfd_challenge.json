@@ -1,5 +1,5 @@
 {
-  "id": 2,
+  "id": 1002,
   "name": "I like a good query.",
   "description": "Come to think of it, I think I had a gnarly saved query also, please find it for me!",
   "max_attempts": 10,
@@ -9,7 +9,7 @@
   "state": "visible",
   "requirements": {
     "prerequisites": [
-      1
+      1001
     ],
     "anonymize": true
   },

@@ -1,5 +1,5 @@
 {
-  "id": 7,
+  "id": 1007,
   "name": "Context, please.",
   "description": "Every now and again I see fields that I am unsure of what they mean, especially in this weird future event. They should really have a description on those!",
   "max_attempts": 10,
@@ -9,7 +9,7 @@
   "state": "visible",
   "requirements": {
     "prerequisites": [
-      6
+      1006
     ],
     "anonymize": true
   },

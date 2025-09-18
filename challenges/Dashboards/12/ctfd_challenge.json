@@ -1,0 +1,19 @@
+{
+  "id": 3012,
+  "name": "Collapse Into Madness",
+  "description": "At some point, you stop asking why and start asking where’s the flag. The section collapses, but your sanity might not recover. \r\n\r\n![loki_madness](https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExMTByaGY4bWJ5aXFtdHZlOXcxZWtoNnBxazl0dXhlbHgzM2xtc3J1YiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/S0KRynVEROiOs/giphy.gif)",
+  "max_attempts": 10,
+  "value": 40,
+  "category": "Visualization Sensation",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [
+      3010
+    ],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/dashboards#/view/4426fd7d-6500-4a3c-be8f-1530810571c7",
+  "next_id": null,
+  "attribution": null
+}

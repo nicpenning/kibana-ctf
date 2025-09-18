@@ -1,0 +1,19 @@
+{
+  "id": 3011,
+  "name": "The One With Too Much Info",
+  "description": "A picture is worth a thousand words. But without the context of the description, how many words is it then? Check out the logo in the dashboard. Usually you can see a description on the image but it doesn't seem to render. Maybe you can go beyond Kibana and inspect the code to find the hidden info! \r\n\r\n![spy_kid](https://i0.wp.com/media2.giphy.com/media/Zvgb12U8GNjvq/giphy.gif)",
+  "max_attempts": 10,
+  "value": 40,
+  "category": "Visualization Sensation",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [
+      3007
+    ],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/dashboards#/view/4426fd7d-6500-4a3c-be8f-1530810571c7",
+  "next_id": null,
+  "attribution": null
+}

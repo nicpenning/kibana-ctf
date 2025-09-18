@@ -1,1 +1,7 @@
-{"id":10,"challenge_id":10,"type":"static","content":"{ctf_images_everywhere}","data":""}
+{
+  "id": 1010,
+  "challenge_id": 1010,
+  "type": "static",
+  "content": "{ctf_images_everywhere}",
+  "data": ""
+}

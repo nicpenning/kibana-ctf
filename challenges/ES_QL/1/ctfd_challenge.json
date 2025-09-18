@@ -1,5 +1,5 @@
 {
-  "id": 11,
+  "id": 2001,
   "name": "Conjuction Junction",
   "description": "ES|QL is the new coolness so I have been dabbling into the new capabilities that this search provides. Try and find the hidden message in my query, have fun!\r\n\r\n![](https://shopabctv.com/cdn/shop/products/SHR-CJ_ABC_SchoolHouseRock_Delta11730_White_RO_1080x.jpg?v=1592229651)",
   "max_attempts": 10,
@@ -9,7 +9,7 @@
   "state": "visible",
   "requirements": {
     "prerequisites": [
-      12
+      2002
     ],
     "anonymize": true
   },

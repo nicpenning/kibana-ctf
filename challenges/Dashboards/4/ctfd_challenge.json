@@ -1,0 +1,17 @@
+{
+  "id": 3004,
+  "name": "I'm to XY for my Dash",
+  "description": "It is critical to know the difference between the horizontal and vertical data points when going to the bar. Yeah, you get the gist. \r\n\r\n![why_no_x_and_y](https://media.makeameme.org/created/when-your-good-88c4c4e30d.jpg)",
+  "max_attempts": 10,
+  "value": 10,
+  "category": "Visualization Sensation",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/dashboards#/view/4426fd7d-6500-4a3c-be8f-1530810571c7",
+  "next_id": null,
+  "attribution": null
+}

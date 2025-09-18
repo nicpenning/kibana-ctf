@@ -1,5 +1,5 @@
 {
-  "id": 10,
+  "id": 1010,
   "name": "Data is more than what meets the eye",
   "description": "Allegedly Kibana can render more than just plain text in fields. I wonder if it can render images!\r\n\r\n![](https://y.yarn.co/a0a279b0-ab4f-43c2-82ce-ad3f6de61381_text.gif)",
   "max_attempts": 10,
@@ -9,7 +9,7 @@
   "state": "visible",
   "requirements": {
     "prerequisites": [
-      3
+      1003
     ],
     "anonymize": true
   },

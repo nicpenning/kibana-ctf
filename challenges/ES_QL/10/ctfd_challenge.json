@@ -1,5 +1,5 @@
 {
-  "id": 20,
+  "id": 2010,
   "name": "What in the FORK is going on here?",
   "description": "A user has fallen for a phishing attack, and multiple events have been logged across process and firewall sources. Use ES|QL's new FORK command to correlate all stages of the attack and reveal the flag.\n\n![](https://media.tenor.com/RYtXByhcZ88AAAAM/forky-toy-story.gif)",
   "max_attempts": 0,

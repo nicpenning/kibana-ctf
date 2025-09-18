@@ -1,5 +1,5 @@
 {
-  "id": 16,
+  "id": 2006,
   "name": "Regex Rumble",
   "description": "ES|QL supports powerful pattern matching. Fix this syntax in the query to find the hidden flag in the logs!\n\n![](https://github.com/nicpenning/kibana-ctf/blob/main/images/chat_gpt_regex_rumble.png)",
   "max_attempts": 10,

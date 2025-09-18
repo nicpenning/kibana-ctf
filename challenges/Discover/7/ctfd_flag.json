@@ -1,1 +1,7 @@
-{"id":6,"challenge_id":6,"type":"static","content":"{ctf_where_we_goin_we_dont_need_roads}","data":"case_insensitive"}
+{
+  "id": 1006,
+  "challenge_id": 1006,
+  "type": "static",
+  "content": "{ctf_where_we_goin_we_dont_need_roads}",
+  "data": "case_insensitive"
+}

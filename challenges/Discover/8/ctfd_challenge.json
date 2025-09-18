@@ -1,5 +1,5 @@
 {
-  "id": 8,
+  "id": 1008,
   "name": "⚠️ 🕰️ ⛏️",
   "description": "Good news, I cracked the code on creating a custom time selection. I created the perfect time selector that upper management need which just might get me promoted. Don't steal my idea!\r\n\r\nOn a completly unrelated note, how many days has it been since our last incident? I need to validate something. . .\r\n\r\nAnswer is in the format of: {ctf_X_days_since_last_incident} where X = number of days.\r\n\r\n![](https://media1.tenor.com/m/FkJZe6MJ2u8AAAAd/rafiki-its-time.gif)",
   "max_attempts": 10,
@@ -9,7 +9,7 @@
   "state": "visible",
   "requirements": {
     "prerequisites": [
-      2
+      1002
     ],
     "anonymize": true
   },

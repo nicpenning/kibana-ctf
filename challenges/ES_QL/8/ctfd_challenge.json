@@ -1,5 +1,5 @@
 {
-  "id": 18,
+  "id": 2008,
   "name": "LOOK! UP in the sky!",
   "description": "ES|QL supports joining data from multiple sources! Use the lookup index `join-threat-data` to enrich the logs-kibana-ctf event that is identified in the query.\n\n![](https://github.com/nicpenning/kibana-ctf/blob/main/images/chat_gpt_superquery.png)",
   "max_attempts": 10,

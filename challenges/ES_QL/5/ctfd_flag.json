@@ -1,1 +1,7 @@
-{"id":15,"challenge_id":15,"type":"static","content":"{ctf_wow_nice_job_finding_this_custom_id}","data":"case_insensitive"}
+{
+  "id": 2005,
+  "challenge_id": 2005,
+  "type": "static",
+  "content": "{ctf_wow_nice_job_finding_this_custom_id}",
+  "data": "case_insensitive"
+}
