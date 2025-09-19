@@ -1229,32 +1229,32 @@ Process {
             }
             '6' {
                 # 6. Check for Requirements
-                Write-Host "`n🔍 Checking requirements: PowerShell, Docker, and Docker Compose..." -ForegroundColor Cyan
+                Write-Host "`n🔍 Checking requirements: PowerShell, Docker, and Docker Compose..."
 
                 # PowerShell check
                 if ($PSVersionTable.PSVersion.Major -lt 7 -or ($PSVersionTable.PSVersion.Major -eq 7 -and $PSVersionTable.PSVersion.Minor -lt 4)) {
                     Write-Host "⚠️ PowerShell 7.4 or newer is required. Current version: $($PSVersionTable.PSVersion)" -ForegroundColor Yellow
                 } else {
-                    Write-Host "✅ PowerShell requirement met. Version: $($PSVersionTable.PSVersion)" -ForegroundColor Green
+                    Write-Host "✅ PowerShell requirement met. Version: $($PSVersionTable.PSVersion)"
                 }
 
                 # Docker check
                 if (-not (Get-Command "docker" -ErrorAction SilentlyContinue)) {
                     Write-Host "⚠️ Docker not found! Please install Docker and ensure it's in your PATH." -ForegroundColor Yellow
                 } else {
-                    Write-Host "✅ Docker requirement met. Docker is available in PATH." -ForegroundColor Green
+                    Write-Host "✅ Docker requirement met. Docker is available in PATH."
                 }
 
                 # Docker Compose check
                 $composeVersion = docker compose version 2>$null
                 if ($composeVersion) {
-                    Write-Host "✅ Docker Compose requirement met. Detected: $composeVersion" -ForegroundColor Green
+                    Write-Host "✅ Docker Compose requirement met. Detected: $composeVersion"
                 } else {
                     Write-Host "⚠️ Docker Compose not detected. Will attempt fallback to 'docker-compose' if needed." -ForegroundColor Yellow
                 }
 
                 # (Future) Elastic Stack & CTFd running checks could go here
-                Write-Host "`n🎯 Requirements check complete!" -ForegroundColor Blue
+                Write-Host "`n🎯 Requirements check complete!"
                 $finished = $true
                 break
             }
@@ -1286,6 +1286,6 @@ Process {
 }
 
 End {
-    Write-Host "This is the end. Thanks for using this script!" -ForegroundColor Blue
+    Write-Host "🙏🏻 This is the end. Thanks for using this script!"
     $finished = $null
 }
