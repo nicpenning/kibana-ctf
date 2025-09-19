@@ -1229,33 +1229,32 @@ Process {
             }
             '6' {
                 # 6. Check for Requirements
-                Write-Host "Checking for correct versions of PowerShell and that Docker/Docker Compose exists"
+                Write-Host "`n🔍 Checking requirements: PowerShell, Docker, and Docker Compose..." -ForegroundColor Cyan
 
-                # Check for PowerShell
+                # PowerShell check
                 if ($PSVersionTable.PSVersion.Major -lt 7 -or ($PSVersionTable.PSVersion.Major -eq 7 -and $PSVersionTable.PSVersion.Minor -lt 4)) {
-                    Write-Host "This script requires PowerShell 7.4 or newer. Current version: $($PSVersionTable.PSVersion)" -ForegroundColor "Yellow"
-                }else{
-                    Write-Host "PowerShell requirement met. This script requires PowerShell 7.4 or newer. Current version: $($PSVersionTable.PSVersion)" -ForegroundColor "Green"
+                    Write-Host "⚠️ PowerShell 7.4 or newer is required. Current version: $($PSVersionTable.PSVersion)" -ForegroundColor Yellow
+                } else {
+                    Write-Host "✅ PowerShell requirement met. Version: $($PSVersionTable.PSVersion)" -ForegroundColor Green
                 }
 
-                # Check for Docker
+                # Docker check
                 if (-not (Get-Command "docker" -ErrorAction SilentlyContinue)) {
-                    Write-Host "Docker is not installed or not in PATH." -ForegroundColor "Yellow"
-                }else{
-                    Write-Host "Docker requirement met. This script requires docker and was found in PATH." -ForegroundColor "Green"
+                    Write-Host "⚠️ Docker not found! Please install Docker and ensure it's in your PATH." -ForegroundColor Yellow
+                } else {
+                    Write-Host "✅ Docker requirement met. Docker is available in PATH." -ForegroundColor Green
                 }
 
-                # Check for Docker Compose
-                $composeVersion = docker compose version
-                if($composeVersion){
-                    Write-Host "Docker Compose requirement met. $composeVersion detected" -ForegroundColor "Green"
-                }else{
-                    Write-Host "Docker Compose not detected, will now check for docker-compose" -ForegroundColor "Yellow"
+                # Docker Compose check
+                $composeVersion = docker compose version 2>$null
+                if ($composeVersion) {
+                    Write-Host "✅ Docker Compose requirement met. Detected: $composeVersion" -ForegroundColor Green
+                } else {
+                    Write-Host "⚠️ Docker Compose not detected. Will attempt fallback to 'docker-compose' if needed." -ForegroundColor Yellow
                 }
 
-                # Check for running Elastic Stack (Future use case if needed)
-                # Check for running CTFd (Future use case if needed)
-
+                # (Future) Elastic Stack & CTFd running checks could go here
+                Write-Host "`n🎯 Requirements check complete!" -ForegroundColor Blue
                 $finished = $true
                 break
             }
