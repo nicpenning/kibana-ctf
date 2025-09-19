@@ -722,6 +722,61 @@ Begin {
             }
         }
         
+        # Retrieve pages from pages.json file and convert it into an object
+        $pages_object = Get-Content './setup/CTFd/pages.json' | ConvertFrom-Json -Depth 10
+        # $config_object = Get-Content './setup/CTFd/config.json' | ConvertFrom-Json -Depth 10 # Deprecated
+
+        # Import Page(s) 1 by 1
+        Write-Debug "Importing $($pages_object.results.count) page(s)"
+        $pages_object.results | ForEach-Object {
+            # Get current page
+            $current_pages = $_ | ConvertTo-Json -Compress
+
+            Write-Debug "Importing page: $($_.title)"
+            try{
+                $import_pages = Invoke-RestMethod -Method POST "$CTFd_URL_API/pages" -ContentType "application/json" -Headers $ctfd_auth -Body $current_pages
+                Write-Host "✅ Imported page $($_.title) - $($import_pages.success)"
+            }catch{
+                Write-Debug "⚠️ Could not import page."
+                Write-Debug "Will try to update the current page."
+                try{
+                    $update_pages = Invoke-RestMethod -Method PATCH "$CTFd_URL_API/pages/1" -ContentType "application/json" -Headers $ctfd_auth -Body $current_pages
+                    Write-Host "✅ Pages updated: $($update_pages.success)"
+                }catch{
+                    Write-Host "❌ Could not import page: $($_.title)"
+                    Write-Host "⚠️ Note: This shouldn't impact the CTF platform if everything else worked."
+                    Write-Debug $_.Exception
+                }
+            }
+        }
+
+        <# Import Config (Deprecated)
+        Write-Debug "Importing $($config_object.results.count) config option(s)"
+        $config_object.results | ForEach-Object {
+            # Get current config
+            $current_config = $_ | ConvertTo-Json -Compress
+
+            Write-Debug "Importing config option: $($_.key)"
+            try{
+                $import_config = Invoke-RestMethod -Method POST "$CTFd_URL_API/configs" -ContentType "application/json" -Headers $ctfd_auth -Body $current_config
+                Write-Debug "✅ Imported config option: $($_.key) - $($import_config.success)"
+            }catch{
+                Write-Debug "Could not import config."
+                Write-Debug $_.Exception
+            }
+        }#>
+
+        # Import Logo
+        Write-Debug "Importing logo for home page"
+        $form = @{
+            "page_id" = 1
+            "type" = "page"
+            "file" = Get-Item -Path "images/DALLE_Capture_The_Flag_logo.webp"
+            "location" = "9e66f558e02ce69471d071f5d9a049c0/DALLE_Capture_The_Flag_logo.webp"
+        }
+        $response = Invoke-RestMethod -Method POST -Uri "$CTFd_URL_API/files" -Headers $ctfd_auth -Form $form
+        Write-Host "✅ Imported logo file`: $($response.success)"
+
         Write-Host "`n🏁 Done with Invoke-CTFd-Deploy.`n" -ForegroundColor Magenta
     }
 
@@ -1049,61 +1104,6 @@ Begin {
                 }
             }
         }
-
-        # Retrieve challenges from challenges.json file and convert it into an object
-        $pages_object = Get-Content './setup/CTFd/pages.json' | ConvertFrom-Json -Depth 10
-        # $config_object = Get-Content './setup/CTFd/config.json' | ConvertFrom-Json -Depth 10 # Deprecated
-
-        # Import Page(s) 1 by 1
-        Write-Debug "Importing $($pages_object.results.count) page(s)"
-        $pages_object.results | ForEach-Object {
-            # Get current page
-            $current_pages = $_ | ConvertTo-Json -Compress
-
-            Write-Debug "Importing page: $($_.title)"
-            try{
-                $import_pages = Invoke-RestMethod -Method POST "$CTFd_URL_API/pages" -ContentType "application/json" -Headers $ctfd_auth -Body $current_pages
-                Write-Host "✅ Imported page $($_.title) - $($import_pages.success)"
-            }catch{
-                Write-Debug "⚠️ Could not import page."
-                Write-Debug "Will try to update the current page."
-                try{
-                    $update_pages = Invoke-RestMethod -Method PATCH "$CTFd_URL_API/pages/1" -ContentType "application/json" -Headers $ctfd_auth -Body $current_pages
-                    Write-Host "✅ Pages updated: $($update_pages.success)"
-                }catch{
-                    Write-Host "❌ Could not import page: $($_.title)"
-                    Write-Host "⚠️ Note: This shouldn't impact the CTF platform if everything else worked."
-                    Write-Debug $_.Exception
-                }
-            }
-        }
-
-        <# Import Config (Deprecated)
-        Write-Debug "Importing $($config_object.results.count) config option(s)"
-        $config_object.results | ForEach-Object {
-            # Get current config
-            $current_config = $_ | ConvertTo-Json -Compress
-
-            Write-Debug "Importing config option: $($_.key)"
-            try{
-                $import_config = Invoke-RestMethod -Method POST "$CTFd_URL_API/configs" -ContentType "application/json" -Headers $ctfd_auth -Body $current_config
-                Write-Debug "✅ Imported config option: $($_.key) - $($import_config.success)"
-            }catch{
-                Write-Debug "Could not import config."
-                Write-Debug $_.Exception
-            }
-        }#>
-
-        # Import Logo
-        Write-Debug "Importing logo for home page"
-        $form = @{
-            "page_id" = 1
-            "type" = "page"
-            "file" = Get-Item -Path "images/DALLE_Capture_The_Flag_logo.webp"
-            "location" = "9e66f558e02ce69471d071f5d9a049c0/DALLE_Capture_The_Flag_logo.webp"
-        }
-        $response = Invoke-RestMethod -Method POST -Uri "$CTFd_URL_API/files" -Headers $ctfd_auth -Form $form
-        Write-Host "✅ Imported logo file`: $($response.success)"
 
         Write-Host "`n✅ Setup complete! Your CTF environment is now live and ready to roll!" -ForegroundColor Green
         Write-Host "------------------------------------------------------------"
