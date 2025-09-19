@@ -23,7 +23,7 @@ function challenge {
     # Create join-threat-data lookup index
     try {
         $result = Invoke-RestMethod -Method PUT -Uri "$Elasticsearch_URL/join-threat-data" -Body $lookupSettings -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck -ErrorAction Stop
-        Write-Host "✅ Index [join-threat-data] created successfully." -ForegroundColor Green
+        Write-Host "✅ Index [join-threat-data] created successfully."
     }
     catch {
         $errMsg = $_.ErrorDetails.Message

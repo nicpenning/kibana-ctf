@@ -207,11 +207,11 @@ Begin {
         $jobs = Get-Job
         $dockerInUse = $($jobs.Command | ForEach-Object { $_ | select-string "docker compose up" })
         if ($dockerInUse) {
-        Write-Host "Docker found to be running" -ForegroundColor Yellow
-        return "True"
+            Write-Host "🐳 Docker found to be running" -ForegroundColor Yellow
+            return "True"
         } else {
-        Write-Debug "Docker was not found to be running"
-        return "False"
+            Write-Debug "Docker was not found to be running"
+            return "False"
         }
     }
     
@@ -242,7 +242,7 @@ Begin {
 
     function Invoke-CheckForInUsePorts {
         $ports = @("9200", "5601")
-        Write-Host "Checking for Elasticsearch (9200) and Kibana (5601) ports being in use before starting docker."
+        Write-Host "🔎 Checking for Elasticsearch (9200) and Kibana (5601) ports being in use before starting docker."
         $portsInUse = @()
         foreach ($port in $ports) {
             $testConnection = Test-Connection -TargetName "localhost" -TcpPort $port
@@ -276,28 +276,28 @@ Begin {
                 Write-Host "Docker install was detected using WSL2, so an additional setting needs to be configured for memory consumption."
                 $wslMaxMem = Read-Host "The following file will be created: "$ENV:USERPROFILE\.wslconfig" `nWould you like to continue?`n1. Yes`n2. No, exit`n(Enter 1 or 2)"
                 if($wslMaxMem -eq 1){
-                $maxmem = @"
+                    $maxmem = @"
         [wsl2]
         kernelCommandLine = "sysctl.vm.max_map_count=262144"
 "@
-                Write-Host "Creating file $ENV:USERPROFILE\.wslconfig with the contents of:$maxmem"
-                try{
-                    $maxmem | Out-File "$ENV:USERPROFILE\.wslconfig"
-                    Write-Host "File created!" -ForegroundColor Green
-                }catch{
-                    Write-Host "File could not be created." -ForegroundColor Red
-                }
+                    Write-Host "Creating file $ENV:USERPROFILE\.wslconfig with the contents of:$maxmem"
+                    try{
+                        $maxmem | Out-File "$ENV:USERPROFILE\.wslconfig"
+                        Write-Host "✅ File created!" -ForegroundColor Green
+                    }catch{
+                        Write-Host "⚠️ File could not be created." -ForegroundColor Red
+                    }
                 }else{
-                Write-Host "Required WSL file was not created, exiting."
-                Exit
+                    Write-Host "❌ Required WSL file was not created, exiting."
+                    Exit
                 }
             }else{
-                Write-Host "Docker install was not detected using WSL2 so you might need to adjust your docker settings to allow additional RAM usage for this setup to work."
-                Write-Host "If Elasticsearch never gets working then check your Docker containers to see if they exited and if so, check the logs and see why the failed and fix accordingly."
+                Write-Host "⚠️ Docker install was not detected using WSL2 so you might need to adjust your docker settings to allow additional RAM usage for this setup to work."
+                Write-Host "❌ If Elasticsearch never gets working then check your Docker containers to see if they exited and if so, check the logs and see why the failed and fix accordingly."
             }
         }
         
-        Write-Host "Starting up the Elastic stack with docker, please be patient as this can take over 10 minutes to download and deploy the entire stack if this is the first time you executed this step.`nOtherwise this will take just a couple of minutes."
+        Write-Host "⏳ Starting up the Elastic stack with docker, please be patient as this can take over 10 minutes to download and deploy the entire stack if this is the first time you executed this step.`nOtherwise this will take just a couple of minutes."
         Set-Location .\setup\Elastic\docker_elastic_stack
         try {
             $composeVersion = docker compose version
@@ -305,12 +305,12 @@ Begin {
                 Write-Debug '"docker compose detected"'
                 $checkInUsePorts = Invoke-CheckForInUsePorts
                 if($checkInUsePorts){
-                    Write-Host "Ports detected already in use. Make sure these ports are available before continuing. Exiting."
+                    Write-Host "❌ Ports detected already in use. Make sure these ports are available before continuing. Exiting."
                     exit
                 }else{
                     docker compose up -d
                 }
-                Write-Host "Elastic Stack containers started, navigate to $Kibana_URL to ensure it started okay.`nNote: It could a few minutes to get the Elastic stack running so be patient.)" -ForegroundColor Green
+                Write-Host "✅ Elastic Stack containers started, navigate to $Kibana_URL to ensure it started okay.`nNote: It could a few minutes to get the Elastic stack running so be patient.)" -ForegroundColor Green
             }else{
                 Throw '"docker compose" not detected, will now check for docker-compose'
             }
@@ -319,13 +319,13 @@ Begin {
             try {
                 $dockerComposeVersion = docker-compose version
                 if($dockerComposeVersion){
-                Write-Debug '"docker-compose detected"'
-                docker-compose up -d
+                    Write-Debug '"docker-compose detected"'
+                    docker-compose up -d
                 }else{
-                Throw '"docker-compose" not detected.'
+                    Throw '"docker-compose" not detected.'
                 }
             } catch {
-                Write-Host "docker compose up -d or docker-compose up -d did not work. Check that you have docker and docker composed installed."
+                Write-Host "❌ docker compose up -d or docker-compose up -d did not work. Check that you have docker and docker composed installed."
             }
         }
         Set-Location ..\..\..\
@@ -337,7 +337,7 @@ Begin {
         try { 
             docker compose down
         } catch {
-            Write-Host "Failed to use docker compose down, so trying docker-compose down."
+            Write-Host "⚠️ Failed to use docker compose down, so trying docker-compose down."
             docker-compose down
         }
         Set-Location ..\..\..\
@@ -398,7 +398,7 @@ Begin {
             $result = Invoke-RestMethod -Method POST -Uri $createKibanaCTFSpaceURL -Headers $kibanaHeader -ContentType "application/json" -Body $spaceJSON -AllowUnencryptedAuthentication
         }catch{
             # Delete and try again if Kibana CTF Space already exists.
-            Write-Host "Failed to create the Kibana CTF space. Going to delete it if it exists and try to create it again." -ForegroundColor Yellow
+            Write-Host "⚠️ Failed to create the Kibana CTF space. Going to delete it if it exists and try to create it again." -ForegroundColor Yellow
             Invoke-RestMethod -Method DELETE -Uri $deleteKibanaCTFSpaceURL -Headers $kibanaHeader -ContentType "application/json" -AllowUnencryptedAuthentication
             $result = Invoke-RestMethod -Method POST -Uri $createKibanaCTFSpaceURL -Headers $kibanaHeader -ContentType "application/json" -Body $spaceJSON -AllowUnencryptedAuthentication
         }
@@ -413,28 +413,44 @@ Begin {
 
     function Invoke-Create-Kibana-CTF-User-Role {
         try {
-            Write-Host "Creating role that will be applied to the kibana-ctf user during the user creation process following this step."
+            Write-Host "`n🔧 Creating the Kibana CTF role..." -ForegroundColor Cyan
             $result = Invoke-RestMethod -Method PUT -Uri $ctfUserRoleURL -Body $ctfUserRole -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck
-            Write-Host "Created CTF User Role: $($result.role.created)"
+
+            Write-Host "✅ Kibana CTF role created successfully!" -ForegroundColor Green
+
+            Write-Host "`n👥 This role will be assigned to all CTF players to ensure they have the right access in Kibana." -ForegroundColor Blue
+            Write-Host "   (No admin privileges here — just enough to compete fairly!)" -ForegroundColor DarkGray
         } catch {
-            Write-Host "Couldn't create role for CTF user. Check Kibana to see if the Kibana CTF role already exists." -ForegroundColor Yellow
-            Write-Host "$_"
+            Write-Host "❌ Couldn't create the Kibana CTF role." -ForegroundColor Red
+            Write-Host "💡 Check Kibana to see if the role already exists." -ForegroundColor Yellow
+            Write-Host "Error details: $_" -ForegroundColor DarkGray
         }
     }
 
     function Invoke-Create-Kibana-CTF-User {
         try {
-            Write-Host "Creating user that should be used to compete in the CTF with the Kibana CTF role mapping."
+            Write-Host "`n👤 Creating Kibana CTF user with the proper role mapping..." -ForegroundColor Cyan
             $result = Invoke-RestMethod -Method PUT -Uri $ctfUserCreateURL -Body $ctfUserCreate -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck
-            Write-Host "Created kibana-ctf user: $($result.created)"
-            Write-Host "Credentials for the Kibana CTF user are:`nusername: kibana-ctf`npassword: kibana-ctf--please-change-me" -ForegroundColor Green
-            Write-Host "If you wish to create more users, use the elastic account that the setup used before and create and number users you wish. `nJust make sure to add the Kibana CTF role to their account." -ForegroundColor Yellow
-            Write-Host "Test user credentials by navigating to $Kibana_URL/s/kibana-ctf/app/home#/ and logging in with the kibana-ctf user." -ForegroundColor Yellow
+
+            Write-Host "✅ kibana-ctf user created successfully!" -ForegroundColor Green
+
+            Write-Host "`n🔑 Credentials for your shiny new Kibana CTF user:" -ForegroundColor Blue
+            Write-Host "   Username : kibana-ctf" -ForegroundColor DarkCyan
+            Write-Host "   Password : kibana-ctf--please-change-me" -ForegroundColor DarkCyan
+
+            Write-Host "`n💡 Tip: If you want more players, log in as the 'elastic' superuser and create additional accounts." -ForegroundColor Yellow
+            Write-Host "   Just remember to assign them the 'Kibana CTF' role so they can play!" -ForegroundColor Yellow
+
+            Write-Host "`n🕹️ Test your new user by visiting:" -ForegroundColor Cyan
+            Write-Host "   $Kibana_URL/s/kibana-ctf/app/home#/" -ForegroundColor Green
+            Write-Host "   (Log in with kibana-ctf to confirm access)" -ForegroundColor DarkGray
         } catch {
-            Write-Host "Couldn't create kibana-ctf user. Check Kibana to see if the user already exists." -ForegroundColor Yellow
-            Write-Host "$_"
+            Write-Host "❌ Couldn't create kibana-ctf user." -ForegroundColor Red
+            Write-Host "💡 Check Kibana to see if the user already exists." -ForegroundColor Yellow
+            Write-Host "Error details: $_" -ForegroundColor DarkGray
         }
     }
+
 
     function Invoke-Ingest-Elasticsearch-Documents {
         Param (
@@ -506,14 +522,16 @@ Begin {
 
     function Invoke-Create-Index-Template {
         try {
-            Write-Host "Creating Index Template for challenges then setup will be complete."
+            Write-Host "`n📂 Creating Index Template for challenges..." -ForegroundColor Cyan
             $result = Invoke-RestMethod -Method PUT -Uri $indexTemplateURL -Body $indexTemplate -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck
-            Write-Host "Created Index Template: $($result.acknowledged)"
+            Write-Host "✅ Index Template created successfully!" -ForegroundColor Green
         } catch {
-            Write-Host "Couldn't create Index Template for ctf data. Check Kibana to see if the Index Template already exists." -ForegroundColor Yellow
-            Write-Host "$_"
+            Write-Host "❌ Couldn't create Index Template for CTF data." -ForegroundColor Red
+            Write-Host "💡 Tip: Check Kibana to see if the Index Template already exists." -ForegroundColor Yellow
+            Write-Host "Error details: $_" -ForegroundColor DarkGray
         }
     }
+
 
     function Invoke-Generate-FakeEvent {
         <#
@@ -648,145 +666,203 @@ Begin {
 
     function Invoke-CTFd-Deploy {
         # 1. Deploy CTFd
+        <# 
+        .SYNOPSIS
+        Deploys or runs the CTFd Docker instance.
 
+        .DESCRIPTION
+        Checks if the CTFd directory exists. If yes, offers to run it. 
+        If no, offers to clone, deploy, and run via Docker.
+        #>
+
+        Write-Host "`n======================================================" -ForegroundColor Cyan
+        Write-Host " 🚩  Invoke-CTFd-Deploy - Challenge Platform Setup  🚩 " -ForegroundColor Magenta
+        Write-Host "======================================================`n" -ForegroundColor Cyan
+        
         # Check to see if CTFd has been deployed, and if not, ask to deploy.
-        try{
+        try {
             $pathForCTFd = Get-Item ../CTFd -ErrorAction Ignore
-        }catch{
-            Write-Host "CTFd path does not exist."
+        } catch {
+            Write-Host "⚠️  No CTFd path detected." -ForegroundColor Yellow
         }
-        if($null -ne ($pathForCTFd)){
-            $runCTFd = Read-host "CTFd directory detected! Would you like to run CTFd via docker? (Y/n)"
-            if($runCTFd -match "y" -or $runCTFd -eq ""){
+
+        if ($null -ne $pathForCTFd) {
+            $runCTFd = Read-Host "📂 CTFd directory found! Would you like to run CTFd via Docker? (Y/n)"
+            if ($runCTFd -match "y" -or $runCTFd -eq "") {
                 Set-Location ../CTFd
-                Write-Host "Bringing CTFd up! (Use docker compose down anytime from the CTFd directory to stop the container)" -ForegroundColor Green
+                Write-Host "`n▶️  Launching CTFd..." -ForegroundColor Green
+                Write-Host "   (Hint: Use 'docker compose down' from the CTFd dir to stop)" -ForegroundColor DarkGray
                 docker compose up -d
                 Set-Location ../kibana-ctf/
-                Write-Host "CTFd downloaded and began the process to bring it up. Navigate to $CTFd_URL to continue the setup process.`nNote: It could take a few minutes for the container to come up." -ForegroundColor Green
-            }else{
-                Write-Host "You said no, you do not wish to run CTFd, exiting." -ForegroundColor Yellow
+                Write-Host "`n✅ CTFd is starting up! Navigate to:" -ForegroundColor Green
+                Write-Host "   🌍 $CTFd_URL" -ForegroundColor Cyan
+                Write-Host "   (It may take a few minutes for the container to be fully ready)" -ForegroundColor DarkGray
+            } else {
+                Write-Host "`n❌ You chose not to run CTFd. Exiting..." -ForegroundColor Yellow
             }
-        }else{
-            $runCTFd = Read-host "CTFd directory not detected, would you like to download and run CTFd via docker? (Y/n)"
-            if($runCTFd -match "y" -or  $runCTFd -eq ""){
+        } else {
+            $runCTFd = Read-Host "📂 No CTFd directory found. Would you like to clone and deploy it via Docker? (Y/n)"
+            if ($runCTFd -match "y" -or $runCTFd -eq "") {
                 Set-Location ../
+                Write-Host "`n🔄 Cloning CTFd repo..." -ForegroundColor Cyan
                 git clone https://github.com/CTFd/CTFd.git
                 Set-Location ./CTFd/
-                Write-Host "Bringing CTFd up! (Use docker compose down anytime from the CTFd directory to stop the container)" -ForegroundColor Green
+                Write-Host "`n▶️  Launching CTFd..." -ForegroundColor Green
                 docker compose up -d
                 Set-Location ../kibana-ctf/
-                Write-Host "CTFd downloaded and began the process to bring it up. Navigate to $CTFd_URL to continue the setup process.`nNote: It could take a few minutes for the container to come up." -ForegroundColor Green
-                Write-Host "Refer to ReadMe `"How to get started`" for next steps. (https://github.com/nicpenning/kibana-ctf?tab=readme-ov-file#how-to-get-started)"
-                Write-Host "Once finished from the steps provided, run the script again and run option 2. to begin the setup for the Elastic Stack instance."
+                Write-Host "`n✅ CTFd has been downloaded and is starting up!" -ForegroundColor Green
+                Write-Host "   🌍 Navigate to $CTFd_URL to complete setup" -ForegroundColor Cyan
+                Write-Host "   (It may take a few minutes for the container to be fully ready)" -ForegroundColor DarkGray
+                Write-Host "`n📖 Refer to the README for next steps:" -ForegroundColor Green
+                Write-Host "   https://github.com/nicpenning/kibana-ctf?tab=readme-ov-file#how-to-get-started" -ForegroundColor Cyan
+                Write-Host "`n👉 Once finished, rerun this script and select option 2 to begin Elastic Stack setup." -ForegroundColor Green
                 Pause
-            }else{
-                Write-Host "You said no, you do not wish to deploy and run CTFd, exiting." -ForegroundColor Yellow
+            } else {
+                Write-Host "`n❌ You chose not to deploy CTFd. Exiting..." -ForegroundColor Yellow
             }
         }
+        
+        Write-Host "`n🏁 Done with Invoke-CTFd-Deploy.`n" -ForegroundColor Magenta
     }
 
     function Invoke-Elastic-Stack-Deploy {
         # 2. Deploy Elastic Stack
         
+        <#
+        .SYNOPSIS
+            Deploys the Elastic Stack for use with the CTF project.
+
+        .DESCRIPTION
+            This function automates the setup of the Elastic Stack environment by:
+            1. Checking for existing configuration (.env file).
+            2. Offering the option to generate a secure .env file with random credentials.
+            3. Starting or restarting the Elastic Stack via Docker Compose.
+            4. Configuring Elasticsearch credentials for automated use.
+            5. Verifying that Elasticsearch is running and available.
+            6. Guiding the user through logging into Kibana.
+            7. Bootstrapping required resources (Index Templates, Kibana Space, CTF Role/User).
+        #>
+
         # Check to see if various parts of the project have already been configured to reduce the need for user input.
-        # 1. Check to see if .env file exists with credentials.
+        # -------------------------------
+        # 1. Environment Configuration
+        # -------------------------------
+        # If no .env file exists, give the user the option to generate one with secure defaults.
         if ($(Invoke-CheckForEnv) -eq "False") {
-            # Choose to use docker or not. If no .env is found, then ask.
-            $dockerChoice = Read-Host "Would you like to use docker with this project? `
-        1. Yes, please generate a secure .env file. (Recommended) `
-        2. No thanks, I know what I am doing or I already have a .env file ready to go.`
-        Please Choose (1 or 2)"
+            Write-Host "Would you like to use docker with this project?"
+            Write-Host "[1] Yes, please generate a secure .env file. (Recommended)"
+            Write-Host "[2] No thanks, I know what I am doing or I already have a .env file ready to go."
+            $dockerChoice = Read-Host "Please Choose (1 or 2)"
         
             if ($dockerChoice -eq "1") {
-                # Generate a .env file with random passwords for Elasticsearch and Kibana. Also generate secure Kibana key for reporting funcationality.
+                # Generate a secure .env file with random credentials for Elasticsearch and Kibana.
                 $env = Get-Content .\setup\Elastic\docker_elastic_stack\.env_template
-                
-                # Replace $elasticsearchPassword
-                $elasticsearchPassword = $(-Join (@('0'..'9';'A'..'Z';'a'..'z';'!';'@';'#') | Get-Random -Count 32))
-                $env = $env.Replace('$elasticsearchPassword', $elasticsearchPassword) 
-                
-                # Replace $kibanaPassword
-                $kibanaPassword = $(-Join (@('0'..'9';'A'..'Z';'a'..'z';'!';'@';'#') | Get-Random -Count 32))
+
+                # Random password for elastic user
+                $elasticsearchPassword = -Join ((@('0'..'9';'A'..'Z';'a'..'z';'!';'@';'#')) | Get-Random -Count 32)
+                $env = $env.Replace('$elasticsearchPassword', $elasticsearchPassword)
+
+                # Random password for Kibana system user
+                $kibanaPassword = -Join ((@('0'..'9';'A'..'Z';'a'..'z';'!';'@';'#')) | Get-Random -Count 32)
                 $env = $env.Replace('$kibanaPassword', $kibanaPassword)
-            
-                # Replace $kibanaEncryptionKey
-                $kibanaEncryptionKey = $(-Join (@('0'..'9';'A'..'Z';'a'..'z';'!';'@';'#') | Get-Random -Count 32))
+
+                # Random Kibana encryption key
+                $kibanaEncryptionKey = -Join ((@('0'..'9';'A'..'Z';'a'..'z';'!';'@';'#')) | Get-Random -Count 32)
                 $env = $env.Replace('$kibanaEncryptionKey', $kibanaEncryptionKey)
-            
-                $env | Out-File .\setup\Elastic\docker_elastic_stack\.env
-            
-                Write-Host "New file has been created (.env) and is ready for use." -ForegroundColor Green
-                Write-Host "The following credentials will be used for setup and access to your Elastic stack so keep it close." -ForegroundColor Blue
-                Write-Host "Username : elastic`nPassword : $elasticsearchPassword"
+
+                # Write the completed .env file
+                $env | Out-File .\setup\Elastic\docker_elastic_stack\.env -Force
+
+                Write-Host "✅ New .env file created successfully!" -ForegroundColor Green
+                Write-Host "ℹ️  Credentials generated for Elasticsearch and Kibana:" -ForegroundColor Blue
+                Write-Host "    Username : elastic"
+                Write-Host "    Password : $elasticsearchPassword"
                 Pause
             } else {
-                Write-Debug "Did not choose to use docker so ignoring docker setup."
+                Write-Debug "User skipped Docker setup. Assuming manual or pre-existing configuration."
             }
         } else {
-                Write-Debug "Docker .env file already exists with password skipping to next section."
+            Write-Debug ".env file already exists. Skipping environment generation."
         }
         
-        # 2. Check to see if docker compose has been executed.
-        if (Invoke-CheckForDockerInUse -eq "False") {
-            # Choose to start docker.
-            $startStack = Read-Host "Would you like to start up the Elastic stack with docker? `
-        1. Yes, please run the docker commands to start the Elastic stack for me (Recommended) `
-        2. No thanks, I will get my cluster up and running without your help and then continue the process `
-        Please Choose (1 or 2)"
+        # -------------------------------
+        # 2. Docker Startup
+        # -------------------------------
         
+        if (Invoke-CheckForDockerInUse -eq "False") {
+            # Prompt to start Elastic Stack containers
+            Write-Host "Would you like to start up the Elastic Stack with Docker?"
+            Write-Host "[1] Yes, please run Docker Compose up for me (Recommended)"
+            Write-Host "[2] No thanks, I will handle the cluster manually."
+            $startStack = Read-Host "Please choose (1 or 2)"
+
             if ($startStack -eq "1") {
                 Invoke-StartDocker
             } elseif ($startStack -eq "2") {
-                Write-Debug "Skipping to next part of the process."
+                Write-Debug "User opted to manually start Elasticsearch/Kibana."
             } else {
-                Write-Debug "Not a valid option. Exiting."
+                Write-Host "❌ Invalid option selected. Exiting." -ForegroundColor Red
                 exit
             }
         } elseif (Invoke-CheckForDockerInUse -eq "True") {
-            Write-Host "Docker found to be running. Would you like to stop and then start Docker?"
-            $restartDocker = Read-Host "1. Yes, please restart Docker`n2. No, please leave it running.`nPlease Choose (1 or 2)"
+            # Optionally restart Docker containers
+            Write-Host "Docker is already running. Would you like to restart it?"
+            Write-Host "[1] Yes, restart Docker (docker-compose down & up)"
+            Write-Host "[2] No, keep it running."
+            $restartDocker = Read-Host "Please choose (1 or 2)"
+
             if ($restartDocker -eq 1) {
-                Write-Host "Stopping current docker instances by bringing them down with docker compose down."
+                Write-Host "Stopping existing containers..." -ForegroundColor Yellow
                 Invoke-StopDocker
-                Write-Host "Starting docker containers back up with docker compose up -d &"
+                Write-Host "Starting fresh containers..." -ForegroundColor Yellow
                 Invoke-StartDocker
             } else {
-                Write-Debug "Continuing with current docker instance running."
+                Write-Debug "Continuing with currently running Docker instance."
             }
         } else {
-            Write-Host "Something is amiss, couldn't check to see if Docker was in use or not. Exiting." -ForegroundColor Yellow
+            Write-Host "⚠️  Unable to determine Docker status. Exiting." -ForegroundColor Yellow
             exit
         }
-        
-        # Configure Elasticsearch credentials for creating the Elasticsearch ingest pipelines and importing saved objects into Kibana.
-        # Force usage of elastic user by trying genereated creds first, then manual credential harvest
+
+        # -------------------------------
+        # 3. Credential Handling
+        # -------------------------------
+        # Use generated password if available, otherwise prompt user.
         if ($elasticsearchPassword) {
-            Write-Host "Elastic credentials detected! Going to use those for the setup process." -ForegroundColor Blue
+            Write-Host "Detected generated credentials — using those for setup." -ForegroundColor Blue
             $elasticsearchPasswordSecure = ConvertTo-SecureString -String "$elasticsearchPassword" -AsPlainText -Force
             $elasticCreds = New-Object System.Management.Automation.PSCredential -ArgumentList "elastic", $elasticsearchPasswordSecure
         } else {
-            Write-Host "No generated credentials were found! Going to need the password for the elastic user." -ForegroundColor Yellow
-            # When no passwords were generated, then prompt for credentials
+            Write-Host "⚠️ No generated password found. Please enter Elastic user credentials." -ForegroundColor Yellow
             $elasticCreds = Get-Credential elastic
         }
-        
-        # Set passwords via automated configuration or manual input
-        # Base64 Encoded elastic:secure_password for Kibana auth
-        $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
+
+        # Prepare base64 auth string for Kibana API requests
+        $elasticCredsBase64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(
+            $elasticCreds.UserName + ":" + ($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)
+        ))
         $kibanaAuth = "Basic $elasticCredsBase64"
 
-        # 3. Check to see if Elasticsearch is available for use.
+        # -------------------------------
+        # 4. Verify Elasticsearch Status
+        # -------------------------------
         Invoke-CheckForElasticsearchStatus
-        
-        $configurationSettings.initializedElasticStack = "true"
-        $configurationSettings | Convertto-JSON | Out-File ./configuration.json -Force
-        
-        Write-Host "But first, please navigate to your Kibana instance to make sure you can log in.`nCopy and Paste the URL below to navigate to Kibana (ctrl-click might not work):" -ForegroundColor Yellow
-        Write-Host "Kibana instance up and runnin here --> $Kibana_URL" -ForegroundColor DarkCyan
-        Write-Host "Username : elastic`nPassword : $elasticsearchPassword"
-        Write-Host "Proceed once you have confirmed you can log in to Kibana with the elastic user." -ForegroundColor Yellow
-        Pause
 
+        # Save state to configuration.json
+        $configurationSettings.initializedElasticStack = "true"
+        $configurationSettings | ConvertTo-Json | Out-File ./configuration.json -Force
+
+        # -------------------------------
+        # 5. User Confirmation for Kibana
+        # -------------------------------
+        Write-Host "`nPlease confirm Kibana is accessible before proceeding." -ForegroundColor Yellow
+        Write-Host "Kibana instance running at --> $Kibana_URL" -ForegroundColor DarkCyan
+        Write-Host "Username : elastic`nPassword : $elasticsearchPassword"
+        $null = Read-Host "⚠️ Once confirmed, press any key to continue..."
+
+        # -------------------------------
+        # 6. Bootstrap Required Resources
+        # -------------------------------
         # Create Index Template for Challenges
         Invoke-Create-Index-Template
 
@@ -798,7 +874,6 @@ Begin {
 
         # Create kibana-ctf user with Kibana CTF Role Mapping
         Invoke-Create-Kibana-CTF-User
-
     }
 
     function Invoke-Elastic-and-CTFd-Challenges {
@@ -977,7 +1052,7 @@ Begin {
 
         # Retrieve challenges from challenges.json file and convert it into an object
         $pages_object = Get-Content './setup/CTFd/pages.json' | ConvertFrom-Json -Depth 10
-        $config_object = Get-Content './setup/CTFd/config.json' | ConvertFrom-Json -Depth 10
+        # $config_object = Get-Content './setup/CTFd/config.json' | ConvertFrom-Json -Depth 10 # Deprecated
 
         # Import Page(s) 1 by 1
         Write-Debug "Importing $($pages_object.results.count) page(s)"
@@ -1003,7 +1078,7 @@ Begin {
             }
         }
 
-        # Import Config
+        <# Import Config (Deprecated)
         Write-Debug "Importing $($config_object.results.count) config option(s)"
         $config_object.results | ForEach-Object {
             # Get current config
@@ -1012,12 +1087,12 @@ Begin {
             Write-Debug "Importing config option: $($_.key)"
             try{
                 $import_config = Invoke-RestMethod -Method POST "$CTFd_URL_API/configs" -ContentType "application/json" -Headers $ctfd_auth -Body $current_config
-                Write-Host "✅ Imported config option: $($_.key) - $($import_config.success)"
+                Write-Debug "✅ Imported config option: $($_.key) - $($import_config.success)"
             }catch{
-                Write-Host "Could not import config."
+                Write-Debug "Could not import config."
                 Write-Debug $_.Exception
             }
-        }
+        }#>
 
         # Import Logo
         Write-Debug "Importing logo for home page"
