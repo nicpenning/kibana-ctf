@@ -96,6 +96,7 @@ Begin {
     }
 
     function Get-CTFd-Admin-Token {
+        Write-Host "`n🗝️ Access Token can be generated here: http://127.0.0.1:8000/settings -> Access Tokens -> Set Expiration -> Generate" -ForegroundColor Cyan
         $ctfd_token = Get-CTFd-Creds
         $ctfd_auth = @{"Authorization" = "Token $ctfd_token"}
 
@@ -697,6 +698,7 @@ Begin {
                 Write-Host "`n✅ CTFd is starting up! Navigate to:" -ForegroundColor Green
                 Write-Host "   🌍 $CTFd_URL" -ForegroundColor Cyan
                 Write-Host "   (It may take a few minutes for the container to be fully ready)" -ForegroundColor DarkGray
+                $ctfd_auth = Get-CTFd-Admin-Token
             } else {
                 Write-Host "`n❌ You chose not to run CTFd. Exiting..." -ForegroundColor Yellow
             }
@@ -713,10 +715,12 @@ Begin {
                 Write-Host "`n✅ CTFd has been downloaded and is starting up!" -ForegroundColor Green
                 Write-Host "   🌍 Navigate to $CTFd_URL to complete setup" -ForegroundColor Cyan
                 Write-Host "   (It may take a few minutes for the container to be fully ready)" -ForegroundColor DarkGray
-                Write-Host "`n📖 Refer to the README for next steps:" -ForegroundColor Green
+                Write-Host "`n🛠️  Next Step is to follow the wizard and create the admin account and then obtain an Access Key:" -ForegroundColor Green
+                Write-Host "`n📖 Refer to the README for the detailed next steps:" -ForegroundColor Green
                 Write-Host "   https://github.com/nicpenning/kibana-ctf?tab=readme-ov-file#how-to-get-started" -ForegroundColor Cyan
                 Write-Host "`n👉 Once finished, rerun this script and select option 2 to begin Elastic Stack setup." -ForegroundColor Green
-                Pause
+                # Setup up Auth header
+                $ctfd_auth = Get-CTFd-Admin-Token
             } else {
                 Write-Host "`n❌ You chose not to deploy CTFd. Exiting..." -ForegroundColor Yellow
             }
