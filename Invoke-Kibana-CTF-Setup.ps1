@@ -168,7 +168,8 @@ Begin {
 
         # Check for token
         if ($configurationSettings.ContainsKey("CTFd_Access_Token") -and `
-            -not [string]::IsNullOrWhiteSpace($configurationSettings.CTFd_Access_Token)) {
+            -not [string]::IsNullOrWhiteSpace($configurationSettings.CTFd_Access_Token) -and `
+            -not ($configurationSettings.CTFd_Access_Token -eq "ctfd_access_token")) {
 
             $CTFd_Access_Token = $configurationSettings.CTFd_Access_Token
             Write-Host "🚩 CTFd Access Token detected in $ConfigPath`: $CTFd_Access_Token" -ForegroundColor Green
@@ -1059,7 +1060,7 @@ Begin {
         # -------------------------------
         # 5. User Confirmation for Kibana
         # -------------------------------
-        $kibanaStatus = Invoke-CheckForKibanaStatus -KibanaUrl $Kibana_URL -MaxRetries 3 -InitialDelay 30 -credential $elasticCreds
+        $kibanaStatus = Invoke-CheckForKibanaStatus -KibanaUrl $Kibana_URL -MaxRetries 3 -InitialDelay 90 -credential $elasticCreds
         if($kibanaStatus -eq $false){
             "Took to long for Kibana to start. Please check credentials, Kibana URL, or the Docker logs for errors."
             exit
