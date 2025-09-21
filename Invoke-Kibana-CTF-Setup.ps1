@@ -115,7 +115,7 @@ Begin {
             # If prompting is enabled
             if ($PSCmdlet.ParameterSetName -eq 'Prompt') {
                 if ($AsSecureString) {
-                    $Value = Read-Host "Enter value for [$Key]" -AsSecureString | `
+                    $Value = Read-Host "Enter value for [$Key]" -AsSecureString |
                         ForEach-Object { [System.Net.NetworkCredential]::new("", $_).Password }
                 } else {
                     $Value = Read-Host "Enter value for [$Key]"
@@ -125,25 +125,26 @@ Begin {
             # Update/Add the key
             $config[$Key] = $Value
 
-            # Rebuild PSD1 as text
-            $sb = [System.Text.StringBuilder]::new()
-            $null = $sb.AppendLine("@{")
+            # Rebuild PSD1 as text (no extra trailing lines)
+            $lines = @("@{")
             foreach ($k in ($config.Keys | Sort-Object)) {
                 $v = $config[$k]
 
-                # Quote strings, leave numbers/bools bare
                 if ($v -is [string]) {
-                    $null = $sb.AppendLine("    $k = '$v'")
-                } elseif ($v -is [bool]) {
-                    $null = $sb.AppendLine("    $k = $($v.ToString().ToLower())")
-                } else {
-                    $null = $sb.AppendLine("    $k = $v")
+                    $escaped = $v.Replace("'", "''")
+                    $lines += "    $k = '$escaped'"
+                }
+                elseif ($v -is [bool]) {
+                    $lines += "    $k = $($v.ToString().ToLower())"
+                }
+                else {
+                    $lines += "    $k = $v"
                 }
             }
-            $null = $sb.AppendLine("}")
+            $lines += "}"
 
-            # Write back to file
-            $sb.ToString() | Set-Content -Path $Path -Encoding UTF8
+            # Write back to file (no trailing newline)
+            [System.IO.File]::WriteAllLines($Path, $lines, [System.Text.Encoding]::UTF8)
 
             Write-Host "✅ Updated [$Key] in $Path" -ForegroundColor Green
         }
@@ -151,6 +152,7 @@ Begin {
             throw "❌ Failed to update PSD1 file: $_"
         }
     }
+
 
     function Get-CTFd-Creds {
         param (
@@ -335,6 +337,64 @@ Begin {
             Write-Host "⚙️ Elastic cluster is $($status.status), continuing through the setup process."
             Start-Sleep -Seconds 2
         }
+    }
+
+    function Invoke-CheckForKibanaStatus {
+        param(
+            [string]$KibanaUrl = $Kibana_URL,
+            [pscredential]$Credential,
+            [int]$MaxRetries = 6,        # number of attempts
+            [int]$InitialDelay = 5       # starting delay in seconds
+        )
+
+        $attempt = 0
+        $delay = $InitialDelay
+
+        while ($attempt -lt $MaxRetries) {
+            try {
+                Write-Host "🌐 Checking Kibana health at $KibanaUrl (Attempt $($attempt+1)/$MaxRetries)..." -ForegroundColor Cyan
+
+                # Prepare Authorization header if credentials provided
+                $headers = @{}
+                if ($Credential) {
+                    $plainCreds   = "$($Credential.UserName):$($Credential.GetNetworkCredential().Password)"
+                    $encodedCreds = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($plainCreds))
+                    $headers["Authorization"] = "Basic $encodedCreds"
+                }
+
+                # Call the status API and parse JSON
+                $resp = Invoke-RestMethod -Uri ("{0}/api/status" -f $KibanaUrl) -Headers $headers -TimeoutSec 10 -ErrorAction Stop
+
+                # Newer Kibana uses `status.overall.level` (e.g. "available")
+                $level = $null
+                if ($resp -and $resp.status -and $resp.status.overall -and $resp.status.overall.level) {
+                    $level = $resp.status.overall.level
+                }
+
+                if ($level -eq "available") {
+                    Write-Host "✅ Kibana is: $level." -ForegroundColor Green
+                    return $true
+                } elseif ($level) {
+                    Write-Host "⚠️ Kibana responded but is not 'available'. Level: $level" -ForegroundColor Yellow
+                    # continue to retry in case it moves to available
+                } else {
+                    Write-Host "❌ Unexpected response from Kibana status API." -ForegroundColor Red
+                    Write-Host "Response preview: $($resp | ConvertTo-Json -Depth 3)" -ForegroundColor DarkGray
+                }
+            } catch {
+                Write-Host "❌ Kibana not reachable at $KibanaUrl (attempt $($attempt+1)). Error: $($_.Exception.Message)" -ForegroundColor Red
+            }
+
+            $attempt++
+            if ($attempt -lt $MaxRetries) {
+                Write-Host "⏳ Waiting $delay seconds before retry..." -ForegroundColor Cyan
+                Start-Sleep -Seconds $delay
+                $delay *= 2
+            }
+        }
+
+        Write-Host "❌ Kibana did not become available after $MaxRetries attempts." -ForegroundColor Red
+        return $false
     }
 
     function Invoke-CheckForInUsePorts {
@@ -996,14 +1056,17 @@ Begin {
         # Save state to configuration.psd1
         Update-Psd1Value -Path "./configuration.psd1" -Key "initializedElasticStack" -Value "true"
 
-
         # -------------------------------
         # 5. User Confirmation for Kibana
         # -------------------------------
-        Write-Host "`nPlease confirm Kibana is accessible before proceeding." -ForegroundColor Yellow
-        Write-Host "Kibana instance running at --> $Kibana_URL" -ForegroundColor DarkCyan
+        $kibanaStatus = Invoke-CheckForKibanaStatus -KibanaUrl $Kibana_URL -MaxRetries 3 -InitialDelay 30 -credential $elasticCreds
+        if($kibanaStatus -eq $false){
+            "Took to long for Kibana to start. Please check credentials, Kibana URL, or the Docker logs for errors."
+            exit
+        }
+
+        Write-Host "Kibana instance is successfully running at --> $Kibana_URL" -ForegroundColor DarkCyan
         Write-Host "Username : elastic`nPassword : $elasticsearchPassword"
-        $null = Read-Host "⚠️ Once confirmed, press any key to continue..."
 
         # -------------------------------
         # 6. Bootstrap Required Resources
@@ -1021,187 +1084,187 @@ Begin {
         Invoke-Create-Kibana-CTF-User
     }
 
-function Invoke-Elastic-and-CTFd-Challenges {
-    # Import CTFd and Elastic Stack Challenges
-    # Show Menu if script was not provided the choice on execution using the Option_Selected variable
-        
-    if ($null -eq $CTF_Options_Selected -or $CTF_Options_Selected) {
-        Show-CTF-Challenges-Menu
-        $CTF_Options_Selected = Read-Host "Enter your choice"
-    }
-
-    # Load configuration
-    $configPath = "./configuration.psd1"
-    $configurationSettings = Import-PowerShellDataFile -Path $configPath
-
-    # Get / Save CTFd Access Token
-    if ($configurationSettings.CTFd_Access_Token) {
-        $CTFd_Access_Token = $configurationSettings.CTFd_Access_Token
-        Write-Host "🚩 CTFd Access Token detected: $CTFd_Access_Token" -ForegroundColor Green
-    } else {
-        $CTFd_Access_Token = Get-CTFd-Admin-Token
-        Update-Psd1Value -Path $configPath -Key "CTFd_Access_Token" -Value $CTFd_Access_Token
-    }
-
-    # Get / Save Elasticsearch URL
-    if ($configurationSettings.Elasticsearch_URL) {
-        $Elasticsearch_URL = $configurationSettings.Elasticsearch_URL
-        Write-Host "🔎 Elasticsearch URL detected: $Elasticsearch_URL" -ForegroundColor Green
-    } else {
-        Write-Host "Elasticsearch URL required." -ForegroundColor Yellow
-        $Elasticsearch_URL = Read-Host "Enter full Elasticsearch URL (e.g. https://127.0.0.1:9200)"
-        Update-Psd1Value -Path $configPath -Key "Elasticsearch_URL" -Value $Elasticsearch_URL
-    }
-
-    # Get / Save Kibana URL
-    if ($configurationSettings.Kibana_URL) {
-        $Kibana_URL = $configurationSettings.Kibana_URL
-        Write-Host "📊 Kibana URL detected: $Kibana_URL" -ForegroundColor Green
-    } else {
-        Write-Host "Kibana URL required." -ForegroundColor Yellow
-        $Kibana_URL = Read-Host "Enter full Kibana URL (e.g. http://127.0.0.1:5601)"
-        Update-Psd1Value -Path $configPath -Key "Kibana_URL" -Value $Kibana_URL
-    }
-
-        # Configure Elasticsearch credentials for importing saved objects into Kibana.
-        # Get elastic user credentials
-    Write-Debug "Going to need the password for the elastic user. Checking for generated creds now."
-    $elasticCredsCheck = Invoke-CheckForEnv
-        # Set passwords via automated configuration or manual input
-        # Base64 Encoded elastic:secure_password for Kibana auth
-        if($($elasticCredsCheck)[0] -eq "True"){
-            $elasticPass = ConvertTo-SecureString -String $($($elasticCredsCheck)[1]) -AsPlainText -Force
-        $elasticCreds = New-Object System.Management.Automation.PSCredential("elastic", $elasticPass)
-    } else {
-        $elasticCreds = Get-Credential elastic
-    }
-        $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
-
-    $kibanaAuth = "Basic $elasticCredsBase64"
-                
-    # Check Elasticsearch
-    Invoke-CheckForElasticsearchStatus
-
-    # Ingest Dummy Documents
-    $docCount = 25000
-    $batchSize = 2500
-    Write-Host "Ingesting $docCount documents in batches of $batchSize..."
-
-    $spinner = @('|','/','-','\'); $i = 0
-    Write-Host "⏳ Generating $docCount fake documents..." -ForegroundColor Cyan
-
-    $dummyDocs = foreach ($n in 1..$docCount) {
-        Write-Host -NoNewline "`r$($spinner[$i % $spinner.Length]) Generating doc $n of $docCount..."
-        $i++
-        Invoke-Generate-FakeEvent
-    }
-    Write-Host "`r✅ Generated $($dummyDocs.Count) fake documents." -ForegroundColor Green
-
-    Invoke-Ingest-Elasticsearch-Documents -documentToIngest $dummyDocs -batchSize $batchSize
-
-    # Import Kibana Dashboard
-    Write-Host "📥 Importing Kibana CTF Dashboard"
-    Import-SavedObject "./setup/Elastic/kibana_dashboard.ndjson"
-
-    # Import Challenges (if selected)
-    if ((0, 1, 2, 3) -contains $CTF_Options_Selected) {
-        $rootManifestPath = "./challenges/challenge_categories.psd1"
-        if (-not (Test-Path $rootManifestPath)) {
-            Write-Host "❌ Root manifest not found at $rootManifestPath." -ForegroundColor Red
-            return
+    function Invoke-Elastic-and-CTFd-Challenges {
+        # Import CTFd and Elastic Stack Challenges
+        # Show Menu if script was not provided the choice on execution using the Option_Selected variable
+            
+        if ($null -eq $CTF_Options_Selected -or $CTF_Options_Selected) {
+            Show-CTF-Challenges-Menu
+            $CTF_Options_Selected = Read-Host "Enter your choice"
         }
 
-        try {
-            $rootManifest = Import-PowerShellDataFile -Path $rootManifestPath
-            $allCategories = $rootManifest.Categories
-        } catch {
-            Write-Host "❌ Failed to load $rootManifestPath. Ensure it is valid PSD1." -ForegroundColor Red
-            return
+        # Load configuration
+        $configPath = "./configuration.psd1"
+        $configurationSettings = Import-PowerShellDataFile -Path $configPath
+
+        # Get / Save CTFd Access Token
+        if ($configurationSettings.CTFd_Access_Token) {
+            $CTFd_Access_Token = $configurationSettings.CTFd_Access_Token
+            Write-Host "🚩 CTFd Access Token detected: $CTFd_Access_Token" -ForegroundColor Green
+        } else {
+            $CTFd_Access_Token = Get-CTFd-Admin-Token
+            Update-Psd1Value -Path $configPath -Key "CTFd_Access_Token" -Value $CTFd_Access_Token
         }
 
-        switch ($CTF_Options_Selected) {
-            0 { $challengeTypes = $allCategories }
-            1 { $challengeTypes = @("Discover") }
-            2 { $challengeTypes = @("ES_QL") }
-            3 { $challengeTypes = @("Dashboards") }
-            default {
-                Write-Host "⚠️ Invalid choice: '$CTF_Options_Selected'" -ForegroundColor Yellow
-                Write-Host "👉 Please enter a valid option (0–3)." -ForegroundColor Cyan
-                $challengeTypes = @()
-            }
+        # Get / Save Elasticsearch URL
+        if ($configurationSettings.Elasticsearch_URL) {
+            $Elasticsearch_URL = $configurationSettings.Elasticsearch_URL
+            Write-Host "🔎 Elasticsearch URL detected: $Elasticsearch_URL" -ForegroundColor Green
+        } else {
+            Write-Host "Elasticsearch URL required." -ForegroundColor Yellow
+            $Elasticsearch_URL = Read-Host "Enter full Elasticsearch URL (e.g. https://127.0.0.1:9200)"
+            Update-Psd1Value -Path $configPath -Key "Elasticsearch_URL" -Value $Elasticsearch_URL
         }
 
-        foreach ($type in $challengeTypes) {
-            Write-Host "`n=== Importing $type Challenges ===" -ForegroundColor Cyan
-            $challengeRoot = "./challenges/$type/"
-            if (-not (Test-Path $challengeRoot)) {
-                Write-Warning "⚠️ No $type challenges found at $challengeRoot. Skipping..."
-                continue
+        # Get / Save Kibana URL
+        if ($configurationSettings.Kibana_URL) {
+            $Kibana_URL = $configurationSettings.Kibana_URL
+            Write-Host "📊 Kibana URL detected: $Kibana_URL" -ForegroundColor Green
+        } else {
+            Write-Host "Kibana URL required." -ForegroundColor Yellow
+            $Kibana_URL = Read-Host "Enter full Kibana URL (e.g. http://127.0.0.1:5601)"
+            Update-Psd1Value -Path $configPath -Key "Kibana_URL" -Value $Kibana_URL
+        }
+
+            # Configure Elasticsearch credentials for importing saved objects into Kibana.
+            # Get elastic user credentials
+        Write-Debug "Going to need the password for the elastic user. Checking for generated creds now."
+        $elasticCredsCheck = Invoke-CheckForEnv
+            # Set passwords via automated configuration or manual input
+            # Base64 Encoded elastic:secure_password for Kibana auth
+            if($($elasticCredsCheck)[0] -eq "True"){
+                $elasticPass = ConvertTo-SecureString -String $($($elasticCredsCheck)[1]) -AsPlainText -Force
+            $elasticCreds = New-Object System.Management.Automation.PSCredential("elastic", $elasticPass)
+        } else {
+            $elasticCreds = Get-Credential elastic
+        }
+            $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
+
+        $kibanaAuth = "Basic $elasticCredsBase64"
+                    
+        # Check Elasticsearch
+        Invoke-CheckForElasticsearchStatus
+
+        # Ingest Dummy Documents
+        $docCount = 25000
+        $batchSize = 2500
+        Write-Host "Ingesting $docCount documents in batches of $batchSize..."
+
+        $spinner = @('|','/','-','\'); $i = 0
+        Write-Host "⏳ Generating $docCount fake documents..." -ForegroundColor Cyan
+
+        $dummyDocs = foreach ($n in 1..$docCount) {
+            Write-Host -NoNewline "`r$($spinner[$i % $spinner.Length]) Generating doc $n of $docCount..."
+            $i++
+            Invoke-Generate-FakeEvent
+        }
+        Write-Host "`r✅ Generated $($dummyDocs.Count) fake documents." -ForegroundColor Green
+
+        Invoke-Ingest-Elasticsearch-Documents -documentToIngest $dummyDocs -batchSize $batchSize
+
+        # Import Kibana Dashboard
+        Write-Host "📥 Importing Kibana CTF Dashboard"
+        Import-SavedObject "./setup/Elastic/kibana_dashboard.ndjson"
+
+        # Import Challenges (if selected)
+        if ((0, 1, 2, 3) -contains $CTF_Options_Selected) {
+            $rootManifestPath = "./challenges/challenge_categories.psd1"
+            if (-not (Test-Path $rootManifestPath)) {
+                Write-Host "❌ Root manifest not found at $rootManifestPath." -ForegroundColor Red
+                return
             }
 
-            $challenges = Get-ChildItem -Directory $challengeRoot | Sort-Object { [int]$_.Name } 
-            foreach ($challenge in $challenges) {
-                $challengePath = $challenge.FullName
-                $manifestPath = Join-Path $challengePath "challenge_manifest.psd1"
+            try {
+                $rootManifest = Import-PowerShellDataFile -Path $rootManifestPath
+                $allCategories = $rootManifest.Categories
+            } catch {
+                Write-Host "❌ Failed to load $rootManifestPath. Ensure it is valid PSD1." -ForegroundColor Red
+                return
+            }
 
-                if (-not (Test-Path $manifestPath)) {
-                    Write-Host "❌ Missing challenge_manifest.psd1 in $challengePath" -ForegroundColor Red
+            switch ($CTF_Options_Selected) {
+                0 { $challengeTypes = $allCategories }
+                1 { $challengeTypes = @("Discover") }
+                2 { $challengeTypes = @("ES_QL") }
+                3 { $challengeTypes = @("Dashboards") }
+                default {
+                    Write-Host "⚠️ Invalid choice: '$CTF_Options_Selected'" -ForegroundColor Yellow
+                    Write-Host "👉 Please enter a valid option (0–3)." -ForegroundColor Cyan
+                    $challengeTypes = @()
+                }
+            }
+
+            foreach ($type in $challengeTypes) {
+                Write-Host "`n=== Importing $type Challenges ===" -ForegroundColor Cyan
+                $challengeRoot = "./challenges/$type/"
+                if (-not (Test-Path $challengeRoot)) {
+                    Write-Warning "⚠️ No $type challenges found at $challengeRoot. Skipping..."
                     continue
                 }
 
-                    try {
-                        $manifest = Import-PowerShellDataFile -Path $manifestPath
-                    } catch {
-                        Write-Host "❌ Failed to load $manifestPath. Ensure it is a valid PSD1 file." -ForegroundColor Red
-                    continue
-                }
+                $challenges = Get-ChildItem -Directory $challengeRoot | Sort-Object { [int]$_.Name } 
+                foreach ($challenge in $challenges) {
+                    $challengePath = $challenge.FullName
+                    $manifestPath = Join-Path $challengePath "challenge_manifest.psd1"
 
-                if (-not $manifest.ContainsKey("RequiredFiles")) {
-                    Write-Warning "❌ No RequiredFiles entry in manifest for $type at $challengePath"
-                    continue
-                }
-
-                $requiredFiles = $manifest.RequiredFiles
-                $actualFiles   = Get-ChildItem -Path $challengePath -File | Select-Object -ExpandProperty Name
-                $missingFiles  = $requiredFiles | Where-Object { $_ -notin $actualFiles }
-
-                if ($missingFiles.Count -eq 0) {
-                    Write-Debug "✅ All required files found. Importing Challenge: $($manifest.Name)"
-                    $actualFiles | Where-Object { $_ -ne "challenge_manifest.psd1" } | ForEach-Object {
-                        switch ($_) {
-                            "ctfd_challenge.json"        { Invoke-Import-CTFd-Challenge "$challengePath/$_" }
-                            "ctfd_flag.json"             { Invoke-Import-CTFd-Flag "$challengePath/$_" }
-                            "ctfd_hint.json"             { Invoke-Import-CTFd-Hint "$challengePath/$_" }
-                            "elastic_import_script.ps1"  { . "$challengePath/$_"; challenge }
-                            "elastic_saved_objects.ndjson" { Import-SavedObject "$challengePath/$_" }
-                            "dynamic_flag.ps1"           { . "$challengePath/$_"; dynamic_flag }
-                        }
+                    if (-not (Test-Path $manifestPath)) {
+                        Write-Host "❌ Missing challenge_manifest.psd1 in $challengePath" -ForegroundColor Red
+                        continue
                     }
-                } else {
-                    Write-Host "⚠️ Missing required files for $type challenge. Import skipped." -ForegroundColor Yellow
-                    $missingFiles | ForEach-Object { Write-Host " - $_" -ForegroundColor Red }
+
+                        try {
+                            $manifest = Import-PowerShellDataFile -Path $manifestPath
+                        } catch {
+                            Write-Host "❌ Failed to load $manifestPath. Ensure it is a valid PSD1 file." -ForegroundColor Red
+                        continue
+                    }
+
+                    if (-not $manifest.ContainsKey("RequiredFiles")) {
+                        Write-Warning "❌ No RequiredFiles entry in manifest for $type at $challengePath"
+                        continue
+                    }
+
+                    $requiredFiles = $manifest.RequiredFiles
+                    $actualFiles   = Get-ChildItem -Path $challengePath -File | Select-Object -ExpandProperty Name
+                    $missingFiles  = $requiredFiles | Where-Object { $_ -notin $actualFiles }
+
+                    if ($missingFiles.Count -eq 0) {
+                        Write-Debug "✅ All required files found. Importing Challenge: $($manifest.Name)"
+                        $actualFiles | Where-Object { $_ -ne "challenge_manifest.psd1" } | ForEach-Object {
+                            switch ($_) {
+                                "ctfd_challenge.json"        { Invoke-Import-CTFd-Challenge "$challengePath/$_" }
+                                "ctfd_flag.json"             { Invoke-Import-CTFd-Flag "$challengePath/$_" }
+                                "ctfd_hint.json"             { Invoke-Import-CTFd-Hint "$challengePath/$_" }
+                                "elastic_import_script.ps1"  { . "$challengePath/$_"; challenge }
+                                "elastic_saved_objects.ndjson" { Import-SavedObject "$challengePath/$_" }
+                                "dynamic_flag.ps1"           { . "$challengePath/$_"; dynamic_flag }
+                            }
+                        }
+                    } else {
+                        Write-Host "⚠️ Missing required files for $type challenge. Import skipped." -ForegroundColor Yellow
+                        $missingFiles | ForEach-Object { Write-Host " - $_" -ForegroundColor Red }
+                    }
                 }
             }
         }
-    }
 
-        Write-Host "`n✅ Setup complete! Your CTF environment is now live and ready to roll!" -ForegroundColor Green
-    Write-Host "------------------------------------------------------------"
-        Write-Host "🌐 CTFd Platform:"
-        Write-Host "   👉 Navigate to $CTFd_URL"
-        Write-Host "   👉 Register your player account and start solving challenges!"
-        Write-Host ""
-        Write-Host "📊 Kibana CTF Playground:"
-        Write-Host "   👉 Navigate to $Kibana_URL"
-        Write-Host "   👉 Log in with the dedicated CTF account:"
-        Write-Host "       username: kibana-ctf"
-        Write-Host "       password: kibana-ctf--please-change-me" -ForegroundColor Yellow
-        Write-Host ""
-        Write-Host "🚀 You’re all set — challenges are waiting and flags are hidden!"
-        Write-Host "Sharpen your skills, dive deep into Kibana, and hunt those 🎯 flags!"
+            Write-Host "`n✅ Setup complete! Your CTF environment is now live and ready to roll!" -ForegroundColor Green
         Write-Host "------------------------------------------------------------"
-        Write-Host "🔥 Happy Hunting, and may the best analyst win! 🚩" -ForegroundColor Green
-}
+            Write-Host "🌐 CTFd Platform:"
+            Write-Host "   👉 Navigate to $CTFd_URL"
+            Write-Host "   👉 Register your player account and start solving challenges!"
+            Write-Host ""
+            Write-Host "📊 Kibana CTF Playground:"
+            Write-Host "   👉 Navigate to $Kibana_URL"
+            Write-Host "   👉 Log in with the dedicated CTF account:"
+            Write-Host "       username: kibana-ctf"
+            Write-Host "       password: kibana-ctf--please-change-me" -ForegroundColor Yellow
+            Write-Host ""
+            Write-Host "🚀 You’re all set — challenges are waiting and flags are hidden!"
+            Write-Host "Sharpen your skills, dive deep into Kibana, and hunt those 🎯 flags!"
+            Write-Host "------------------------------------------------------------"
+            Write-Host "🔥 Happy Hunting, and may the best analyst win! 🚩" -ForegroundColor Green
+    }
 
     function Invoke-Remove-CTFd {
         $continue = Read-Host "This action is destructive and will remove all CTFd resources such as the containers which in turn will lose all progress, users, flags, etc. Please backup your CTF using the UI if possible (https://docs.ctfd.io/docs/exports/ctfd-exports). If you wish to continue please type in: `nDELETE-CTFd-Instance"
