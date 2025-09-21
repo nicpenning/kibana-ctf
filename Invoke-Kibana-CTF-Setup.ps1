@@ -1023,7 +1023,7 @@ Begin {
 
 function Invoke-Elastic-and-CTFd-Challenges {
     # Import CTFd and Elastic Stack Challenges
-        # Show Menu if script was not provided the choice on execution using the Option_Selected variable
+    # Show Menu if script was not provided the choice on execution using the Option_Selected variable
         
     if ($null -eq $CTF_Options_Selected -or $CTF_Options_Selected) {
         Show-CTF-Challenges-Menu
