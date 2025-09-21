@@ -88,9 +88,6 @@ Now you need to create your CTFd user for completing the challenges. Open up CTF
 ## Modular Challenge Structure 🏗️
 Challenges are stored in the `challenges` and each challenge is part of a category and contains files necessary to build the challenge in CTFd and the populate the challenge in the Elastic stack. Don't look at these files if you wish to challenge yourself! These challenges are modular so more can be added later or tweaked as needed. Inside of the challenges directory, there are files as follows:
 
-
-Each challenge belongs to a **category** and contains the files necessary to build the challenge in CTFd and populate the Elastic stack. The structure is **modular**, so you can add or tweak challenges over time.
-
 ```
 Discover/
 ├── 1/ # Challenge Number (first challenge in the Discover category)
