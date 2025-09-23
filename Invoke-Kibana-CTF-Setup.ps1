@@ -917,8 +917,8 @@ Begin {
         $form = @{
             "page_id" = 1
             "type" = "page"
-            "file" = Get-Item -Path "images/DALLE_Capture_The_Flag_logo.webp"
-            "location" = "9e66f558e02ce69471d071f5d9a049c0/DALLE_Capture_The_Flag_logo.webp"
+            "file" = Get-Item -Path "images/kibana-ctf.png"
+            "location" = "kibana_ctf_images/kibana-ctf.png"
         }
         $response = Invoke-RestMethod -Method POST -Uri "$CTFd_URL_API/files" -Headers $ctfd_auth -Form $form
         Write-Host "✅ Imported logo file`: $($response.success)"
