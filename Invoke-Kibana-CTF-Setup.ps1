@@ -67,7 +67,8 @@ Begin {
     $CTFd_URL_API = $CTFd_URL+"/api/v1"
 
     # Extract custom settings from configuration.psd1
-    $configurationSettings = Import-PowerShellDataFile ./configuration.psd1
+    $configPath = "./configuration.psd1"
+    $configurationSettings = Import-PowerShellDataFile $configPath 
     
     if($null -eq $Elasticsearch_URL){$Elasticsearch_URL = $configurationSettings.Elasticsearch_URL}
     if($null -eq $Kibana_URL){ $Kibana_URL= $configurationSettings.Kibana_URL}
@@ -144,7 +145,8 @@ Begin {
             $lines += "}"
 
             # Write back to file (no trailing newline)
-            [System.IO.File]::WriteAllLines($Path, $lines, [System.Text.Encoding]::UTF8)
+            #[System.IO.File]::WriteAllLines($Path, $lines, [System.Text.Encoding]::UTF8)
+            Set-Content -Path (Resolve-Path $Path) -Value $lines -Encoding UTF8 -Force
 
             Write-Host "✅ Updated [$Key] in $Path" -ForegroundColor Green
         }
@@ -153,26 +155,14 @@ Begin {
         }
     }
 
-
     function Get-CTFd-Creds {
-        param (
-            [string]$ConfigPath = "./configuration.psd1"
-        )
-
-        if (-not (Test-Path $ConfigPath)) {
-            throw "❌ Config file not found: $ConfigPath"
-        }
-
-        # Import existing config
-        $configurationSettings = Import-PowerShellDataFile -Path $ConfigPath
-
         # Check for token
         if ($configurationSettings.ContainsKey("CTFd_Access_Token") -and `
             -not [string]::IsNullOrWhiteSpace($configurationSettings.CTFd_Access_Token) -and `
             -not ($configurationSettings.CTFd_Access_Token -eq "ctfd_access_token")) {
 
             $CTFd_Access_Token = $configurationSettings.CTFd_Access_Token
-            Write-Host "🚩 CTFd Access Token detected in $ConfigPath`: $CTFd_Access_Token" -ForegroundColor Green
+            Write-Host "🚩 CTFd Access Token detected in $ConfigPath" -ForegroundColor Green
         } else {
             Write-Host "`n🗝️ Access Token can be generated here:" -ForegroundColor Cyan
             Write-Host "   http://127.0.0.1:8000/settings -> Access Tokens -> Set Expiration -> Generate" -ForegroundColor Cyan
@@ -180,8 +170,13 @@ Begin {
             $CTFd_Access_Token = Read-Host "Enter the token for the administrator account. Starts with ctfd_" -MaskInput
 
             # Persist with helper function
-            Update-Psd1Value -Path $ConfigPath -Key "CTFd_Access_Token" -Value $CTFd_Access_Token
-            Write-Host "💾 CTFd Access Token saved to $ConfigPath for future use." -ForegroundColor Green
+            try{
+                Update-Psd1Value -Path $configPath -Key "CTFd_Access_Token" -Value $CTFd_Access_Token
+            }catch{
+                Write-Host "❌ Failed to update the configuration.psd1 file with the CTFd Access Token." -ForegroundColor Red
+            }
+
+            Write-Host "💾 CTFd Access Token saved to $configPath for future use." -ForegroundColor Green
         }
 
         return $CTFd_Access_Token
@@ -203,7 +198,7 @@ Begin {
         try{
             $validate = Invoke-RestMethod -Method GET -Uri "$CTFd_URL_API/pages" -ContentType "application/json" -Headers $ctfd_auth
             if($validate){
-                Write-Host "✅ Valid token provided!" -ForegroundColor Green
+                Write-Host "✅ Valid CTFd token provided!" -ForegroundColor Green
             }else{
                 Write-Host "❌ Could not validate, try another token or checking your connection to $CTFd_URL_API/pages endpoint."
             }
@@ -1094,18 +1089,8 @@ Begin {
             $CTF_Options_Selected = Read-Host "Enter your choice"
         }
 
-        # Load configuration
-        $configPath = "./configuration.psd1"
-        $configurationSettings = Import-PowerShellDataFile -Path $configPath
-
         # Get / Save CTFd Access Token
-        if ($configurationSettings.CTFd_Access_Token) {
-            $CTFd_Access_Token = $configurationSettings.CTFd_Access_Token
-            Write-Host "🚩 CTFd Access Token detected: $CTFd_Access_Token" -ForegroundColor Green
-        } else {
-            $CTFd_Access_Token = Get-CTFd-Admin-Token
-            Update-Psd1Value -Path $configPath -Key "CTFd_Access_Token" -Value $CTFd_Access_Token
-        }
+        $ctfd_auth = Get-CTFd-Admin-Token
 
         # Get / Save Elasticsearch URL
         if ($configurationSettings.Elasticsearch_URL) {
@@ -1127,15 +1112,16 @@ Begin {
             Update-Psd1Value -Path $configPath -Key "Kibana_URL" -Value $Kibana_URL
         }
 
-            # Configure Elasticsearch credentials for importing saved objects into Kibana.
-            # Get elastic user credentials
+        # Configure Elasticsearch credentials for importing saved objects into Kibana.
+        # Get elastic user credentials
         Write-Debug "Going to need the password for the elastic user. Checking for generated creds now."
         $elasticCredsCheck = Invoke-CheckForEnv
-            # Set passwords via automated configuration or manual input
-            # Base64 Encoded elastic:secure_password for Kibana auth
-            if($($elasticCredsCheck)[0] -eq "True"){
-                $elasticPass = ConvertTo-SecureString -String $($($elasticCredsCheck)[1]) -AsPlainText -Force
-            $elasticCreds = New-Object System.Management.Automation.PSCredential("elastic", $elasticPass)
+
+        # Set passwords via automated configuration or manual input
+        # Base64 Encoded elastic:secure_password for Kibana auth
+        if($($elasticCredsCheck)[0] -eq "True"){
+            $elasticPass = ConvertTo-SecureString -String $($($elasticCredsCheck)[1]) -AsPlainText -Force
+        $elasticCreds = New-Object System.Management.Automation.PSCredential("elastic", $elasticPass)
         } else {
             $elasticCreds = Get-Credential elastic
         }
