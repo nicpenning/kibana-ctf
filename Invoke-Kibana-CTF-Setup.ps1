@@ -312,7 +312,7 @@ Begin {
     
     function Invoke-CheckForElasticsearchStatus {
         # Check for Elastic stack connectivity to a healthy cluster
-        Write-Debug "Waiting for Elastic stack to be accessible."
+        Write-Host "🔎 Waiting for Elasticsearch to be accessible."
     
         $healthAPI = $Elasticsearch_URL+"/_cluster/health"
         Write-Debug "Using the URL: $healthAPI"
@@ -320,7 +320,7 @@ Begin {
         do {
             $trys = 0
             try {
-                Write-Host "Checking to see if the cluster is accessible. Please wait. If this takes more than a minute, make sure Elasticsearch is available." -ForegroundColor Cyan
+                Write-Debug "Checking to see if the cluster is accessible. Please wait. If this takes more than a minute, make sure Elasticsearch is available."
                 $status = Invoke-RestMethod -Method Get -Uri $healthAPI -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck  
             } catch {
                 Write-Debug "Waiting for healthy cluster for 5 seconds. Then checking again."
