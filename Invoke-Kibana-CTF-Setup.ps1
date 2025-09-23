@@ -318,14 +318,20 @@ Begin {
         Write-Debug "Using the URL: $healthAPI"
         # Keep checking for a healthy cluster that can be used for the initialization process!
         do {
+            $trys = 0
             try {
-                Write-Debug "Checking to see if the cluster is accessible. Please wait."
+                Write-Host "Checking to see if the cluster is accessible. Please wait. If this takes more than a minute, make sure Elasticsearch is available." -ForegroundColor Cyan
                 $status = Invoke-RestMethod -Method Get -Uri $healthAPI -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck  
             } catch {
                 Write-Debug "Waiting for healthy cluster for 5 seconds. Then checking again."
                 Write-Debug $_.Exception
                 $status
                 Start-Sleep -Seconds 5
+                $trys++
+                if($trys -gt 12){
+                    Write-Host "❌ Could not connect to the Elastic cluster. Please make sure it is running and the credentials are correct." -ForegroundColor Red
+                    exit
+                }
             }
         } until ("yellow" -eq $status.status -or "green" -eq $status.status)
     
