@@ -156,6 +156,9 @@ Begin {
     }
 
     function Get-CTFd-Creds {
+        # Check for existing token in configuration.psd1
+        $configurationSettings = Import-PowerShellDataFile $configPath
+
         # Check for token
         if ($configurationSettings.ContainsKey("CTFd_Access_Token") -and `
             -not [string]::IsNullOrWhiteSpace($configurationSettings.CTFd_Access_Token) -and `
