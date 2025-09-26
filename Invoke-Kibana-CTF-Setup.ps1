@@ -70,9 +70,14 @@ Begin {
     $configPath = "./configuration.psd1"
     $configurationSettings = Import-PowerShellDataFile $configPath 
     
-    if($null -eq $Elasticsearch_URL){$Elasticsearch_URL = $configurationSettings.Elasticsearch_URL}
-    if($null -eq $Kibana_URL){ $Kibana_URL= $configurationSettings.Kibana_URL}
-
+    if($configurationSettings.Elasticsearch_URL -ne "https://127.0.0.1:9200"){
+        $Elasticsearch_URL = $configurationSettings.Elasticsearch_URL
+        Write-Host "💾 Modifed Elasticsearch URL detected in configuration.psd1, using $Elasticsearch_URL" -ForegroundColor Yellow
+    }
+    if($configurationSettings.Kibana_URL -ne "http://127.0.0.1:5601"){
+        $Kibana_URL = $configurationSettings.Kibana_URL
+        Write-Host "💾 Modifed Kibana URL detected in configuration.psd1, using $Kibana_URL" -ForegroundColor Yellow
+    }
     # Elasticsearch Variables
     $indexName = "logs-kibana-ctf"
     $ingestIndexURL = $Elasticsearch_URL+"/$indexName/_doc"
