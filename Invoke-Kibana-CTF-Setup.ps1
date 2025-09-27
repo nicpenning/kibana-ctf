@@ -373,7 +373,7 @@ Begin {
                 }
 
                 # Call the status API and parse JSON
-                $resp = Invoke-RestMethod -Uri ("{0}/api/status" -f $KibanaUrl) -Headers $headers -TimeoutSec 10 -ErrorAction Stop
+                $resp = Invoke-RestMethod -Uri ("{0}/api/status" -f $KibanaUrl) -Headers $headers -TimeoutSec 10 -ErrorAction Stop -SkipCertificateCheck
 
                 # Newer Kibana uses `status.overall.level` (e.g. "available")
                 $level = $null
