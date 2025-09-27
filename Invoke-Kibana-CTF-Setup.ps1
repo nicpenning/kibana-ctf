@@ -554,12 +554,12 @@ Begin {
 
         # Create the space!
         try{
-            $result = Invoke-RestMethod -Method POST -Uri $createKibanaCTFSpaceURL -Headers $kibanaHeader -ContentType "application/json" -Body $kibanaCTFSpace -AllowUnencryptedAuthentication
+            $result = Invoke-RestMethod -Method POST -Uri $createKibanaCTFSpaceURL -Headers $kibanaHeader -ContentType "application/json" -Body $kibanaCTFSpace -AllowUnencryptedAuthentication -SkipCertificateCheck
         }catch{
             # Delete and try again if Kibana CTF Space already exists.
             Write-Host "⚠️ Failed to create the Kibana CTF space. Going to delete it if it exists and try to create it again." -ForegroundColor Yellow
-            Invoke-RestMethod -Method DELETE -Uri $deleteKibanaCTFSpaceURL -Headers $kibanaHeader -ContentType "application/json" -AllowUnencryptedAuthentication
-            $result = Invoke-RestMethod -Method POST -Uri $createKibanaCTFSpaceURL -Headers $kibanaHeader -ContentType "application/json" -Body $kibanaCTFSpace -AllowUnencryptedAuthentication
+            Invoke-RestMethod -Method DELETE -Uri $deleteKibanaCTFSpaceURL -Headers $kibanaHeader -ContentType "application/json" -AllowUnencryptedAuthentication -SkipCertificateCheck
+            $result = Invoke-RestMethod -Method POST -Uri $createKibanaCTFSpaceURL -Headers $kibanaHeader -ContentType "application/json" -Body $kibanaCTFSpace -AllowUnencryptedAuthentication -SkipCertificateCheck
         }
 
         if($result.errors -or $null -eq $result){
