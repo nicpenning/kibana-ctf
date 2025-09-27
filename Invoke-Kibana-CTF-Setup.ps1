@@ -532,7 +532,7 @@ Begin {
             "--$boundary--$LF" 
         ) -join $LF
     
-        $result = Invoke-RestMethod -Method POST -Uri $importSavedObjectsURL -Headers $kibanaHeader -ContentType "multipart/form-data; boundary=`"$boundary`"" -Body $bodyLines -AllowUnencryptedAuthentication
+        $result = Invoke-RestMethod -Method POST -Uri $importSavedObjectsURL -Headers $kibanaHeader -ContentType "multipart/form-data; boundary=`"$boundary`"" -Body $bodyLines -AllowUnencryptedAuthentication -SkipCertificateCheck
         if($result.errors -or $null -eq $result){
             Write-Host "❌ There was an error trying to import $filename"
             $result.errors
