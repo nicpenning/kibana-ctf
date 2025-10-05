@@ -99,7 +99,7 @@ Discover/
 │ └── elastic_saved_objects.ndjson# Saved objects for Elastic stack (Optional)
 ```
 
-With the new **manifest model**, each challenge folder must include a `challenge_manifest.psd1` file. This manifest declares which files belong to the challenge, allowing the setup script to automatically discover and import them.
+With this **manifest model**, each challenge folder must include a `challenge_manifest.psd1` file. This manifest declares which files belong to the challenge, allowing the setup script to automatically discover and import them.
 
 For more details on how challenges can be created, check out the [documentation](./documentation/Creating%20a%20Challenge.md).
 
