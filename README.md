@@ -55,6 +55,8 @@ pwsh
 ./Invoke-Kibana-CTF-Setup.ps1
 ```
 
+[Check out this quick run of the setup on YouTube!](https://youtu.be/v962vvBVokY)
+
 _Note: Run Option 6. Check for Requirements, then proceed to the next step if your environment meets the requirements._
 
 ### 2. Deploy everything from scratch - Use Option 7
