@@ -6,9 +6,7 @@ Kibana CTF is an open source Kibana CTF challenge simulation using the open sour
 
 🎯 Goal: Have fun diving deep into Kibana!
 
-🎶 Here is a Spotify playlist that works great as a motivator and timer! 
-
-https://open.spotify.com/playlist/3Rax5ahJdZkq1xrgkqDqTX?si=ce0c2f33bb8c43d0
+🎶 Soundtrack: [Spotify playlist](https://open.spotify.com/playlist/3Rax5ahJdZkq1xrgkqDqTX?si=ce0c2f33bb8c43d0) - Get in the zone and use this playlist while doing the CTF!
 
 _Features_:
 - [x] Discover challenges (10)
@@ -55,7 +53,10 @@ pwsh
 ./Invoke-Kibana-CTF-Setup.ps1
 ```
 
-[Check out this quick run of the setup on YouTube!](https://youtu.be/v962vvBVokY)
+↘️ Check out this speed run of the setup on YouTube! ↙️
+
+[![Watch speed run of setup!](https://img.youtube.com/vi/v962vvBVokY/hqdefault.jpg)](https://www.youtube.com/watch?v=v962vvBVokY)
+
 
 _Note: Run Option 6. Check for Requirements, then proceed to the next step if your environment meets the requirements._
 
