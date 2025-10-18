@@ -1,0 +1,19 @@
+{
+  "id": 3010,
+  "name": "Regex Rodeo",
+  "description": "Saddle up, partner — these wild regex patterns won’t wrangle themselves. Hold on tight and see if you can lasso that regex on the loose. While you do that, I will feast on this here donut. \r\n\r\n![mmm_donut](https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExY2lvMWg2cmpvbTcwam0wOHRsdWxiMHVpcWVxdXc1aTlya29haWNucCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Vglo1a00v4K3uVcgK3/giphy.gif)",
+  "max_attempts": 10,
+  "value": 30,
+  "category": "Visualization Sensation",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [
+      3007
+    ],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/dashboards#/view/4426fd7d-6500-4a3c-be8f-1530810571c7",
+  "next_id": null,
+  "attribution": null
+}

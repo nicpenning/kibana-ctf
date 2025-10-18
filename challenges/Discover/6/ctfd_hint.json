@@ -1,0 +1,10 @@
+{
+  "id": 1007,
+  "type": "standard",
+  "challenge_id": 1007,
+  "content": "Make sure you are in the custom-random-logz data view for this one!",
+  "cost": 0,
+  "requirements": {
+    "prerequisites": []
+  }
+}

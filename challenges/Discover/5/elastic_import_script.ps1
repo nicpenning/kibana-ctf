@@ -1,5 +1,5 @@
 function challenge {
-    $dateNow = ($(Get-Date -AsUTC)).ToString("o")
+    $dateNow = ($(Get-Date -AsUTC).AddHours(-2)).ToString("o")
     $challenge = [PSCustomObject]@{
         '@timestamp' = $dateNow
         message = "Just a regular event log, nothing to see here."
@@ -32,5 +32,5 @@ function challenge {
 
     $result = Invoke-Ingest-Elasticsearch-Documents -documentToIngest $challenge -customUrl $ingestIndexIDURL
 
-    return Write-Host "Challenge 5 imported." -ForegroundColor Green
+    return Write-Debug "✅ elastic_import_script.ps1 executed"
 }

@@ -1,0 +1,6 @@
+{
+  "id": 2008,
+  "challenge_id": 2008,
+  "content": "Field mappings can be a pain! I know the lookup index has the file.name.keyword field, so that should work. Perhaps I can create my own version of that field in my dataset.",
+  "type": "standard"
+}

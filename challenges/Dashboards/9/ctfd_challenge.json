@@ -1,0 +1,19 @@
+{
+  "id": 3009,
+  "name": "Fantastic Filter Fun",
+  "description": "Sometimes, you just gotta filter 'dem waffles. \r\n\r\n![lego_my_eggo](https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExNmNpdmJjcHU5ZDNvN2x5MWp5bnVybjZtOG05Zmk3MnZ3emR1ZWRqZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/12VJIhFyTivHJC/giphy.gif)",
+  "max_attempts": 10,
+  "value": 30,
+  "category": "Visualization Sensation",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [
+      3006
+    ],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/dashboards#/view/4426fd7d-6500-4a3c-be8f-1530810571c7",
+  "next_id": null,
+  "attribution": null
+}

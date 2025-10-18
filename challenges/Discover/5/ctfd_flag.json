@@ -1,1 +1,7 @@
-{"id":5,"challenge_id":5,"type":"static","content":"{ctf_fancy_query_in_json}","data":"case_insensitive"}
+{
+  "id": 1005,
+  "challenge_id": 1005,
+  "type": "static",
+  "content": "{ctf_fancy_query_in_json}",
+  "data": "case_insensitive"
+}

@@ -1,5 +1,5 @@
 function challenge {
-    $dateNow = ($(Get-Date -AsUTC)).ToString("o")
+    $dateNow = ($(Get-Date -AsUTC).AddHours(-2)).ToString("o")
     $challenge = [PSCustomObject]@{
         '@timestamp' = $dateNow
         message = "Just a regular event log, nothing to see here."
@@ -12,5 +12,5 @@ function challenge {
         $count++
     }while($count -lt 100)
 
-    return Write-Host "Challenge 9 imported." -ForegroundColor Green
+    return Write-Debug "✅ elastic_import_script.ps1 executed"
 }

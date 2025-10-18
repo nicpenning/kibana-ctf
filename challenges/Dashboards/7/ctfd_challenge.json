@@ -1,0 +1,21 @@
+{
+  "id": 3007,
+  "name": "Describe your perfect visualization",
+  "description": "Now only if I can figure out what the purpose of these visualizations are. \r\n\r\n![ralphie_computer](https://miro.medium.com/v2/resize:fit:640/format:webp/1*0OosM_BVC9dNILDoyvUGAg.gif)",
+  "max_attempts": 10,
+  "value": 20,
+  "category": "Visualization Sensation",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [
+      3001,
+      3002,
+      3003
+    ],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/dashboards#/view/4426fd7d-6500-4a3c-be8f-1530810571c7",
+  "next_id": null,
+  "attribution": null
+}

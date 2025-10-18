@@ -1,20 +1,15 @@
 {
-  "id": 10,
+  "id": 1010,
   "name": "Data is more than what meets the eye",
-  "description": "Allegedly Kibana can render more than just plain text in fields. I wonder if it can render images! Bonus points for the first one to figure this out!\r\n\r\n⚠️ Caution: This requires making changes that others will see, so once you figure it out, you may want to \"undo\" your changes :)\r\n\r\n![](https://y.yarn.co/a0a279b0-ab4f-43c2-82ce-ad3f6de61381_text.gif)",
-  "max_attempts": 0,
-  "value": 60,
+  "description": "Allegedly Kibana can render more than just plain text in fields. I wonder if it can render images!\r\n\r\n![](https://y.yarn.co/a0a279b0-ab4f-43c2-82ce-ad3f6de61381_text.gif)",
+  "max_attempts": 10,
+  "value": 70,
   "category": "(re)Discover",
-  "initial":60,
-  "minimum":30,
-  "decay":10,
-  "function":"linear",
-  "type": "dynamic",
+  "type": "standard",
   "state": "visible",
   "requirements": {
     "prerequisites": [
-      3,
-      7
+      1003
     ],
     "anonymize": true
   },

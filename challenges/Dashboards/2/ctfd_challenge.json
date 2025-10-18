@@ -1,0 +1,17 @@
+{
+  "id": 3002,
+  "name": "Be Descriptive",
+  "description": "Dashboards can be even more useful when you know what their purpose is. If the author isn't too lazy, they can provide some sort of description for their creation! \r\n\r\n![dashboard_fever](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQD5SEulkFry3y8zX3AcB6mhqXQAkjqBTnYtive043ZnMUO0-bVKbDgvZoA158OClzIMfk&usqp=CAU)",
+  "max_attempts": 10,
+  "value": 10,
+  "category": "Visualization Sensation",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/dashboards#/view/4426fd7d-6500-4a3c-be8f-1530810571c7",
+  "next_id": null,
+  "attribution": null
+}

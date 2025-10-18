@@ -1,0 +1,17 @@
+{
+  "id": 3003,
+  "name": "Me Tric",
+  "description": "Check out me new tric! I can display some solid numbers with a trend line! \r\n\r\n![metrics_everywhere](https://miro.medium.com/v2/resize:fit:640/format:webp/1*cdruN2ydQcDzrbSj_uYhhw.png)",
+  "max_attempts": 10,
+  "value": 10,
+  "category": "Visualization Sensation",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/dashboards#/view/4426fd7d-6500-4a3c-be8f-1530810571c7",
+  "next_id": null,
+  "attribution": null
+}

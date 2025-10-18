@@ -1,5 +1,5 @@
 function challenge {
-    $dateNow = ($(Get-Date -AsUTC)).ToString("o")
+    $dateNow = ($(Get-Date -AsUTC).AddHours(-2)).ToString("o")
     $challenge = [PSCustomObject]@{
         '@timestamp' = $dateNow
         message = "Just a regular event log, nothing to see here."
@@ -30,7 +30,7 @@ function challenge {
     } | ConvertTo-Json
     $ingestIndexIDURL = $Elasticsearch_URL+"/logs-kibana-ctf/_create/e2N0Zl93b3dfbmljZV9qb2JfZmluZGluZ190aGlzX2N1c3RvbV9pZH0"
 
-    Invoke-Ingest-Elasticsearch-Documents -documentToIngest $challenge -customUrl $ingestIndexIDURL
+    $result = Invoke-Ingest-Elasticsearch-Documents -documentToIngest $challenge -customUrl $ingestIndexIDURL
 
-    return Write-Host "Challenge 12 imported." -ForegroundColor Green
+    return Write-Debug "✅ elastic_import_script.ps1 executed"
 }

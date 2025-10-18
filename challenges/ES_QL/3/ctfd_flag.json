@@ -1,1 +1,7 @@
-{"id":14,"challenge_id":13,"type":"static","content":"{ctf_comments_for_the_win}","data":"case_insensitive"}
+{
+  "id": 2003,
+  "challenge_id": 2003,
+  "type": "static",
+  "content": "{ctf_comments_for_the_win}",
+  "data": "case_insensitive"
+}

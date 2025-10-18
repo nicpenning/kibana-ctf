@@ -1,0 +1,17 @@
+{
+  "id": 2006,
+  "name": "Regex Rumble",
+  "description": "ES|QL supports powerful pattern matching. Fix this syntax in the query to find the hidden flag in the logs!\n\n![](https://github.com/nicpenning/kibana-ctf/blob/new_challenges/images/chat_gpt_regex_rumble.png?raw=true)",
+  "max_attempts": 10,
+  "value": 50,
+  "category": "ES|QL != SQL",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/discover#/view/regex-rumble-id",
+  "next_id": null,
+  "attribution": null
+}

@@ -1,1 +1,7 @@
-{"id":12,"challenge_id":11,"type":"static","content":"{ctf_es|ql_is_not_sql_yay}","data":""}
+{
+  "id": 2001,
+  "challenge_id": 2001,
+  "type": "static",
+  "content": "{ctf_es|ql_is_not_sql_yay}",
+  "data": ""
+}

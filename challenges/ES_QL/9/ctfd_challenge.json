@@ -1,0 +1,17 @@
+{
+  "id": 2009,
+  "name": "Array Unleashed",
+  "description": "Arrays can hide secrets! Use ES|QL’s `mv_expand` to flatten the arrays and find the hidden flag. Not all secrets are visible at first glance…\n\n![](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQjoqIzU4QRljLlx9mebkdEFHEsyh8PzWEJ9g&s)",
+  "max_attempts": 10,
+  "value": 50,
+  "category": "ES|QL != SQL",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/discover#/view/mv-expand-id",
+  "next_id": null,
+  "attribution": null
+}

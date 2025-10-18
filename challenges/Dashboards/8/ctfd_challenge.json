@@ -1,0 +1,19 @@
+{
+  "id": 3008,
+  "name": "Secret Formula",
+  "description": "Oh my, how the tables have turned! I have hidden the secret formula, and I bet you will never find it! \r\n\r\n![imposter_krabs](https://media3.giphy.com/media/v1.Y2lkPTZjMDliOTUyY3I5OGV3YXVha2ZtODhrbG8ycGN1bGpvbGU4dmc5M2lsd3JwajhjeiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/e1zNzEJNM1WRG/giphy.gif)",
+  "max_attempts": 10,
+  "value": 30,
+  "category": "Visualization Sensation",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [
+      3005
+    ],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/dashboards#/view/4426fd7d-6500-4a3c-be8f-1530810571c7",
+  "next_id": null,
+  "attribution": null
+}

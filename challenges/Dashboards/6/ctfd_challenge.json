@@ -1,0 +1,21 @@
+{
+  "id": 3006,
+  "name": "Who’s in Control Here?",
+  "description": "Is it you, or is it Kibana? \r\n\r\n![whos_in_charge_here](https://i.redd.it/1szoy1lphm6a1.gif)",
+  "max_attempts": 10,
+  "value": 20,
+  "category": "Visualization Sensation",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [
+      3001,
+      3002,
+      3003
+    ],
+    "anonymize": true
+  },
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/dashboards#/view/4426fd7d-6500-4a3c-be8f-1530810571c7",
+  "next_id": null,
+  "attribution": null
+}

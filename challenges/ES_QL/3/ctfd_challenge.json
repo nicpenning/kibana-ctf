@@ -1,8 +1,8 @@
 {
-  "id": 13,
+  "id": 2003,
   "name": "No Comment",
   "description": "Apparently you can use comments in ES|QL - nice.\r\n\r\n![](https://media.tenor.com/6B2uvITD1OIAAAAM/bh187-minions.gif)\r\n",
-  "max_attempts": 0,
+  "max_attempts": 10,
   "value": 10,
   "category": "ES|QL != SQL",
   "type": "standard",
@@ -11,7 +11,7 @@
     "prerequisites": [],
     "anonymize": true
   },
-  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/discover#/view/f0b666be-6b99-4b57-8d27-2bad2bb95bc7",
+  "connection_info": "http://127.0.0.1:5601/s/kibana-ctf/app/discover#/view/comments-id",
   "next_id": null,
   "attribution": null
 }

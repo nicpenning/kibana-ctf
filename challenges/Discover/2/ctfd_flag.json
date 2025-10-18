@@ -1,1 +1,7 @@
-{"id":2,"challenge_id":2,"type":"static","content":"{ctf_one_query_to_find_them_all}","data":"case_insensitive"}
+{
+  "id": 1002,
+  "challenge_id": 1002,
+  "type": "static",
+  "content": "{ctf_one_query_to_find_them_all}",
+  "data": "case_insensitive"
+}

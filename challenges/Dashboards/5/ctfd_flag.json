@@ -1,0 +1,7 @@
+{
+    "id":3005,
+    "challenge_id":3005,
+    "type":"static",
+    "content":"{ctf_my_special_reference_format}",
+    "data":"case_insensitive"
+}

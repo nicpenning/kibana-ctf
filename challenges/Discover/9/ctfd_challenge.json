@@ -1,15 +1,15 @@
 {
-  "id": 9,
-  "name": "Patt Erns (Deprecated)",
-  "description": "Notice: This challenge requires a Platinum license of Elastic to solve.\r\n\r\nThere is a new guy in town and his name is Patt Erns. He claims there is an easy way to identify interesting arrangements of data, and he has only been here for the past **6 hours**. Is this something that you know how to do?\r\n\r\n![](https://wallpapersok.com/images/hd/doge-meme-faces-pattern-fqbgpvculd0224cz.jpg)",
-  "max_attempts": 0,
-  "value": 50,
+  "id": 1009,
+  "name": "Tag, You're It!",
+  "description": "Tags? Yes, please!\r\n\r\n![](https://media1.tenor.com/m/CQ8DZUon0IkAAAAC/spongebob-tag-youre-it.gif)",
+  "max_attempts": 10,
+  "value": 30,
   "category": "(re)Discover",
   "type": "standard",
   "state": "visible",
   "requirements": {
     "prerequisites": [
-      8
+      1008
     ],
     "anonymize": true
   },

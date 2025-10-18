@@ -1,0 +1,7 @@
+{
+    "id":3006,
+    "challenge_id":3006,
+    "type":"static",
+    "content":"{ctf_controls_are_nice_when_you_know_what_they_are_controlling}",
+    "data":"case_insensitive"
+}

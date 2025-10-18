@@ -6,17 +6,66 @@ Creating a new challenge for the Kibana CTF involves setting up several files th
 ## Step-by-Step Instructions
 
 ### 1. Choose a Category and Challenge Number
-Decide on a category for your challenge (e.g., Discover, ES|QL) and assign a unique challenge number. The structure should look like this:
+
+#### Challenge ID Reference Cheat Sheet
+
+To keep things consistent, all challenge IDs follow a **category-based scheme**. Use this as a quick lookup when creating new challenges:
+
+| Category     | ID Range   | Example IDs   |
+|--------------|------------|---------------|
+| **Discover**   | `1000+`    | 1001, 1002, 1003 … |
+| **ES\_QL**     | `2000+`    | 2001, 2002, 2003 … |
+| **Dashboards** | `3000+`    | 3001, 3002, 3003 … |
+
+👉 Each challenge, flag, and hint **must share the same ID** (e.g., Challenge 1001 → Flag 1001 → Hint 1001). If you need more than 1 flag or hint, add another digit at the end to the challenge ID and increment accordingly. Using the example above, the first hint ID would be 1001, and the second 10010, the third, 10011, etc.
+
+Decide on a category for your challenge (e.g., Discover, ES|QL) and assign the next available number. This directory number is simply an easy way to see how many challenges are in a category. It is not used for anything else. The structure should look like this:
 ```
-challenges/[category]/[challenge-number]/
+challenges/[category]/[number]/
 ```
 
-### 2. Create the ctfd_challenge.json File (Required)
+or in practice:
+
+```
+challenges/Discover/11/
+```
+
+The key is making sure that the IDs for challenges, flags, hints, etc, are all unique. To determine the next available ID, you can look at the lastly created challenge's ID.
+
+### 2. Create the Manifest File (Required)
+
+Each challenge directory must contain a `challenge_manifest.psd1`, otherwise it won't be imported.  
+This manifest declares which files belong to the challenge so the setup script can discover and import them automatically.
+
+**Minimal requirements**
+- `Name` — friendly display name for the challenge.  
+- `RequiredFiles` — array of filenames that must exist in the challenge folder. At minimum include:
+  - `ctfd_challenge.json`
+  - `ctfd_flag.json`  
+- Optional entries you may include in `RequiredFiles`: `ctfd_hint.json`, `elastic_import_script.ps1`, `elastic_saved_objects.ndjson`, etc.
+
+
+**Schema:**
+```powershell
+@{
+    Name = "Back to the basics"
+    RequiredFiles = @(
+        "ctfd_challenge.json"
+        "ctfd_flag.json"
+        # Optional:
+        "ctfd_hint.json"
+        "elastic_import_script.ps1"
+        "elastic_saved_objects.ndjson"
+    )
+}
+```
+
+### 3. Create the ctfd_challenge.json File (Required)
 Create a file named `ctfd_challenge.json` in the challenge directory. This file is required and contains all the metadata for your challenge in CTFd. The file must be a valid JSON object with the following fields:
 
 | Field            | Type      | Description                                                                                   |
 |------------------|-----------|-----------------------------------------------------------------------------------------------|
-| id               | integer   | Unique challenge ID (should be unique within your set of challenges).                         |
+| id               | integer   | Unique challenge ID (must follow category-based scheme).                         |
 | name             | string    | The title of the challenge.                                                                   |
 | description      | string    | A detailed explanation of the challenge, can include Markdown and image links.                |
 | max_attempts     | integer   | Maximum number of attempts allowed (0 for unlimited).                                         |
@@ -32,7 +81,7 @@ Create a file named `ctfd_challenge.json` in the challenge directory. This file 
 **Example:**
 ```json
 {
-  "id": 1,
+  "id": 1001,
   "name": "Back to the basics",
   "description": "Discover, where it all began. I had an awesome custom search/session saved for searching on host information, but can't find it. Maybe you can help me?\r\n\r\n![old_kibana.jpg](https://www.timroes.de/static/634d0811df5e7f971ebccf819aaecd9e/3f8aa/discover-columns.png)",
   "max_attempts": 0,
@@ -50,12 +99,21 @@ Create a file named `ctfd_challenge.json` in the challenge directory. This file 
 }
 ```
 
-### 3. Create the ctfd_flag.json File (Required)
+**Tip**
+
+For a more UI driven experience for CTFd challenges, you can create the challenge in your CTFd instance then export the data (don't use CSV). Here are the docs to do this: https://docs.ctfd.io/docs/exports/ctfd-exports/
+
+Once the files have been exported, you can extract the zipped files and peer into the json files and use them for the setup process. Note that this works with challenges, flags, and about any other aspect of CTFd.
+![Export CTFd Files](/images/export_ctfd_files.png)
+
+The last thing to note is that these are an array of all challenges, flags, etc., which means you need to break out each challenge from the array and place it into your challenge directory with the appropriate title.
+
+### 4. Create the ctfd_flag.json File (Required)
 Create a file named `ctfd_flag.json` in the challenge directory. This file should contain the actual flag that participants need to find. The format should be a JSON object with the following fields:
 
 | Field         | Type     | Description                                                      |
 |---------------|----------|------------------------------------------------------------------|
-| id            | integer  | Unique flag ID.                                                  |
+| id            | integer  | Unique flag ID (should match the challenge ID).                                                  |
 | challenge_id  | integer  | The ID of the challenge this flag belongs to.                    |
 | type          | string   | The flag type, usually "static".                                 |
 | content       | string   | The flag value participants must submit.                         |
@@ -64,20 +122,24 @@ Create a file named `ctfd_flag.json` in the challenge directory. This file shoul
 **Example:**
 ```json
 {
-  "id": 1,
-  "challenge_id": 1,
+  "id": 1001,
+  "challenge_id": 1001,
   "type": "static",
   "content": "{ctf_one_search_to_rule_them_all}",
   "data": "case_insensitive"
 }
 ```
 
-### 4. (Optional) Create a Hint File
+**Tips**
+- For flags, try and use some techniques such as encoding in hex or base 64 to prevent the {ctf_**} from easily being queried or searched for.
+- Use the UI tip mentioned previously for when creating challenges using CTFd export feature!
+
+### 5. (Optional) Create a Hint File
 If you want to provide hints for your challenge, create a file named `ctfd_hint.json`. This file can help participants if they get stuck. The format should be a JSON object with the following fields:
 
 | Field         | Type     | Description                                                      |
 |---------------|----------|------------------------------------------------------------------|
-| id            | integer  | Unique hint ID.                                                  |
+| id            | integer  | Unique hint ID (should match the challenge ID).                                                  |
 | type          | string   | Hint type, usually "standard".                                   |
 | challenge_id  | integer  | The ID of the challenge this hint belongs to.                    |
 | content       | string   | The hint text, can include Markdown and images.                  |
@@ -87,9 +149,9 @@ If you want to provide hints for your challenge, create a file named `ctfd_hint.
 **Example:**
 ```json
 {
-  "id": 3,
+  "id": 1003,
   "type": "standard",
-  "challenge_id": 1,
+  "challenge_id": 1001,
   "content": "Not the data!\n\n![](https://media1.giphy.com/media/qN9x0UIc0Rhg4/200w.gif?cid=6c09b952q6k3us6dh9m3dgek4fnqmti482nhgbfgmdk0r3mg&ep=v1_gifs_search&rid=200w.gif&ct=g)\n\nCheck out the saved search/session itself (not the queries, not the results).",
   "cost": 0,
   "requirements": {
@@ -98,8 +160,11 @@ If you want to provide hints for your challenge, create a file named `ctfd_hint.
 }
 ```
 
+**Tip**
 
-### 5. (Optional) Create an Elastic Import Script
+Use the UI tip mentioned previously for when creating challenges using CTFd export feature!
+
+### 6. (Optional) Create an Elastic Import Script
 
 If your challenge requires specific data to be set up in the Elastic stack, create a PowerShell script named `elastic_import_script.ps1` in the challenge directory. This script should define a function that builds the challenge data as a PowerShell object, converts it to JSON, and ingests it into Elasticsearch using the provided URL and helper functions.
 
@@ -155,7 +220,7 @@ function challenge {
 - Make sure to use the correct index and document ID for your challenge.
 - Use secrets or flags in the data as needed
 
-### 6. (Optional) Create Saved Objects File
+### 7. (Optional) Create Saved Objects File
 
 If your challenge requires saved objects in the Elastic stack (such as saved searches, index patterns, or ES|QL queries), create a file named `elastic_saved_objects.ndjson` in the challenge directory. This file should contain one or more newline-delimited JSON (NDJSON) objects, each representing a saved object to be imported into Kibana.
 
@@ -178,53 +243,27 @@ If your challenge requires saved objects in the Elastic stack (such as saved sea
 
 By including saved objects, you can provide participants with pre-built searches, dashboards, or queries that are essential for solving your challenge.
 
-### 7. Finalize Your Challenge
+### 8. Finalize Your Challenge
 Once all files are created, ensure they are correctly formatted and placed in the appropriate directory structure. Test your challenge to verify that it works as intended within the CTF environment.
 
-### 8. Update the Setup Script (Required) 
-
-After creating your new challenge files, you must update the main setup script (`Invoke-Kibana-CTF-Setup.ps1`) so your challenge is included in the import process. This ensures your challenge, flag, hint, and any Elastic/Kibana resources are loaded during setup and testing.
-
-**Steps:**
-
-1. **Locate the Challenge Import Section:**  
-   Find the section in `Invoke-Kibana-CTF-Setup.ps1` where challenges are imported (usually in the `Invoke-Elastic-and-CTFd-Challenges` function). These start after the comment `# Challenges Discover - Import`. Perhaps in a later release, these can simply be automatically found and added on the fly. For now, it is manual. For any assitance, use the GitHub repo Issues and ask for help!
-
-2. **Add Your Challenge Files:**  
-   Add lines to import your new challenge, flag, hint, and any scripts or saved objects. These should be added in the correct order if possible, so the below example code would fall after the Discover/10 sections of each part respectively.
-   For example, if your challenge is `Discover/11`:
-
-   ```powershell
-   Invoke-Import-CTFd-Challenge './challenges/Discover/10/ctfd_challenge.json'
-   New code goes here --> Invoke-Import-CTFd-Challenge './challenges/Discover/11/ctfd_challenge.json'
-   ...
-   Invoke-Import-CTFd-Flag './challenges/Discover/10/ctfd_flag.json'
-   New code goes here --> Invoke-Import-CTFd-Flag './challenges/Discover/11/ctfd_flag.json'
-   ...
-   # If you have a hint:
-   Invoke-Import-CTFd-Hint './challenges/Discover/10/ctfd_hint.json'
-   New code goes here --> Invoke-Import-CTFd-Hint './challenges/Discover/11/ctfd_hint.json'
-   ...
-   # If you have an import script:
-   . ./challenges/Discover/10/elastic_import_script.ps1; challenge
-   New code goes here --> . ./challenges/Discover/11/elastic_import_script.ps1; challenge
-   ...
-   # If you have saved objects:
-   Import-SavedObject "./challenges/Discover/10/elastic_saved_objects.ndjson"
-   New code goes here --> Import-SavedObject "./challenges/Discover/11/elastic_saved_objects.ndjson"
-
-   ```
-
-3. **Test the Setup:**  
-   Run the setup script and select the option to import challenges.  
-   Verify your new challenge appears in CTFd and Kibana, and works as expected.
+**Test the Setup:**  
+Run the setup script and select the option to import challenges.  
+Verify your new challenge appears in CTFd and Kibana, and works as expected.
 
 **Tip:**  
-Keep your challenge imports grouped by category for clarity and maintainability.
+To test importing of challenges over and over, it makes most sense to delete the challenges before re-importing since the script doesn't update any already imported challenges and instead fails to import because the challenge already exists.
+
+Use the [Resetting the Instance](https://docs.ctfd.io/tutorials/configuration/resetting-a-ctfd-instance/) docs to delete **just** the challenges before importing already imported challenges.
 
 ---
 
-By updating the setup script, you ensure your new challenge is automatically included in future deployments and tests.
-
 ## Conclusion
-By following these steps, you can create a new challenge for the Kibana CTF. Make sure to test your challenge thoroughly and consider sharing it with the community!
+By following these steps, you can create a new challenge for the Kibana CTF.  Make sure to test your challenge thoroughly and consider sharing it with the community!
+
+With the manifest model, the setup script will automatically:  
+- Discover your challenge  
+- Validate the required files  
+- Import it into CTFd and Kibana  
+
+✅ This makes challenge creation simpler, cleaner, and much easier to share with the community.  
+🚩 Now go build something fun and keep those flags hidden well — happy hunting!
