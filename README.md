@@ -19,6 +19,7 @@ _Features_:
 
 ## Requirements 🪚
 - PowerShell 7.5+ (For Setup [Manual/Automated])
+- Docker
 - Elastic Stack (Kibana and Elasticsearch 8.17+/9.0+ - 9.1.3+ Recommended) -> Can be downloaded and set up using included script!
 - CTFd (Latest) -> Can be downloaded and set up using included script!
 
