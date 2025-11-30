@@ -66,6 +66,9 @@ Begin {
     # CTFd Variables
     $CTFd_URL_API = $CTFd_URL+"/api/v1"
 
+    # CTFd config.ini path
+    $ctfd_iniPath = "..\CTFd\CTFd\config.ini"
+
     # Extract custom settings from configuration.psd1
     $configPath = "./configuration.psd1"
     $configurationSettings = Import-PowerShellDataFile $configPath 
@@ -188,6 +191,58 @@ Begin {
         }
 
         return $CTFd_Access_Token
+    }
+
+    function Invoke-Setup-CTFd-Preset-Admin {
+        param(
+            [string]$ctfName = "Kibana CTF"
+        )
+        # Read the INI file into memory
+        $iniContent = Get-Content $ctfd_iniPath -Raw
+
+        # Helper to generate a secure random string
+        function New-SecureString {
+            param(
+                [int]$Length = 32
+            )
+            $bytes = New-Object byte[] $Length
+            [System.Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+
+            # URL-safe base64 (good for passwords/tokens)
+            return [Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+','-').Replace('/','_')
+        }
+
+        # Generate values
+        $CTFd_Admin_User   = "ctfd_admin"
+        $CTFd_Admin_Pass   = New-SecureString -Length 32
+        $CTFd_Access_Token  = "ctfd_"+$(New-SecureString -Length 48)   # API tokens usually longer
+        $CTFd_Preset_Configs = '{"setup": "true","ctf_name": "' + $ctfName + '"}'
+
+        # Update text directly using regex (reliable for INI files)
+        $iniContent = $iniContent -replace "(?m)^PRESET_ADMIN_NAME\s*=.*","PRESET_ADMIN_NAME = $CTFd_Admin_User"
+        $iniContent = $iniContent -replace "(?m)^PRESET_ADMIN_PASSWORD\s*=.*","PRESET_ADMIN_PASSWORD = $CTFd_Admin_Pass"
+        $iniContent = $iniContent -replace "(?m)^PRESET_ADMIN_TOKEN\s*=.*","PRESET_ADMIN_TOKEN = $CTFd_Access_Token"
+        $iniContent = $iniContent -replace "(?m)^PRESET_CONFIGS\s*=.*","PRESET_CONFIGS = $CTFd_Preset_Configs"
+
+        # Save the updated INI file with generated credentials
+        Set-Content -Path $ctfd_iniPath -Value $iniContent
+
+        # Store CTFd Access Token in configuration.psd1
+        try{
+            Set-Location ../kibana-ctf
+            Update-Psd1Value -Path $configPath -Key "CTFd_Access_Token" -Value $CTFd_Access_Token
+            Set-Location ../CTFd
+            Write-Host "💾 CTFd Access Token saved to $configPath for future use." -ForegroundColor Green
+        }catch{
+            Write-Host "❌ Failed to update the configuration.psd1 file with the CTFd Access Token." -ForegroundColor Red
+            Set-Location ../CTFd
+        }
+
+        Write-Host "Finished setting CTFd preset admin credentials, make sure to copy these values for later use."
+        Write-Host "    Username: $CTFd_Admin_User"
+        Write-Host "    Password: $CTFd_Admin_Pass"
+        Write-Host "Access Token: $CTFd_Access_Token"
+        pause
     }
     
     function Get-Elastic-Creds {
@@ -473,6 +528,7 @@ Begin {
                 $checkInUsePorts = Invoke-CheckForInUsePorts
                 if($checkInUsePorts){
                     Write-Host "❌ Ports detected already in use. Make sure these ports are available before continuing. Exiting."
+                    Set-Location ..\..\..\
                     exit
                 }else{
                     docker compose up -d
@@ -773,6 +829,7 @@ Begin {
     $option5 = "[5] 🗑️ Delete Elastic Stack"
     $option6 = "[6] 🔍 Check for Requirements"
     $option7 = "[7] 🤖 Deploy everything from scratch (Recommended)"
+    $option8 = "[8] ⚙️ Developer Options (Create/Export/Test Challenges)"
 
     # Challenge category options
     $challenge_option0 = "[0] 🌀 All Challenges         (Recommended)"
@@ -781,6 +838,11 @@ Begin {
     $challenge_option3 = "[3] 📈 Dashboards             (Kibana dashboards only)"
     #$challenge_option4 = "[4] 🎯 Hand-pick Challenges   (Choose specific ones)"
     $quit              = "[Q] ❌ Quit"
+
+    # Developer menu options
+    $developer_option0 = "[0] 🛠️ Create New CTF Challenge (Template / Wizard)"
+    $developer_option1 = "[1] 📦 Export Existing CTF Challenge (From CTFd)"
+    $developer_option2 = "[2] 🧪 Test CTF Challenge Import (Import to CTFd)"
 
     $quit = "Q. Quit"
 
@@ -798,11 +860,26 @@ Begin {
         Write-Host $option5 -ForegroundColor White
         Write-Host $option6 -ForegroundColor White
         Write-Host $option7 -ForegroundColor White
+        Write-Host $option8 -ForegroundColor White
         Write-Host ""
         Write-Host $quit -ForegroundColor Red
         Write-Host ""
     }
 
+    function Show-Developer-Menu {
+        Write-Host ""
+        Write-Host "====================================================" -ForegroundColor Cyan
+        Write-Host "        ⚙️ Developer Options for Creating, Exporting, and Testing Challenges 🛠️" -ForegroundColor Green
+        Write-Host "====================================================" -ForegroundColor Cyan
+        Write-Host "What would you like to do?" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host $developer_option0 -ForegroundColor White
+        #Write-Host $developer_option1 -ForegroundColor White
+        #Write-Host $developer_option2 -ForegroundColor White
+        Write-Host ""
+        Write-Host $quit -ForegroundColor Red
+        Write-Host ""
+    }
     function Show-CTF-Challenges-Menu {
         Write-Host ""
         Write-Host "====================================================" -ForegroundColor Cyan
@@ -865,13 +942,17 @@ Begin {
                 Write-Host "`n🔄 Cloning CTFd repo..." -ForegroundColor Cyan
                 git clone https://github.com/CTFd/CTFd.git
                 Set-Location ./CTFd/
+                # Configure CTFd Preset Admin User/Pass
+                Write-Host "`n⚙️  Configuring CTFd preset admin user, password and access token..." -ForegroundColor Cyan
+                Invoke-Setup-CTFd-Preset-Admin
+
                 Write-Host "`n▶️  Launching CTFd..." -ForegroundColor Green
                 docker compose up -d
                 Set-Location ../kibana-ctf/
                 Write-Host "`n✅ CTFd has been downloaded and is starting up!" -ForegroundColor Green
                 Write-Host "   🌍 Navigate to $CTFd_URL to complete setup" -ForegroundColor Cyan
                 Write-Host "   (It may take a few minutes for the container to be fully ready)" -ForegroundColor DarkGray
-                Write-Host "`n🛠️  Next Step is to follow the wizard and create the admin account and then obtain an Access Key:" -ForegroundColor Green
+                Write-Host "`n🛠️ Next Step is to follow the wizard and create the admin account and then obtain an Access Key:" -ForegroundColor Green
                 Write-Host "`n📖 Refer to the README for the detailed next steps:" -ForegroundColor Green
                 Write-Host "   https://github.com/nicpenning/kibana-ctf?tab=readme-ov-file#how-to-get-started" -ForegroundColor Cyan
                 Write-Host "`n👉 Once finished, rerun this script and select option 2 to begin Elastic Stack setup." -ForegroundColor Green
@@ -1412,6 +1493,35 @@ Process {
                 Invoke-Elastic-and-CTFd-Challenges
 
                 $finished = $true
+                break
+            }
+            '8' {
+                # Developer Options
+
+                # Menu for developer options
+                Show-Developer-Menu
+                $devOptionSelected = Read-Host "Enter your choice"
+                switch ($devOptionSelected) {
+                    '0' {
+                        # Create New CTF Challenge
+                        Write-Host "`n🚧 Developer Option: Create New CTF Challenge 🚧" -ForegroundColor Magenta
+                        #Invoke-Create-New-CTF-Challenge-Wizard
+                        # Step 1: Choose Challenge Name
+                        # Step 2: Choose Challenge Category (Display Category Options)
+                        # Step 3: Choose Required Files
+                        # Step 4: Choose Kibana Compatible Version
+                        # Step 5: Generate Challenge Directory and Template Files
+                        # Step 6: Provide Next Steps to User - List of Required Files to Complete
+                        Write-Host "`n🚧 This feature is under development. Stay tuned! 🚧"
+                        $finished = $true
+                        break
+                    }
+                    default {
+                        Write-Host "Invalid choice. Please select a valid option."
+                        $finished = $true
+                        break
+                    }
+                }
                 break
             }
             {"q","Q"} {
