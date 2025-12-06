@@ -447,7 +447,7 @@ Begin {
                     Write-Host "Response preview: $($resp | ConvertTo-Json -Depth 3)" -ForegroundColor DarkGray
                 }
             } catch {
-                Write-Host "❌ Kibana not reachable at $KibanaUrl (attempt $($attempt+1)). Error: $($_.Exception.Message)" -ForegroundColor Red
+                Write-Host "⚠️ Kibana not yet reachable at $KibanaUrl (attempt $($attempt+1)). Message: $($_.Exception.Message)" -ForegroundColor Yellow
             }
 
             $attempt++
@@ -820,6 +820,148 @@ Begin {
         $randomFlagExtension = -join (Get-Random -Count 5 -InputObject $chars)
         return $randomFlagExtension
     }
+
+    # Developer Functions
+    function Invoke-Create-New-CTF-Challenge-Wizard {
+        # Load challenge categories from manifest
+        $rootManifestPath = ".\challenges\challenge_categories.psd1"
+        try {
+            $rootManifest = Import-PowerShellDataFile -Path $rootManifestPath
+            $allCategories = $rootManifest.Categories
+            $allCategories
+        } catch {
+            Write-Host "❌ Failed to load $rootManifestPath. Ensure it is valid PSD1." -ForegroundColor Red
+            return
+        }
+        
+        Write-Host "`n🛠️  Invoke-Create-New-CTF-Challenge-Wizard - Create a New CTF Challenge 🚩 " -ForegroundColor Magenta
+        Write-Host "=========================================================================`n" -ForegroundColor Cyan
+
+        # Get challenge details from user
+        $Challenge_Name = Read-Host "Enter the challenge name"
+        $Challenge_Category = Read-Host "Enter the challenge category ($allCategories New)"
+        if($Challenge_Category -eq "New"){
+            Write-Host "Creating a new challenge category requires updating the $rootmanifestPath file manually. Add the category then run the wizard again." -ForegroundColor Yellow
+            Exit
+        }elseif($allCategories -contains $Challenge_Category){
+            Write-Host "Selected existing category: $Challenge_Category" -ForegroundColor Green
+            # Get Challenge category series number from challenge category number in array
+            $categorySeriesNumber = ($allCategories.IndexOf($Challenge_Category) + 1) * 1000
+            Write-Host "Category series number is: $categorySeriesNumber" -ForegroundColor Green
+        }else{
+            Write-Host "❌ Invalid category selected. Exiting." -ForegroundColor Red
+            Exit
+        }
+
+        $Challenge_Required_Kibana_Version = Read-Host "Enter the required Kibana version for the challenge (e.g., 9.2.1)"
+
+        # Create simplified challenge object
+        $challengeObject = @"
+@{
+    Name = `"$Challenge_Name`"
+    Category = `"$Challenge_Category`"
+    RequiredFiles = @(
+        `"ctfd_challenge.json`"
+        `"ctfd_flag.json`"
+    )
+    Resources = @{
+        KibanaVersion = `"^$Challenge_Required_Kibana_Version`"
+    }
+}
+"@
+
+
+        # Determine new challenge number
+        $existingChallengesPath = ".\challenges\$($Challenge_Category)"
+        if (Test-Path $existingChallengesPath) {
+            # Get existing challenge numbers
+            $totalChallenges = Get-Item "$existingChallengesPath\*" | Where-Object { $_.PSIsContainer }
+            # Get the highest existing challenge number and increment
+            $new_challenge_number = ($totalChallenges.count + 1)
+            Write-Host "Found $($totalChallenges.count) existing challenges. New challenge number will be: $new_challenge_number" -ForegroundColor Green
+        } else {
+            Write-Host "Category folder does not exist, something is wrong. Exiting." -ForegroundColor Red
+            Exit
+        }
+
+        # Create new challenge directory
+        New-Item -ItemType Directory -Path ".\challenges\$($Challenge_Category)\$($new_challenge_number)" -Force | Out-Null
+        # Save challenge manifest
+        Out-File -FilePath ".\challenges\$($Challenge_Category)\$($new_challenge_number)\challenge_manifest.psd1" -InputObject $challengeObject -Encoding UTF8 -Force
+        Write-Host "✅ Created new challenge directory and manifest at .\challenges\$($Challenge_Category)\$($new_challenge_number)\challenge_manifest.psd1" -ForegroundColor Green
+
+        # Add required files in new challenge directory based on what is in the manifest
+        $Challenge_Description = Read-Host "Enter a brief description for the challenge (will be added to ctfd_challenge.json)"
+        $Challenge_Points = Read-Host "Enter the point value for the challenge (will be added to ctfd_challenge.json)"
+        $Challenge_Flag = Read-Host "Enter the flag for the challenge (will be added to ctfd_flag.json) {ctf_<your_flag_will_go_here>}"
+        $Challenge_Id = $categorySeriesNumber + $new_challenge_number
+        foreach ($requiredFile in $challengeObject.RequiredFiles) {
+            switch ($requiredFile) {
+                "ctfd_challenge.json" {
+                    $ctfd_challenge_template = @{
+                        id           = [int]$Challenge_Id
+                        name         = $Challenge_Name
+                        description  = $Challenge_Description
+                        max_attempts = 10
+                        value        = [int]$Challenge_Points
+                        category     = $Challenge_Category
+                        type         = "standard"
+                        state        = "visible"
+                    }
+                    $ctfd_challenge_template | ConvertTo-Json -Depth 10 | Out-File -FilePath ".\challenges\$($Challenge_Category)\$($new_challenge_number)\ctfd_challenge.json" -Encoding UTF8
+                    Write-Host "✅ Created ctfd_challenge.json template." -ForegroundColor Green
+                }
+                "ctfd_flag.json" {
+                    $ctfd_flag_template = @{
+                        id           = $Challenge_Id  # Update this ID after importing the challenge to CTFd
+                        challenge_id = $Challenge_Id  # Update this ID after importing the challenge to CTFd
+                        type         = "static"
+                        content      = "{ctf_$Challenge_Flag}"
+                        data         =  "case_insensitive"
+                    }
+                    $ctfd_flag_template | ConvertTo-Json -Depth 10 | Out-File -FilePath ".\challenges\$($Challenge_Category)\$($new_challenge_number)\ctfd_flag.json" -Encoding UTF8
+                    Write-Host "✅ Created ctfd_flag.json template." -ForegroundColor Green
+                }
+                default {
+                    Write-Host "⚠️ Unknown required file type: $requiredFile. Skipping." -ForegroundColor Yellow
+                }
+            }
+        }
+
+        # Ask if user wants a hint to the challenge
+        $needHint = Read-Host "Would you like to add a hint to this challenge?`n1. Yes`n2. No`n(Enter 1 or 2)"
+        if($needHint -eq 1){
+            $Challenge_Hint = Read-Host "Enter the hint for the challenge (will be added to ctfd_hint.json)"
+            $ctfd_hint_template = @{
+                id           = $Challenge_Id  # Update this ID after importing the challenge to CTFd
+                challenge_id = $Challenge_Id  # Update this ID after importing the challenge to CTFd
+                content      = $Challenge_Hint
+                cost         = 0
+            }
+            $ctfd_hint_template | ConvertTo-Json -Depth 10 | Out-File -FilePath ".\challenges\$($Challenge_Category)\$($new_challenge_number)\ctfd_hint.json" -Encoding UTF8
+            Write-Host "✅ Created ctfd_hint.json template." -ForegroundColor Green
+        }
+
+        # Ask if user if they will need an advanced PowerShell import script (elastic_import_script.ps1)
+        $needImportScript = Read-Host "Would you like to generate an advanced PowerShell import script for this challenge?`n1. Yes`n2. No`n(Enter 1 or 2)"
+        if($needImportScript -eq 1){
+            $importScriptContent = @"
+# Advanced Elastic Stack Import Script for Challenge: $Challenge_Name
+# This script will help you import the necessary resources into Elastic Stack for the challenge.
+# Make sure to customize the script as needed before running.
+function challenge {
+
+    return Write-Debug "✅ elastic_import_script.ps1 executed"
+}
+"@
+
+            Out-File -FilePath ".\challenges\$($Challenge_Category)\$($new_challenge_number)\elastic_import_script.ps1" -InputObject $importScriptContent -Encoding UTF8 -Force
+            Write-Host "✅ Created elastic_import_script.ps1 template." -ForegroundColor Green
+        }
+
+        return "Finished generating new challenge files. Now try to import the new challenge into CTFd and tweak as needed!"
+
+}
     
     # Main menu options
     $option1 = "[1] 🏁 Deploy CTFd"
@@ -843,6 +985,11 @@ Begin {
     $developer_option0 = "[0] 🛠️ Create New CTF Challenge (Template / Wizard)"
     $developer_option1 = "[1] 📦 Export Existing CTF Challenge (From CTFd)"
     $developer_option2 = "[2] 🧪 Test CTF Challenge Import (Import to CTFd)"
+    $developer_option3 = "[3] 🟢 Start Up Elastic Stack (Requires preconfigured docker setup with already imported challenges)"
+    $developer_option4 = "[4] 🔴 Shut Down Elastic Stack"
+    $developer_option5 = "[5] 🟢 Start Up CTFd (Requires preconfigured docker setup with already imported challenges)"
+    $developer_option6 = "[6] 🔴 Shut Down CTFd"
+
 
     $quit = "Q. Quit"
 
@@ -868,14 +1015,18 @@ Begin {
 
     function Show-Developer-Menu {
         Write-Host ""
-        Write-Host "====================================================" -ForegroundColor Cyan
+        Write-Host "=========================================================================================" -ForegroundColor Cyan
         Write-Host "        ⚙️ Developer Options for Creating, Exporting, and Testing Challenges 🛠️" -ForegroundColor Green
-        Write-Host "====================================================" -ForegroundColor Cyan
+        Write-Host "=========================================================================================" -ForegroundColor Cyan
         Write-Host "What would you like to do?" -ForegroundColor Yellow
         Write-Host ""
         Write-Host $developer_option0 -ForegroundColor White
         #Write-Host $developer_option1 -ForegroundColor White
         #Write-Host $developer_option2 -ForegroundColor White
+        #Write-Host $developer_option3 -ForegroundColor White
+        #Write-Host $developer_option4 -ForegroundColor White
+        #Write-Host $developer_option5 -ForegroundColor White
+        #Write-Host $developer_option6 -ForegroundColor White
         Write-Host ""
         Write-Host $quit -ForegroundColor Red
         Write-Host ""
@@ -1331,7 +1482,7 @@ Begin {
         }
 
             Write-Host "`n✅ Setup complete! Your CTF environment is now live and ready to roll!" -ForegroundColor Green
-        Write-Host "------------------------------------------------------------"
+            Write-Host "------------------------------------------------------------"
             Write-Host "🌐 CTFd Platform:"
             Write-Host "   👉 Navigate to $CTFd_URL"
             Write-Host "   👉 Register your player account and start solving challenges!"
@@ -1505,7 +1656,7 @@ Process {
                     '0' {
                         # Create New CTF Challenge
                         Write-Host "`n🚧 Developer Option: Create New CTF Challenge 🚧" -ForegroundColor Magenta
-                        #Invoke-Create-New-CTF-Challenge-Wizard
+                        Invoke-Create-New-CTF-Challenge-Wizard
                         # Step 1: Choose Challenge Name
                         # Step 2: Choose Challenge Category (Display Category Options)
                         # Step 3: Choose Required Files
