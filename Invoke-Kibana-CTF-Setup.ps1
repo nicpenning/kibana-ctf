@@ -895,7 +895,8 @@ Begin {
         $Challenge_Points = Read-Host "Enter the point value for the challenge (will be added to ctfd_challenge.json)"
         $Challenge_Flag = Read-Host "Enter the flag for the challenge (will be added to ctfd_flag.json) {ctf_<your_flag_will_go_here>}"
         $Challenge_Id = $categorySeriesNumber + $new_challenge_number
-        foreach ($requiredFile in $challengeObject.RequiredFiles) {
+        $newChallengeImport = Import-PowerShellDataFile -Path ".\challenges\$($Challenge_Category)\$($new_challenge_number)\challenge_manifest.psd1"
+        foreach ($requiredFile in $newChallengeImport.RequiredFiles) {
             switch ($requiredFile) {
                 "ctfd_challenge.json" {
                     $ctfd_challenge_template = @{
@@ -961,7 +962,7 @@ function challenge {
 
         return "Finished generating new challenge files. Now try to import the new challenge into CTFd and tweak as needed!"
 
-}
+    }
     
     # Main menu options
     $option1 = "[1] 🏁 Deploy CTFd"
@@ -983,13 +984,13 @@ function challenge {
 
     # Developer menu options
     $developer_option0 = "[0] 🛠️ Create New CTF Challenge (Template / Wizard)"
-    $developer_option1 = "[1] 📦 Export Existing CTF Challenge (From CTFd)"
-    $developer_option2 = "[2] 🧪 Test CTF Challenge Import (Import to CTFd)"
-    $developer_option3 = "[3] 🟢 Start Up Elastic Stack (Requires preconfigured docker setup with already imported challenges)"
-    $developer_option4 = "[4] 🔴 Shut Down Elastic Stack"
-    $developer_option5 = "[5] 🟢 Start Up CTFd (Requires preconfigured docker setup with already imported challenges)"
-    $developer_option6 = "[6] 🔴 Shut Down CTFd"
-    $developer_option7 = "[7] 🚦Check CTFd and Elastic Stack Status"
+    $developer_option1 = "[1] 📥 Import CTF Challenge to CTFd and Elastic Stack"
+    $developer_option2 = "[2] 📦 Export Existing CTF Challenge (From CTFd)"
+    $developer_option4 = "[3] 🟢 Start Up Elastic Stack (Requires preconfigured docker setup with already imported challenges)"
+    $developer_option5 = "[4] 🔴 Shut Down Elastic Stack"
+    $developer_option6 = "[5] 🟢 Start Up CTFd (Requires preconfigured docker setup with already imported challenges)"
+    $developer_option7 = "[6] 🔴 Shut Down CTFd"
+    $developer_option8 = "[7] 🚦Check CTFd and Elastic Stack Status"
 
 
     $quit = "Q. Quit"
