@@ -971,7 +971,7 @@ function challenge {
     $option5 = "[5] 🗑️ Delete Elastic Stack"
     $option6 = "[6] 🔍 Check for Requirements"
     $option7 = "[7] 🤖 Deploy everything from scratch (Recommended)"
-    $option8 = "[8] ⚙️ Developer Options (Create/Export/Test Challenges)"
+    $option8 = "[8] ⚙️ Developer Options (Create/Export/Test Challenges + Manage Stacks)"
 
     # Challenge category options
     $challenge_option0 = "[0] 🌀 All Challenges         (Recommended)"
@@ -989,6 +989,7 @@ function challenge {
     $developer_option4 = "[4] 🔴 Shut Down Elastic Stack"
     $developer_option5 = "[5] 🟢 Start Up CTFd (Requires preconfigured docker setup with already imported challenges)"
     $developer_option6 = "[6] 🔴 Shut Down CTFd"
+    $developer_option7 = "[7] 🚦Check CTFd and Elastic Stack Status"
 
 
     $quit = "Q. Quit"
@@ -1657,13 +1658,6 @@ Process {
                         # Create New CTF Challenge
                         Write-Host "`n🚧 Developer Option: Create New CTF Challenge 🚧" -ForegroundColor Magenta
                         Invoke-Create-New-CTF-Challenge-Wizard
-                        # Step 1: Choose Challenge Name
-                        # Step 2: Choose Challenge Category (Display Category Options)
-                        # Step 3: Choose Required Files
-                        # Step 4: Choose Kibana Compatible Version
-                        # Step 5: Generate Challenge Directory and Template Files
-                        # Step 6: Provide Next Steps to User - List of Required Files to Complete
-                        Write-Host "`n🚧 This feature is under development. Stay tuned! 🚧"
                         $finished = $true
                         break
                     }
