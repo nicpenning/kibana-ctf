@@ -972,7 +972,7 @@ function challenge {
     $option5 = "[5] 🗑️ Delete Elastic Stack"
     $option6 = "[6] 🔍 Check for Requirements"
     $option7 = "[7] 🤖 Deploy everything from scratch (Recommended)"
-    $option8 = "[8] ⚙️ Developer Options (Create/Export/Test Challenges + Manage Stacks)"
+    $option8 = "[8] 🔧 Developer Options (Create/Export/Test Challenges + Manage Stacks)"
 
     # Challenge category options
     $challenge_option0 = "[0] 🌀 All Challenges         (Recommended)"
@@ -986,11 +986,11 @@ function challenge {
     $developer_option0 = "[0] 🛠️ Create New CTF Challenge (Template / Wizard)"
     $developer_option1 = "[1] 📥 Import CTF Challenge to CTFd and Elastic Stack"
     $developer_option2 = "[2] 📦 Export Existing CTF Challenge (From CTFd)"
-    $developer_option4 = "[3] 🟢 Start Up Elastic Stack (Requires preconfigured docker setup with already imported challenges)"
-    $developer_option5 = "[4] 🔴 Shut Down Elastic Stack"
-    $developer_option6 = "[5] 🟢 Start Up CTFd (Requires preconfigured docker setup with already imported challenges)"
-    $developer_option7 = "[6] 🔴 Shut Down CTFd"
-    $developer_option8 = "[7] 🚦Check CTFd and Elastic Stack Status"
+    $developer_option3 = "[3] 🟢 Start Up Elastic Stack (Requires preconfigured docker setup with already imported challenges)"
+    $developer_option4 = "[4] 🔴 Shut Down Elastic Stack"
+    $developer_option5 = "[5] 🟢 Start Up CTFd (Requires preconfigured docker setup with already imported challenges)"
+    $developer_option6 = "[6] 🔴 Shut Down CTFd"
+    $developer_option7 = "[7] 🚦Check CTFd and Elastic Stack Status"
 
 
     $quit = "Q. Quit"
@@ -1018,17 +1018,17 @@ function challenge {
     function Show-Developer-Menu {
         Write-Host ""
         Write-Host "=========================================================================================" -ForegroundColor Cyan
-        Write-Host "        ⚙️ Developer Options for Creating, Exporting, and Testing Challenges 🛠️" -ForegroundColor Green
+        Write-Host "        🔧 Developer Options for Creating, Exporting, and Testing Challenges 🛠️" -ForegroundColor Green
         Write-Host "=========================================================================================" -ForegroundColor Cyan
         Write-Host "What would you like to do?" -ForegroundColor Yellow
         Write-Host ""
         Write-Host $developer_option0 -ForegroundColor White
         #Write-Host $developer_option1 -ForegroundColor White
         #Write-Host $developer_option2 -ForegroundColor White
-        #Write-Host $developer_option3 -ForegroundColor White
-        #Write-Host $developer_option4 -ForegroundColor White
-        #Write-Host $developer_option5 -ForegroundColor White
-        #Write-Host $developer_option6 -ForegroundColor White
+        Write-Host $developer_option3 -ForegroundColor White
+        Write-Host $developer_option4 -ForegroundColor White
+        Write-Host $developer_option5 -ForegroundColor White
+        Write-Host $developer_option6 -ForegroundColor White
         Write-Host ""
         Write-Host $quit -ForegroundColor Red
         Write-Host ""
@@ -1649,8 +1649,6 @@ Process {
                 break
             }
             '8' {
-                # Developer Options
-
                 # Menu for developer options
                 Show-Developer-Menu
                 $devOptionSelected = Read-Host "Enter your choice"
@@ -1662,9 +1660,58 @@ Process {
                         $finished = $true
                         break
                     }
-                    default {
-                        Write-Host "Invalid choice. Please select a valid option."
+                    '1' {
+                        # Import a specific CTF Challenge
+                        Write-Host "`n🚧 Developer Option: Import a Specific CTF Challenge 🚧" -ForegroundColor Magenta
+                        Write-Host "Still in development..."
                         $finished = $true
+                        break
+                    }
+                    '2' {
+                        # Export Existing CTF Challenge from CTFd
+                        Write-Host "`n🚧 Developer Option: Export Existing CTF Challenge from CTFd"
+                        Write-Host "Still in development..."
+                        $finished = $true
+                        break
+                    }
+                    '3' {
+                        # Start up Elastic Stack
+                        Write-Host "`n🚧 Developer Option: Start up Elastic Stack 🚧" -ForegroundColor Magenta
+                        Invoke-StartDocker
+                        Write-Host "`n✅ Elastic Stack is running at $Elastic_URL."
+                        $finished = $true
+                        break
+                    }
+                    '4' {
+                        # Stop Elastic Stack
+                        Write-Host "`n🚧 Developer Option: Stop Elastic Stack 🚧" -ForegroundColor Magenta
+                        Invoke-StopDocker
+                        Write-Host "`n✅ Elastic Stack has been stopped."
+                        $finished = $true
+                        break
+                    }
+                    '5'{
+                        # Start up CTFd
+                        Write-Host "`n🚧 Developer Option: Start up CTFd 🚧"
+                        Set-Location ../CTFd
+                        docker compose up -d
+                        Set-Location ../kibana-ctf/
+                        Write-Host "`n✅ CTFd is running at $CTFd_URL"
+                        $finished = $true
+                        break
+                    }
+                    '6' {
+                        # Stop CTFd
+                        Write-Host "`n🚧 Developer Option: Stop CTFd 🚧"
+                        Set-Location ../CTFd
+                        docker compose down
+                        Set-Location ../kibana-ctf/
+                        Write-Host "`n✅ CTFd has been stopped."
+                        $finished = $true
+                        break
+                    }
+                    default {
+                        Write-Host "Invalid choice. Please select a valid option." -ForegroundColor Yellow
                         break
                     }
                 }
@@ -1678,7 +1725,6 @@ Process {
             }
             default {
                 Write-Host "Invalid choice. Please select a valid option."
-                $finished = $true
                 break
             }
         }
