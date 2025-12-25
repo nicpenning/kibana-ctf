@@ -220,6 +220,7 @@ Begin {
 
         # Update text directly using regex (reliable for INI files)
         $iniContent = $iniContent -replace "(?m)^PRESET_ADMIN_NAME\s*=.*","PRESET_ADMIN_NAME = $CTFd_Admin_User"
+        $iniContent = $iniContent -replace "(?m)^PRESET_ADMIN_EMAIL\s*=.*","PRESET_ADMIN_EMAIL = $CTFd_Admin_User@ctfd.local"
         $iniContent = $iniContent -replace "(?m)^PRESET_ADMIN_PASSWORD\s*=.*","PRESET_ADMIN_PASSWORD = $CTFd_Admin_Pass"
         $iniContent = $iniContent -replace "(?m)^PRESET_ADMIN_TOKEN\s*=.*","PRESET_ADMIN_TOKEN = $CTFd_Access_Token"
         $iniContent = $iniContent -replace "(?m)^PRESET_CONFIGS\s*=.*","PRESET_CONFIGS = $CTFd_Preset_Configs"
@@ -247,6 +248,22 @@ Begin {
     
     function Get-Elastic-Creds {
         return Get-Credential -Message "Enter the credentials for the elastic stack, recommended to use the default elastic account"
+    }
+
+    function Invoke-CheckForElasticCreds {
+        $elasticCredsCheck = Invoke-CheckForEnv
+
+        # Set passwords via automated configuration or manual input
+        # Base64 Encoded elastic:secure_password for Kibana auth
+        if($($elasticCredsCheck)[0] -eq "True"){
+            $elasticPass = ConvertTo-SecureString -String $($($elasticCredsCheck)[1]) -AsPlainText -Force
+        $elasticCreds = New-Object System.Management.Automation.PSCredential("elastic", $elasticPass)
+        } else {
+            $elasticCreds = Get-Credential elastic
+        }
+            $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
+
+        return $elasticCreds
     }
     
     function Get-Challenges-From-CTFd {
@@ -339,6 +356,35 @@ Begin {
             Write-Debug $_.Exception
         }
     }
+    function Invoke-CheckForCTFdStatus {
+        param (
+            $MaxRetries = 5,
+            $TimeoutSeconds = 60
+        )
+        # Check for CTFd Status
+        Write-Host "🚩 Checking CTFd availability"
+        $ctfd_auth = Get-CTFd-Admin-Token
+        
+        do {
+            $trys = 0
+            try {
+                Write-Debug "Checking to see if CTFd is accessible."
+                $status = Invoke-RestMethod -Method Get -Uri "$CTFd_URL_API/challenges" -ContentType "application/json" -Headers $ctfd_auth -AllowUnencryptedAuthentication -SkipCertificateCheck -ConnectionTimeoutSeconds $TimeoutSeconds
+            } catch {
+                Write-Debug "Waiting for healthy cluster for 5 seconds. Then checking again."
+                Write-Host "Attempt number: $($trys+1) of $MaxRetries; Current timeout set at $TimeoutSeconds seconds" -ForegroundColor Yellow
+                Write-Debug $_.Exception
+                $status
+                Start-Sleep -Seconds 5
+                $trys++
+                if($trys -ge $MaxRetries){
+                    Write-Host "❌ Could not reach CTFd challenges API. Please make sure it is running and the credentials are correct." -ForegroundColor Red
+                    exit
+                }
+            }
+        } until ("True" -eq $status.success)
+
+}
 
     # Elastic Stack Setup Functions
     function Invoke-CheckForEnv {
@@ -374,6 +420,10 @@ Begin {
     }
     
     function Invoke-CheckForElasticsearchStatus {
+        param (
+            $MaxRetries = 5,
+            $TimeoutSeconds = 60
+        )
         # Check for Elastic stack connectivity to a healthy cluster
         Write-Host "🔎 Waiting for Elasticsearch to be accessible."
     
@@ -384,22 +434,23 @@ Begin {
             $trys = 0
             try {
                 Write-Debug "Checking to see if the cluster is accessible. Please wait. If this takes more than a minute, make sure Elasticsearch is available."
-                $status = Invoke-RestMethod -Method Get -Uri $healthAPI -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck  
+                $status = Invoke-RestMethod -Method Get -Uri $healthAPI -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck -ConnectionTimeoutSeconds $TimeoutSeconds
             } catch {
                 Write-Debug "Waiting for healthy cluster for 5 seconds. Then checking again."
+                Write-Host "Attempt number: $($trys+1) of $MaxRetries; Current timeout set at $TimeoutSeconds seconds" -ForegroundColor Yellow
                 Write-Debug $_.Exception
                 $status
                 Start-Sleep -Seconds 5
                 $trys++
-                if($trys -gt 12){
-                    Write-Host "❌ Could not connect to the Elastic cluster. Please make sure it is running and the credentials are correct." -ForegroundColor Red
+                if($trys -ge $MaxRetries){
+                    Write-Host "❌ Could not connect to the Elasticsearch. Please make sure it is running and the credentials are correct." -ForegroundColor Red
                     exit
                 }
             }
         } until ("yellow" -eq $status.status -or "green" -eq $status.status)
     
         if ("yellow" -eq $status.status -or "green" -eq $status.status) {
-            Write-Host "⚙️ Elastic cluster is $($status.status), continuing through the setup process."
+            Write-Host "⚙️ Elasticsearch is: available ($($status.status)). Continuing..." -ForegroundColor Green
             Start-Sleep -Seconds 2
         }
     }
@@ -965,14 +1016,12 @@ function challenge {
     }
     
     # Main menu options
+    $option0 = "[0] 🤖 Deploy everything from scratch (Recommended)"
     $option1 = "[1] 🏁 Deploy CTFd"
     $option2 = "[2] ⚙️ Deploy Elastic Stack"
     $option3 = "[3] 🚩 Import Flags (CTFd) + Challenges (Elastic Stack)"
-    $option4 = "[4] 🗑️ Delete CTFd"
-    $option5 = "[5] 🗑️ Delete Elastic Stack"
-    $option6 = "[6] 🔍 Check for Requirements"
-    $option7 = "[7] 🤖 Deploy everything from scratch (Recommended)"
-    $option8 = "[8] 🔧 Developer Options (Create/Export/Test Challenges + Manage Stacks)"
+    $option4 = "[4] 🔍 Check for Requirements"
+    $option5 = "[5] 🔧 Developer Options (Create/Export/Test Challenges + Manage Stacks)"
 
     # Challenge category options
     $challenge_option0 = "[0] 🌀 All Challenges         (Recommended)"
@@ -990,7 +1039,9 @@ function challenge {
     $developer_option4 = "[4] 🔴 Shut Down Elastic Stack"
     $developer_option5 = "[5] 🟢 Start Up CTFd (Requires preconfigured docker setup with already imported challenges)"
     $developer_option6 = "[6] 🔴 Shut Down CTFd"
-    $developer_option7 = "[7] 🚦Check CTFd and Elastic Stack Status"
+    $developer_option7 = "[7] 🚦Check Elastic Stack and CTFd Status"
+    $developer_option8 = "[8] 🗑️ Delete CTFd"
+    $developer_option9 = "[9] 🗑️ Delete Elastic Stack"
 
 
     $quit = "Q. Quit"
@@ -1002,14 +1053,13 @@ function challenge {
         Write-Host "====================================================" -ForegroundColor Cyan
         Write-Host "What would you like to do?" -ForegroundColor Yellow
         Write-Host ""
+        Write-Host $option0 -ForegroundColor White
         Write-Host $option1 -ForegroundColor White
         Write-Host $option2 -ForegroundColor White
         Write-Host $option3 -ForegroundColor White
         Write-Host $option4 -ForegroundColor White
         Write-Host $option5 -ForegroundColor White
         Write-Host $option6 -ForegroundColor White
-        Write-Host $option7 -ForegroundColor White
-        Write-Host $option8 -ForegroundColor White
         Write-Host ""
         Write-Host $quit -ForegroundColor Red
         Write-Host ""
@@ -1023,12 +1073,15 @@ function challenge {
         Write-Host "What would you like to do?" -ForegroundColor Yellow
         Write-Host ""
         Write-Host $developer_option0 -ForegroundColor White
-        #Write-Host $developer_option1 -ForegroundColor White
-        #Write-Host $developer_option2 -ForegroundColor White
+        Write-Host $developer_option1 -ForegroundColor White
+        Write-Host $developer_option2 -ForegroundColor White
         Write-Host $developer_option3 -ForegroundColor White
         Write-Host $developer_option4 -ForegroundColor White
         Write-Host $developer_option5 -ForegroundColor White
         Write-Host $developer_option6 -ForegroundColor White
+        Write-Host $developer_option7 -ForegroundColor White
+        Write-Host $developer_option8 -ForegroundColor White
+        Write-Host $developer_option9 -ForegroundColor White
         Write-Host ""
         Write-Host $quit -ForegroundColor Red
         Write-Host ""
@@ -1277,14 +1330,7 @@ function challenge {
         # 3. Credential Handling
         # -------------------------------
         # Use generated password if available, otherwise prompt user.
-        if ($elasticsearchPassword) {
-            Write-Host "Detected generated credentials — using those for setup." -ForegroundColor Blue
-            $elasticsearchPasswordSecure = ConvertTo-SecureString -String "$elasticsearchPassword" -AsPlainText -Force
-            $elasticCreds = New-Object System.Management.Automation.PSCredential -ArgumentList "elastic", $elasticsearchPasswordSecure
-        } else {
-            Write-Host "⚠️ No generated password found. Please enter Elastic user credentials." -ForegroundColor Yellow
-            $elasticCreds = Get-Credential elastic
-        }
+        $elasticCreds = Invoke-CheckForElasticCreds
 
         # Prepare base64 auth string for Kibana API requests
         $elasticCredsBase64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(
@@ -1362,6 +1408,8 @@ function challenge {
 
         # Configure Elasticsearch credentials for importing saved objects into Kibana.
         # Get elastic user credentials
+        # Use generated password if available, otherwise prompt user.
+        $elasticCreds = Invoke-CheckForElasticCreds
         Write-Debug "Going to need the password for the elastic user. Checking for generated creds now."
         $elasticCredsCheck = Invoke-CheckForEnv
 
@@ -1570,6 +1618,18 @@ Process {
         }
 
         switch ($Option_Selected) {
+            '0' {
+                # Deploy all from scratch!
+
+                Invoke-CTFd-Deploy
+
+                Invoke-Elastic-Stack-Deploy
+
+                Invoke-Elastic-and-CTFd-Challenges
+
+                $finished = $true
+                break
+            }
             '1' {
                 # Deploy CTFd
                 Invoke-CTFd-Deploy
@@ -1592,20 +1652,6 @@ Process {
                 break
             }
             '4' {
-                # Remove CTFd
-                Invoke-Remove-CTFd
-
-                $finished = $true
-                break
-            }
-            '5' {
-                # Remove Elastic Stack
-                Invoke-Remove-Elastic-Stack
-
-                $finished = $true
-                break
-            }
-            '6' {
                 # 6. Check for Requirements
                 Write-Host "`n🔍 Checking requirements: PowerShell, Docker, and Docker Compose..."
 
@@ -1636,19 +1682,7 @@ Process {
                 $finished = $true
                 break
             }
-            '7' {
-                # Deploy all from scratch!
-
-                Invoke-CTFd-Deploy
-
-                Invoke-Elastic-Stack-Deploy
-
-                Invoke-Elastic-and-CTFd-Challenges
-
-                $finished = $true
-                break
-            }
-            '8' {
+            '5' {
                 # Menu for developer options
                 Show-Developer-Menu
                 $devOptionSelected = Read-Host "Enter your choice"
@@ -1710,8 +1744,42 @@ Process {
                         $finished = $true
                         break
                     }
+                    '7' {
+                        # Check Elastic Stack and CTFd Status
+                        Write-Host "`n🚧 Developer Option: Check Elastic Stack and CTFd Status 🚧" -ForegroundColor Magenta
+                        #Write-Host "`n🔍 Checking Elastic Stack and CTFd status..."\
+                        $elasticCreds = Invoke-CheckForElasticCreds
+                        # Check Elasticsearch Status
+                        Invoke-CheckForElasticsearchStatus -MaxRetries 1 -TimeoutSeconds 1
+                        # Check Kibana Status
+                        $kibanaStatus = Invoke-CheckForKibanaStatus -KibanaUrl $Kibana_URL -MaxRetries 1 -InitialDelay 1
+                        # Check CTFd Status
+                        Invoke-CheckForCTFdStatus -MaxRetries 1 -TimeoutSeconds 1
+                        $finished = $true
+                        break
+                    }
+                    '8' {
+                        # Remove CTFd
+                        Invoke-Remove-CTFd
+
+                        $finished = $true
+                        break
+                    }
+                    '9' {
+                        # Remove Elastic Stack
+                        Invoke-Remove-Elastic-Stack
+
+                        $finished = $true
+                        break
+                    }
                     default {
                         Write-Host "Invalid choice. Please select a valid option." -ForegroundColor Yellow
+                        break
+                    }
+                    {"q","Q"} {
+                        Write-Host "You selected quit, exiting." -ForegroundColor Yellow
+
+                        $finished = $true
                         break
                     }
                 }
