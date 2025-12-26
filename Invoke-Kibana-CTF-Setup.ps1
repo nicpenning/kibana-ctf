@@ -257,11 +257,11 @@ Begin {
         # Base64 Encoded elastic:secure_password for Kibana auth
         if($($elasticCredsCheck)[0] -eq "True"){
             $elasticPass = ConvertTo-SecureString -String $($($elasticCredsCheck)[1]) -AsPlainText -Force
-        $elasticCreds = New-Object System.Management.Automation.PSCredential("elastic", $elasticPass)
+            $elasticCreds = New-Object System.Management.Automation.PSCredential("elastic", $elasticPass)
         } else {
             $elasticCreds = Get-Credential elastic
         }
-            $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
+        $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
 
         return $elasticCreds
     }
@@ -356,6 +356,7 @@ Begin {
             Write-Debug $_.Exception
         }
     }
+
     function Invoke-CheckForCTFdStatus {
         param (
             $MaxRetries = 5,
@@ -384,7 +385,106 @@ Begin {
             }
         } until ("True" -eq $status.success)
 
-}
+    }
+
+    function Invoke-Import-Specfic-CTFd-Challenge {
+        # Get / Save CTFd Access Token
+        $ctfd_auth = Get-CTFd-Admin-Token
+
+        # Configure Elasticsearch credentials for importing saved objects into Kibana.
+        # Get elastic user credentials
+        $elasticCreds = Invoke-CheckForElasticCreds
+        $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
+        $kibanaAuth = "Basic $elasticCredsBase64"
+                    
+        # Check Elasticsearch
+        Invoke-CheckForElasticsearchStatus
+
+        # List available challenges from challenges/challenge_categories.psd1
+        Write-Host "`n`Select the category of challenge to import (e.g., Discover, ES_QL, Dashboards)`n"
+        Write-Host "1. Discover"
+        Write-Host "2. ES_QL"
+        Write-Host "3. Dashboards"
+        $challengeCategoryToImport = Read-Host "Enter your choice: "
+        
+        # Display challenges in the selected category
+        $rootManifestPath = "./challenges/challenge_categories.psd1"
+        $rootManifest = Import-PowerShellDataFile -Path $rootManifestPath
+        $selectedCategory = switch ($challengeCategoryToImport) {
+            '1' { 'Discover' }
+            '2' { 'ES_QL' }
+            '3' { 'Dashboards' }
+            default {
+                Write-Host "Invalid choice. Exiting." -ForegroundColor Yellow
+                $finished = $true
+                break
+            }
+        }
+
+        $challengeRoot = "./challenges/$selectedCategory/"
+        $challenges = Get-ChildItem -Directory $challengeRoot | Sort-Object { [int]$_.Name }
+        Write-Host "`nAvailable challenges in $selectedCategory :`n"
+        
+        $challenges | ForEach-Object {
+            $manifestPath = Join-Path $_.FullName "challenge_manifest.psd1"
+            if (Test-Path $manifestPath) {
+                $manifest = Import-PowerShellDataFile -Path $manifestPath
+                Write-Host "$($_.Name). $($manifest.Name)"
+            }
+        }
+
+        $challengeToImport = Read-Host "`nEnter the number of the challenge to import: "
+        $challengePath = Join-Path $challengeRoot $challengeToImport
+        if (-not (Test-Path $challengePath)) {
+            Write-Host "Invalid challenge number. Exiting." -ForegroundColor Yellow
+            $finished = $true
+            break
+        }
+
+        $manifestPath = Join-Path $challengePath "challenge_manifest.psd1"
+
+        if (-not (Test-Path $manifestPath)) {
+            Write-Host "❌ Missing challenge_manifest.psd1 in $challengePath" -ForegroundColor Red
+            continue
+        }
+
+        try {
+            $manifest = Import-PowerShellDataFile -Path $manifestPath
+        } catch {
+            Write-Host "❌ Failed to load $manifestPath. Ensure it is a valid PSD1 file." -ForegroundColor Red
+            continue
+        }
+
+        if (-not $manifest.ContainsKey("RequiredFiles")) {
+            Write-Warning "❌ No RequiredFiles entry in manifest for $type at $challengePath"
+            continue
+        }
+
+        $requiredFiles = $manifest.RequiredFiles
+        $actualFiles   = Get-ChildItem -Path $challengePath -File | Select-Object -ExpandProperty Name
+        $missingFiles  = $requiredFiles | Where-Object { $_ -notin $actualFiles }
+
+        if ($missingFiles.Count -eq 0) {
+            Write-Debug "✅ All required files found. Importing Challenge: $($manifest.Name)"
+            $actualFiles | Where-Object { $_ -ne "challenge_manifest.psd1" } | ForEach-Object {
+                switch ($_) {
+                    "ctfd_challenge.json"        { Invoke-Import-CTFd-Challenge "$challengePath/$_" }
+                    "ctfd_flag.json"             { Invoke-Import-CTFd-Flag "$challengePath/$_" }
+                    "ctfd_hint.json"             { Invoke-Import-CTFd-Hint "$challengePath/$_" }
+                    "elastic_import_script.ps1"  { . "$challengePath/$_"; challenge }
+                    "elastic_saved_objects.ndjson" { Import-SavedObject "$challengePath/$_" }
+                    "dynamic_flag.ps1"           { . "$challengePath/$_"; dynamic_flag }
+                }
+            }
+
+            return $true
+        } else {
+            Write-Host "⚠️ Missing required files for $type challenge. Import skipped." -ForegroundColor Yellow
+            $missingFiles | ForEach-Object { Write-Host " - $_" -ForegroundColor Red }
+            return $false
+        }
+
+    }
 
     # Elastic Stack Setup Functions
     function Invoke-CheckForEnv {
@@ -621,7 +721,11 @@ Begin {
         Param (
             $filename
         )
-        
+        if($null -eq $kibanaAuth){
+            $plainCreds   = "$($elasticCreds.UserName):$($elasticCreds.GetNetworkCredential().Password)"
+            $encodedCreds = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($plainCreds))
+            $global:kibanaAuth = "Basic $encodedCreds"
+        }
         $importSavedObjectsURL = $Kibana_URL+"/s/kibana-ctf/api/saved_objects/_import?overwrite=true"
         $kibanaHeader = @{"kbn-xsrf" = "true"; "Authorization" = "$kibanaAuth"}
         $savedObjectsFilePath =  Resolve-Path $filename
@@ -1409,7 +1513,7 @@ function challenge {
         # Configure Elasticsearch credentials for importing saved objects into Kibana.
         # Get elastic user credentials
         # Use generated password if available, otherwise prompt user.
-        $elasticCreds = Invoke-CheckForElasticCreds
+        # $elasticCreds = Invoke-CheckForElasticCreds
         Write-Debug "Going to need the password for the elastic user. Checking for generated creds now."
         $elasticCredsCheck = Invoke-CheckForEnv
 
@@ -1417,11 +1521,11 @@ function challenge {
         # Base64 Encoded elastic:secure_password for Kibana auth
         if($($elasticCredsCheck)[0] -eq "True"){
             $elasticPass = ConvertTo-SecureString -String $($($elasticCredsCheck)[1]) -AsPlainText -Force
-        $elasticCreds = New-Object System.Management.Automation.PSCredential("elastic", $elasticPass)
+            $elasticCreds = New-Object System.Management.Automation.PSCredential("elastic", $elasticPass)
         } else {
             $elasticCreds = Get-Credential elastic
         }
-            $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
+        $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
 
         $kibanaAuth = "Basic $elasticCredsBase64"
                     
@@ -1696,8 +1800,12 @@ Process {
                     }
                     '1' {
                         # Import a specific CTF Challenge
-                        Write-Host "`n🚧 Developer Option: Import a Specific CTF Challenge 🚧" -ForegroundColor Magenta
-                        Write-Host "Still in development..."
+                        $result = Invoke-Import-Specfic-CTFd-Challenge
+                        if("true" -eq $result){
+                            Write-Host "`n✅ Challenge imported successfully!"
+                        } else {
+                            Write-Host "`n❌ Challenge import failed."
+                        }
                         $finished = $true
                         break
                     }
