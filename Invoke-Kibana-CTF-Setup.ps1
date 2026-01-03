@@ -1825,20 +1825,13 @@ Process {
                         # Get Challenges
                         $challenges = Get-Challenges-From-CTFd
 
-                        # Remove Challenges 1 by 1
+                        # List Challenges 1 by 1
                         Write-Host "Retrieving $($challenges.data.count) challenges"
                         $challenges.data | Sort-Object id | ForEach-Object {
                             # Get all challenge details per challenge
                             $id = $_.id
                             $challenge_info = Invoke-RestMethod -Method Get "$CTFd_URL_API/challenges/$id" -ContentType "application/json" -Headers $ctfd_auth
                             Write-Host "Challenge found: $($challenge_info.data.id) - $($challenge_info.data.name)"
-                            #try{
-                                #$remove_challenge = Invoke-RestMethod -Method Delete "$CTFd_URL_API/challenges/$id" -ContentType "application/json" -Headers $ctfd_auth
-                                #Write-Host "Removed challenge $($challenge_info.data.name) - $($remove_challenge.success)"
-                            #}catch{
-                               # Write-Host "Could not remove challenge: $($challenge_info.data.name) - $id"
-                                #Write-Debug $_.Exception
-                            #}
                         }
 
                         $challengeToExport = Read-Host "Enter the ID of the challenge you would like to export from CTFd"
@@ -1908,6 +1901,7 @@ Process {
                             Where-Object { $_ -ne 'null' -and $_.Trim() -ne '' } | 
                             Out-File "$exportDir/ctfd_challenge.json" -Encoding UTF8
                         Write-Host "✅ Exported challenge to $exportDir/ctfd_challenge.json" -ForegroundColor Green
+                        
                         # Export flags
                         try {
                             $flags = Invoke-RestMethod -Method Get "$CTFd_URL_API/challenges/$challengeToExport/flags" -ContentType "application/json" -Headers $ctfd_auth
