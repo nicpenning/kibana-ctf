@@ -1902,13 +1902,8 @@ Process {
                         $challengeData = $challenge_info.data
                         $challengeData.id = $newId
 
-                        # Find hint objects and update ID with the new ID
-                        if ($challengeData.hints) {
-                            $challengeData.hints | ForEach-Object { $_.id = $newId }
-                        }
-
-                        # Export challenge JSON
-                        $challengeData | Select-Object -Property * -ExcludeProperty @('view', 'rating', 'ratings','type_data') | 
+                        # Export challenge JSON (Excluded unneeded properties)
+                        $challengeData | Select-Object -Property * -ExcludeProperty @('view', 'rating', 'ratings','type_data', 'solves', 'solved_by_me', 'attempts', 'hints', 'solution_id', 'solution_state') | 
                             ConvertTo-Json -Depth 10 | 
                             Where-Object { $_ -ne 'null' -and $_.Trim() -ne '' } | 
                             Out-File "$exportDir/ctfd_challenge.json" -Encoding UTF8
