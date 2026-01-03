@@ -490,6 +490,146 @@ Begin {
 
     }
 
+    function Invoke-Export-Existing-CTFd-Challenge {
+        # Setup up Auth header
+        $ctfd_auth = Get-CTFd-Admin-Token
+
+        # Get Challenges
+        $challenges = Get-Challenges-From-CTFd
+
+        # List Challenges 1 by 1
+        Write-Host "Retrieving $($challenges.data.count) challenges"
+        $challenges.data | Sort-Object id | ForEach-Object {
+            # Get all challenge details per challenge
+            $id = $_.id
+            $challenge_info = Invoke-RestMethod -Method Get "$CTFd_URL_API/challenges/$id" -ContentType "application/json" -Headers $ctfd_auth
+            Write-Host "Challenge found: $($challenge_info.data.id) - $($challenge_info.data.name)"
+        }
+
+        $challengeToExport = Read-Host "Enter the ID of the challenge you would like to export from CTFd"
+
+        # Fetch the challenge details
+        $challenge_info = Invoke-RestMethod -Method Get "$CTFd_URL_API/challenges/$challengeToExport" -ContentType "application/json" -Headers $ctfd_auth
+
+        # Load challenge categories from manifest
+        $rootManifestPath = ".\challenges\challenge_categories.psd1"
+        try {
+            $rootManifest = Import-PowerShellDataFile -Path $rootManifestPath
+            $allCategories = $rootManifest.Categories
+        } catch {
+            Write-Host "❌ Failed to load $rootManifestPath. Ensure it is valid PSD1." -ForegroundColor Red
+            return $false
+        }
+
+        # Ask user which category to export to
+        Write-Host "`nSelect the category to export this challenge to:" -ForegroundColor Cyan
+        $allCategories | ForEach-Object { 
+            $index = $allCategories.IndexOf($_) + 1
+            Write-Host "$index. $_"
+        }
+        $categoryChoice = Read-Host "Enter category number"
+
+        # Validate category selection
+        $categoryIndex = [int]$categoryChoice - 1
+        if ($categoryIndex -lt 0 -or $categoryIndex -ge $allCategories.Count) {
+            Write-Host "❌ Invalid category selection. Exiting." -ForegroundColor Red
+            $finished = $true
+            break
+        }
+        $category = $allCategories[$categoryIndex]
+        Write-Host "Selected category: $category" -ForegroundColor Green
+
+        # Determine next challenge number for this category
+        $categoryPath = "./challenges/$category"
+        if (Test-Path $categoryPath) {
+            $existingChallenges = Get-ChildItem -Directory $categoryPath -ErrorAction SilentlyContinue | 
+                Where-Object { $_.Name -match '^\d+$' } | 
+                Sort-Object { [int]$_.Name }
+            $nextChallengeNumber = ($existingChallenges.Count) + 1
+        } else {
+            $nextChallengeNumber = 1
+        }
+        Write-Host "Next challenge number for $category`: $nextChallengeNumber" -ForegroundColor Green
+
+        # Calculate new ID
+        $newId = ($categoryIndex + 1) * 1000 + $nextChallengeNumber
+        Write-Host "New ID for the challenge: $newId" -ForegroundColor Green
+
+        # Create the export directory
+        $exportDir = "./challenges/$category/$nextChallengeNumber"
+        if (!(Test-Path $exportDir)) {
+            New-Item -ItemType Directory -Path $exportDir -Force | Out-Null
+            Write-Host "📁 Created directory: $exportDir" -ForegroundColor Green
+        }
+
+        # Prepare challenge data with new ID
+        $challengeData = $challenge_info.data
+        $challengeData.id = $newId
+
+        # Export challenge JSON (Excluded unneeded properties)
+        $challengeData | Select-Object -Property * -ExcludeProperty @('view', 'rating', 'ratings','type_data', 'solves', 'solved_by_me', 'attempts', 'hints', 'solution_id', 'solution_state') | 
+            ConvertTo-Json -Depth 10 | 
+            Where-Object { $_ -ne 'null' -and $_.Trim() -ne '' } | 
+            Out-File "$exportDir/ctfd_challenge.json" -Encoding UTF8
+        Write-Host "✅ Exported challenge to $exportDir/ctfd_challenge.json" -ForegroundColor Green
+        
+        # Export flags
+        try {
+            $flags = Invoke-RestMethod -Method Get "$CTFd_URL_API/challenges/$challengeToExport/flags" -ContentType "application/json" -Headers $ctfd_auth
+            if ($flags.data -and $flags.data.Count -gt 0) {
+                $flags.data | ForEach-Object { $_.id = $newId }
+                $flags.data | ForEach-Object { $_.challenge_id = $newId }
+                $flags.data | ForEach-Object { $_.challenge = $newId }
+                $flags.data | ConvertTo-Json -Depth 10 | Out-File "$exportDir/ctfd_flag.json" -Encoding UTF8
+                Write-Host "✅ Exported flags to $exportDir/ctfd_flag.json" -ForegroundColor Green
+            } else {
+                Write-Host "⚠️ No flags found for challenge $challengeToExport" -ForegroundColor Yellow
+            }
+        } catch {
+            Write-Host "❌ Failed to export flags for challenge $challengeToExport" -ForegroundColor Red
+            Write-Debug $_.Exception
+        }
+
+        # Export hints
+        try {
+            $hints = Invoke-RestMethod -Method Get "$CTFd_URL_API/challenges/$challengeToExport/hints" -ContentType "application/json" -Headers $ctfd_auth
+            if ($hints.data -and $hints.data.Count -gt 0) {
+                $hints.data | ForEach-Object { $_.id = $newId }
+                $hints.data | ForEach-Object { $_.challenge_id = $newId }
+                $hints.data | ForEach-Object { $_.challenge = $newId }
+                $hints.data | ConvertTo-Json -Depth 10 | Out-File "$exportDir/ctfd_hint.json" -Encoding UTF8
+                Write-Host "✅ Exported hints to $exportDir/ctfd_hint.json" -ForegroundColor Green
+            } else {
+                Write-Host "ℹ️ No hints found for challenge $challengeToExport" -ForegroundColor Cyan
+            }
+        } catch {
+            Write-Host "❌ Failed to export hints for challenge $challengeToExport" -ForegroundColor Red
+            Write-Debug $_.Exception
+        }
+
+        # Create challenge manifest
+        $requiredFiles = @()
+        $requiredFiles = @("ctfd_challenge.json", "ctfd_flag.json")
+        if ($hints.data -and $hints.data.Count -gt 0) { $requiredFiles += "ctfd_hint.json" }
+        $Challenge_Required_Kibana_Version = Read-Host "Enter the minimum required Kibana version for this challenge (e.g. 8.17.0)"
+        $manifestContent = @"
+@{
+    Name = "$($challengeData.name)"
+    Category = "$category"
+    RequiredFiles = @(
+        "$($requiredFiles  -join "`"`n        `"")"
+    )
+    Resources = @{
+        KibanaVersion = "^$Challenge_Required_Kibana_Version"
+    }
+}
+"@
+        $manifestContent | Out-File "$exportDir/challenge_manifest.psd1" -Encoding UTF8
+        Write-Host "✅ Created challenge manifest at $exportDir/challenge_manifest.psd1" -ForegroundColor Green
+        Write-Host "`n🎉 Successfully exported challenge '$($challengeData.name)' with new ID $newId to $exportDir" -ForegroundColor Green
+        return $true
+    }
+
     # Elastic Stack Setup Functions
     function Invoke-CheckForEnv {
         # Check for existing .env file for setup
@@ -1816,148 +1956,14 @@ Process {
                     }
                     '2' {
                         # Export Existing CTF Challenge from CTFd
-                        Write-Host "`n🚧 Developer Option: Export Existing CTF Challenge from CTFd"
-                        Write-Host "Still in development..."
+                        Write-Host "`n🚧 Developer Option: Export Existing CTF Challenge from CTFd 🚧"
 
-                        # Setup up Auth header
-                        $ctfd_auth = Get-CTFd-Admin-Token
-
-                        # Get Challenges
-                        $challenges = Get-Challenges-From-CTFd
-
-                        # List Challenges 1 by 1
-                        Write-Host "Retrieving $($challenges.data.count) challenges"
-                        $challenges.data | Sort-Object id | ForEach-Object {
-                            # Get all challenge details per challenge
-                            $id = $_.id
-                            $challenge_info = Invoke-RestMethod -Method Get "$CTFd_URL_API/challenges/$id" -ContentType "application/json" -Headers $ctfd_auth
-                            Write-Host "Challenge found: $($challenge_info.data.id) - $($challenge_info.data.name)"
-                        }
-
-                        $challengeToExport = Read-Host "Enter the ID of the challenge you would like to export from CTFd"
-
-                        # Fetch the challenge details
-                        $challenge_info = Invoke-RestMethod -Method Get "$CTFd_URL_API/challenges/$challengeToExport" -ContentType "application/json" -Headers $ctfd_auth
-
-                        # Load challenge categories from manifest
-                        $rootManifestPath = ".\challenges\challenge_categories.psd1"
-                        try {
-                            $rootManifest = Import-PowerShellDataFile -Path $rootManifestPath
-                            $allCategories = $rootManifest.Categories
-                        } catch {
-                            Write-Host "❌ Failed to load $rootManifestPath. Ensure it is valid PSD1." -ForegroundColor Red
-                            $finished = $true
-                            break
-                        }
-
-                        # Ask user which category to export to
-                        Write-Host "`nSelect the category to export this challenge to:" -ForegroundColor Cyan
-                        $allCategories | ForEach-Object { 
-                            $index = $allCategories.IndexOf($_) + 1
-                            Write-Host "$index. $_"
-                        }
-                        $categoryChoice = Read-Host "Enter category number"
-
-                        # Validate category selection
-                        $categoryIndex = [int]$categoryChoice - 1
-                        if ($categoryIndex -lt 0 -or $categoryIndex -ge $allCategories.Count) {
-                            Write-Host "❌ Invalid category selection. Exiting." -ForegroundColor Red
-                            $finished = $true
-                            break
-                        }
-                        $category = $allCategories[$categoryIndex]
-                        Write-Host "Selected category: $category" -ForegroundColor Green
-
-                        # Determine next challenge number for this category
-                        $categoryPath = "./challenges/$category"
-                        if (Test-Path $categoryPath) {
-                            $existingChallenges = Get-ChildItem -Directory $categoryPath -ErrorAction SilentlyContinue | 
-                                Where-Object { $_.Name -match '^\d+$' } | 
-                                Sort-Object { [int]$_.Name }
-                            $nextChallengeNumber = ($existingChallenges.Count) + 1
+                        $result = Invoke-Export-Existing-CTFd-Challenge
+                        if("true" -eq $result){
+                            Write-Host "`n✅ Challenge exported successfully!"
                         } else {
-                            $nextChallengeNumber = 1
+                            Write-Host "`n❌ Challenge export failed."
                         }
-                        Write-Host "Next challenge number for $category`: $nextChallengeNumber" -ForegroundColor Green
-
-                        # Calculate new ID
-                        $newId = ($categoryIndex + 1) * 1000 + $nextChallengeNumber
-                        Write-Host "New ID for the challenge: $newId" -ForegroundColor Green
-
-                        # Create the export directory
-                        $exportDir = "./challenges/$category/$nextChallengeNumber"
-                        if (!(Test-Path $exportDir)) {
-                            New-Item -ItemType Directory -Path $exportDir -Force | Out-Null
-                            Write-Host "📁 Created directory: $exportDir" -ForegroundColor Green
-                        }
-
-                        # Prepare challenge data with new ID
-                        $challengeData = $challenge_info.data
-                        $challengeData.id = $newId
-
-                        # Export challenge JSON (Excluded unneeded properties)
-                        $challengeData | Select-Object -Property * -ExcludeProperty @('view', 'rating', 'ratings','type_data', 'solves', 'solved_by_me', 'attempts', 'hints', 'solution_id', 'solution_state') | 
-                            ConvertTo-Json -Depth 10 | 
-                            Where-Object { $_ -ne 'null' -and $_.Trim() -ne '' } | 
-                            Out-File "$exportDir/ctfd_challenge.json" -Encoding UTF8
-                        Write-Host "✅ Exported challenge to $exportDir/ctfd_challenge.json" -ForegroundColor Green
-                        
-                        # Export flags
-                        try {
-                            $flags = Invoke-RestMethod -Method Get "$CTFd_URL_API/challenges/$challengeToExport/flags" -ContentType "application/json" -Headers $ctfd_auth
-                            if ($flags.data -and $flags.data.Count -gt 0) {
-                                $flags.data | ForEach-Object { $_.id = $newId }
-                                $flags.data | ForEach-Object { $_.challenge_id = $newId }
-                                $flags.data | ForEach-Object { $_.challenge = $newId }
-                                $flags.data | ConvertTo-Json -Depth 10 | Out-File "$exportDir/ctfd_flag.json" -Encoding UTF8
-                                Write-Host "✅ Exported flags to $exportDir/ctfd_flag.json" -ForegroundColor Green
-                            } else {
-                                Write-Host "⚠️ No flags found for challenge $challengeToExport" -ForegroundColor Yellow
-                            }
-                        } catch {
-                            Write-Host "❌ Failed to export flags for challenge $challengeToExport" -ForegroundColor Red
-                            Write-Debug $_.Exception
-                        }
-
-                        # Export hints
-                        try {
-                            $hints = Invoke-RestMethod -Method Get "$CTFd_URL_API/challenges/$challengeToExport/hints" -ContentType "application/json" -Headers $ctfd_auth
-                            if ($hints.data -and $hints.data.Count -gt 0) {
-                                $hints.data | ForEach-Object { $_.id = $newId }
-                                $hints.data | ForEach-Object { $_.challenge_id = $newId }
-                                $hints.data | ForEach-Object { $_.challenge = $newId }
-                                $hints.data | ConvertTo-Json -Depth 10 | Out-File "$exportDir/ctfd_hint.json" -Encoding UTF8
-                                Write-Host "✅ Exported hints to $exportDir/ctfd_hint.json" -ForegroundColor Green
-                            } else {
-                                Write-Host "ℹ️ No hints found for challenge $challengeToExport" -ForegroundColor Cyan
-                            }
-                        } catch {
-                            Write-Host "❌ Failed to export hints for challenge $challengeToExport" -ForegroundColor Red
-                            Write-Debug $_.Exception
-                        }
-
-                        # Create challenge manifest
-                        $requiredFiles = @()
-                        $requiredFiles = @("ctfd_challenge.json", "ctfd_flag.json")
-                        if ($hints.data -and $hints.data.Count -gt 0) { $requiredFiles += "ctfd_hint.json" }
-                        $Challenge_Required_Kibana_Version = Read-Host "Enter the minimum required Kibana version for this challenge (e.g. 8.17.0)"
-                        $manifestContent = @"
-@{
-    Name = "$($challengeData.name)"
-    Category = "$category"
-    RequiredFiles = @(
-        "$($requiredFiles  -join "`"`n        `"")"
-    )
-    Resources = @{
-        KibanaVersion = "^$Challenge_Required_Kibana_Version"
-    }
-}
-"@
-                        $manifestContent | Out-File "$exportDir/challenge_manifest.psd1" -Encoding UTF8
-                        Write-Host "✅ Created challenge manifest at $exportDir/challenge_manifest.psd1" -ForegroundColor Green
-
-                        Write-Host "`n🎉 Successfully exported challenge '$($challengeData.name)' with new ID $newId to $exportDir" -ForegroundColor Green
-
                         $finished = $true
                         break
                     }
