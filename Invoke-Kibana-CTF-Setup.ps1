@@ -296,7 +296,11 @@ Begin {
         )
         $ctfd_challenge = Get-Content $challenge_file_path | ConvertFrom-Json -Depth 10
         # Set connection info
-        $ctfd_challenge.connection_info = $ctfd_challenge.connection_info.Replace("http://127.0.0.1:5601",$Kibana_URL)
+        if($null -ne $ctfd_challenge.connection_info){
+            $ctfd_challenge.connection_info = $ctfd_challenge.connection_info.Replace("http://127.0.0.1:5601",$Kibana_URL)
+        }else{
+            Write-Debug "No connection info to modify for challenge: $($ctfd_challenge.name)"
+        }
 
         Write-Debug "Importing challenge: $($ctfd_challenge.name)"
         $current_challenge = $ctfd_challenge | ConvertTo-Json -Depth 10
@@ -433,7 +437,7 @@ Begin {
             }
         }
 
-        $challengeToImport = Read-Host "`nEnter the number of the challenge to import: "
+        $challengeToImport = Read-Host "`nEnter the number of the challenge to import"
         $challengePath = Join-Path $challengeRoot $challengeToImport
         if (-not (Test-Path $challengePath)) {
             Write-Host "Invalid challenge number. Exiting." -ForegroundColor Yellow
@@ -1898,13 +1902,17 @@ Process {
                         $challengeData = $challenge_info.data
                         $challengeData.id = $newId
 
+                        # Find hint objects and update ID with the new ID
+                        if ($challengeData.hints) {
+                            $challengeData.hints | ForEach-Object { $_.id = $newId }
+                        }
+
                         # Export challenge JSON
                         $challengeData | Select-Object -Property * -ExcludeProperty @('view', 'rating', 'ratings','type_data') | 
                             ConvertTo-Json -Depth 10 | 
                             Where-Object { $_ -ne 'null' -and $_.Trim() -ne '' } | 
                             Out-File "$exportDir/ctfd_challenge.json" -Encoding UTF8
                         Write-Host "✅ Exported challenge to $exportDir/ctfd_challenge.json" -ForegroundColor Green
-
                         # Export flags
                         try {
                             $flags = Invoke-RestMethod -Method Get "$CTFd_URL_API/challenges/$challengeToExport/flags" -ContentType "application/json" -Headers $ctfd_auth
