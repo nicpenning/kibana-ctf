@@ -56,8 +56,9 @@ pwsh
 
 ↘️ Check out this speed run of the setup on YouTube! ↙️
 
-⚠️ This works for the most part - but major changes have been implemented to fully automate the setup. New video may be released at a later date.
 [![Watch speed run of setup!](https://img.youtube.com/vi/v962vvBVokY/hqdefault.jpg)](https://www.youtube.com/watch?v=v962vvBVokY)
+
+⚠️ About the setup video - Major changes have been implemented to fully automate the setup. New video may be released at a later date.
 
 
 _Note: Run Option "🔍 Check for Requirements", then proceed to the next step if your environment meets the requirements._
