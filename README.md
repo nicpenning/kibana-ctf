@@ -56,14 +56,16 @@ pwsh
 
 ↘️ Check out this speed run of the setup on YouTube! ↙️
 
+⚠️ This works for the most part - but major changes have been implemented to fully automate the setup. New video may be released at a later date.
 [![Watch speed run of setup!](https://img.youtube.com/vi/v962vvBVokY/hqdefault.jpg)](https://www.youtube.com/watch?v=v962vvBVokY)
 
 
-_Note: Run Option 6. Check for Requirements, then proceed to the next step if your environment meets the requirements._
+_Note: Run Option "🔍 Check for Requirements", then proceed to the next step if your environment meets the requirements._
 
 ### 2. Deploy everything from scratch - Use Option 0 (Below options are deprecated)
    <details>
     🗒️Note: These are deprecated steps that will be removed in future release. Instead simply run option 0 and follow the steps. (Ignore below).
+    
     a. Once deployed, go to the CTFd instance and navigate through the wizard with default settings (most of these will be overwritten later). Make sure to make note of your admin user/password combination and specify how long you want the CTF to last (this can easily be changed later if needed.)
 
    ![CTFd First Start Page](./images/image.png)
