@@ -1411,6 +1411,8 @@ function challenge {
                 Write-Host "   https://github.com/nicpenning/kibana-ctf?tab=readme-ov-file#how-to-get-started" -ForegroundColor Cyan
                 Write-Host "`n👉 Once finished, rerun this script and select option 2 to begin Elastic Stack setup." -ForegroundColor Green
                 # Setup up Auth header
+                Write-Host "`n⏳ Waiting 30 seconds for CTFd to be ready before obtaining admin token..." -ForegroundColor Yellow
+                Start-Sleep -Seconds 30 # Wait for CTFd to be ready
                 $ctfd_auth = Get-CTFd-Admin-Token
             } else {
                 Write-Host "`n❌ You chose not to deploy CTFd. Exiting..." -ForegroundColor Yellow
