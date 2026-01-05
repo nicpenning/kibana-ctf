@@ -1,13 +1,13 @@
 @{
     Categories = @(
         # 1000 Series
-        "Dashboards"
-
-        # 2000 Series
         "Discover"
 
-        # 3000 Series
+        # 2000 Series
         "ES_QL"
+
+        # 3000 Series
+        "Dashboards"
 
         # 4000 Series
     )

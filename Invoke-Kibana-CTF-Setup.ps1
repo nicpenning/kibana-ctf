@@ -66,6 +66,9 @@ Begin {
     # CTFd Variables
     $CTFd_URL_API = $CTFd_URL+"/api/v1"
 
+    # CTFd config.ini path
+    $ctfd_iniPath = "..\CTFd\CTFd\config.ini"
+
     # Extract custom settings from configuration.psd1
     $configPath = "./configuration.psd1"
     $configurationSettings = Import-PowerShellDataFile $configPath 
@@ -189,9 +192,78 @@ Begin {
 
         return $CTFd_Access_Token
     }
+
+    function Invoke-Setup-CTFd-Preset-Admin {
+        param(
+            [string]$ctfName = "Kibana CTF"
+        )
+        # Read the INI file into memory
+        $iniContent = Get-Content $ctfd_iniPath -Raw
+
+        # Helper to generate a secure random string
+        function New-SecureString {
+            param(
+                [int]$Length = 32
+            )
+            $bytes = New-Object byte[] $Length
+            [System.Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+
+            # URL-safe base64 (good for passwords/tokens)
+            return [Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+','-').Replace('/','_')
+        }
+
+        # Generate values
+        $CTFd_Admin_User   = "ctfd_admin"
+        $CTFd_Admin_Pass   = New-SecureString -Length 32
+        $CTFd_Access_Token  = "ctfd_"+$(New-SecureString -Length 48)   # API tokens usually longer
+        $CTFd_Preset_Configs = '{"setup": "true","ctf_name": "' + $ctfName + '"}'
+
+        # Update text directly using regex (reliable for INI files)
+        $iniContent = $iniContent -replace "(?m)^PRESET_ADMIN_NAME\s*=.*","PRESET_ADMIN_NAME = $CTFd_Admin_User"
+        $iniContent = $iniContent -replace "(?m)^PRESET_ADMIN_EMAIL\s*=.*","PRESET_ADMIN_EMAIL = $CTFd_Admin_User@ctfd.local"
+        $iniContent = $iniContent -replace "(?m)^PRESET_ADMIN_PASSWORD\s*=.*","PRESET_ADMIN_PASSWORD = $CTFd_Admin_Pass"
+        $iniContent = $iniContent -replace "(?m)^PRESET_ADMIN_TOKEN\s*=.*","PRESET_ADMIN_TOKEN = $CTFd_Access_Token"
+        $iniContent = $iniContent -replace "(?m)^PRESET_CONFIGS\s*=.*","PRESET_CONFIGS = $CTFd_Preset_Configs"
+
+        # Save the updated INI file with generated credentials
+        Set-Content -Path $ctfd_iniPath -Value $iniContent
+
+        # Store CTFd Access Token in configuration.psd1
+        try{
+            Set-Location ../kibana-ctf
+            Update-Psd1Value -Path $configPath -Key "CTFd_Access_Token" -Value $CTFd_Access_Token
+            Set-Location ../CTFd
+            Write-Host "💾 CTFd Access Token saved to $configPath for future use." -ForegroundColor Green
+        }catch{
+            Write-Host "❌ Failed to update the configuration.psd1 file with the CTFd Access Token." -ForegroundColor Red
+            Set-Location ../CTFd
+        }
+
+        Write-Host "Finished setting CTFd preset admin credentials, make sure to copy these values for later use."
+        Write-Host "    Username: $CTFd_Admin_User"
+        Write-Host "    Password: $CTFd_Admin_Pass"
+        Write-Host "Access Token: $CTFd_Access_Token"
+        pause
+    }
     
     function Get-Elastic-Creds {
         return Get-Credential -Message "Enter the credentials for the elastic stack, recommended to use the default elastic account"
+    }
+
+    function Invoke-CheckForElasticCreds {
+        $elasticCredsCheck = Invoke-CheckForEnv
+
+        # Set passwords via automated configuration or manual input
+        # Base64 Encoded elastic:secure_password for Kibana auth
+        if($($elasticCredsCheck)[0] -eq "True"){
+            $elasticPass = ConvertTo-SecureString -String $($($elasticCredsCheck)[1]) -AsPlainText -Force
+            $elasticCreds = New-Object System.Management.Automation.PSCredential("elastic", $elasticPass)
+        } else {
+            $elasticCreds = Get-Credential elastic
+        }
+        $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
+
+        return $elasticCreds
     }
     
     function Get-Challenges-From-CTFd {
@@ -224,7 +296,11 @@ Begin {
         )
         $ctfd_challenge = Get-Content $challenge_file_path | ConvertFrom-Json -Depth 10
         # Set connection info
-        $ctfd_challenge.connection_info = $ctfd_challenge.connection_info.Replace("http://127.0.0.1:5601",$Kibana_URL)
+        if($null -ne $ctfd_challenge.connection_info){
+            $ctfd_challenge.connection_info = $ctfd_challenge.connection_info.Replace("http://127.0.0.1:5601",$Kibana_URL)
+        }else{
+            Write-Debug "No connection info to modify for challenge: $($ctfd_challenge.name)"
+        }
 
         Write-Debug "Importing challenge: $($ctfd_challenge.name)"
         $current_challenge = $ctfd_challenge | ConvertTo-Json -Depth 10
@@ -285,6 +361,275 @@ Begin {
         }
     }
 
+    function Invoke-CheckForCTFdStatus {
+        param (
+            $MaxRetries = 5,
+            $TimeoutSeconds = 60
+        )
+        # Check for CTFd Status
+        Write-Host "🚩 Checking CTFd availability"
+        $ctfd_auth = Get-CTFd-Admin-Token
+        
+        do {
+            $trys = 0
+            try {
+                Write-Debug "Checking to see if CTFd is accessible."
+                $status = Invoke-RestMethod -Method Get -Uri "$CTFd_URL_API/challenges" -ContentType "application/json" -Headers $ctfd_auth -AllowUnencryptedAuthentication -SkipCertificateCheck -ConnectionTimeoutSeconds $TimeoutSeconds
+            } catch {
+                Write-Debug "Waiting for healthy cluster for 5 seconds. Then checking again."
+                Write-Host "Attempt number: $($trys+1) of $MaxRetries; Current timeout set at $TimeoutSeconds seconds" -ForegroundColor Yellow
+                Write-Debug $_.Exception
+                $status
+                Start-Sleep -Seconds 5
+                $trys++
+                if($trys -ge $MaxRetries){
+                    Write-Host "❌ Could not reach CTFd challenges API. Please make sure it is running and the credentials are correct." -ForegroundColor Red
+                    exit
+                }
+            }
+        } until ("True" -eq $status.success)
+
+    }
+
+    function Invoke-Import-Specfic-CTFd-Challenge {
+        # Get / Save CTFd Access Token
+        $ctfd_auth = Get-CTFd-Admin-Token
+
+        # Configure Elasticsearch credentials for importing saved objects into Kibana.
+        # Get elastic user credentials
+        $elasticCreds = Invoke-CheckForElasticCreds
+        $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
+        $kibanaAuth = "Basic $elasticCredsBase64"
+                    
+        # Check Elasticsearch
+        Invoke-CheckForElasticsearchStatus
+
+        # List available challenges from challenges/challenge_categories.psd1
+        Write-Host "`n`Select the category of challenge to import (e.g., Discover, ES_QL, Dashboards)`n"
+        Write-Host "1. Discover"
+        Write-Host "2. ES_QL"
+        Write-Host "3. Dashboards"
+        $challengeCategoryToImport = Read-Host "Enter your choice: "
+        
+        # Display challenges in the selected category
+        $rootManifestPath = "./challenges/challenge_categories.psd1"
+        $rootManifest = Import-PowerShellDataFile -Path $rootManifestPath
+        $selectedCategory = switch ($challengeCategoryToImport) {
+            '1' { 'Discover' }
+            '2' { 'ES_QL' }
+            '3' { 'Dashboards' }
+            default {
+                Write-Host "Invalid choice. Exiting." -ForegroundColor Yellow
+                $finished = $true
+                break
+            }
+        }
+
+        $challengeRoot = "./challenges/$selectedCategory/"
+        $challenges = Get-ChildItem -Directory $challengeRoot | Sort-Object { [int]$_.Name }
+        Write-Host "`nAvailable challenges in $selectedCategory :`n"
+        
+        $challenges | ForEach-Object {
+            $manifestPath = Join-Path $_.FullName "challenge_manifest.psd1"
+            if (Test-Path $manifestPath) {
+                $manifest = Import-PowerShellDataFile -Path $manifestPath
+                Write-Host "$($_.Name). $($manifest.Name)"
+            }
+        }
+
+        $challengeToImport = Read-Host "`nEnter the number of the challenge to import"
+        $challengePath = Join-Path $challengeRoot $challengeToImport
+        if (-not (Test-Path $challengePath)) {
+            Write-Host "Invalid challenge number. Exiting." -ForegroundColor Yellow
+            $finished = $true
+            break
+        }
+
+        $manifestPath = Join-Path $challengePath "challenge_manifest.psd1"
+
+        if (-not (Test-Path $manifestPath)) {
+            Write-Host "❌ Missing challenge_manifest.psd1 in $challengePath" -ForegroundColor Red
+            continue
+        }
+
+        try {
+            $manifest = Import-PowerShellDataFile -Path $manifestPath
+        } catch {
+            Write-Host "❌ Failed to load $manifestPath. Ensure it is a valid PSD1 file." -ForegroundColor Red
+            continue
+        }
+
+        if (-not $manifest.ContainsKey("RequiredFiles")) {
+            Write-Warning "❌ No RequiredFiles entry in manifest for $type at $challengePath"
+            continue
+        }
+
+        $requiredFiles = $manifest.RequiredFiles
+        $actualFiles   = Get-ChildItem -Path $challengePath -File | Select-Object -ExpandProperty Name
+        $missingFiles  = $requiredFiles | Where-Object { $_ -notin $actualFiles }
+
+        if ($missingFiles.Count -eq 0) {
+            Write-Debug "✅ All required files found. Importing Challenge: $($manifest.Name)"
+            $actualFiles | Where-Object { $_ -ne "challenge_manifest.psd1" } | ForEach-Object {
+                switch ($_) {
+                    "ctfd_challenge.json"        { Invoke-Import-CTFd-Challenge "$challengePath/$_" }
+                    "ctfd_flag.json"             { Invoke-Import-CTFd-Flag "$challengePath/$_" }
+                    "ctfd_hint.json"             { Invoke-Import-CTFd-Hint "$challengePath/$_" }
+                    "elastic_import_script.ps1"  { . "$challengePath/$_"; challenge }
+                    "elastic_saved_objects.ndjson" { Import-SavedObject "$challengePath/$_" }
+                    "dynamic_flag.ps1"           { . "$challengePath/$_"; dynamic_flag }
+                }
+            }
+
+            return $true
+        } else {
+            Write-Host "⚠️ Missing required files for $type challenge. Import skipped." -ForegroundColor Yellow
+            $missingFiles | ForEach-Object { Write-Host " - $_" -ForegroundColor Red }
+            return $false
+        }
+
+    }
+
+    function Invoke-Export-Existing-CTFd-Challenge {
+        # Setup up Auth header
+        $ctfd_auth = Get-CTFd-Admin-Token
+
+        # Get Challenges
+        $challenges = Get-Challenges-From-CTFd
+
+        # List Challenges 1 by 1
+        Write-Host "Retrieving $($challenges.data.count) challenges"
+        $challenges.data | Sort-Object id | ForEach-Object {
+            # Get all challenge details per challenge
+            $id = $_.id
+            $challenge_info = Invoke-RestMethod -Method Get "$CTFd_URL_API/challenges/$id" -ContentType "application/json" -Headers $ctfd_auth
+            Write-Host "Challenge found: $($challenge_info.data.id) - $($challenge_info.data.name)"
+        }
+
+        $challengeToExport = Read-Host "Enter the ID of the challenge you would like to export from CTFd"
+
+        # Fetch the challenge details
+        $challenge_info = Invoke-RestMethod -Method Get "$CTFd_URL_API/challenges/$challengeToExport" -ContentType "application/json" -Headers $ctfd_auth
+
+        # Load challenge categories from manifest
+        $rootManifestPath = ".\challenges\challenge_categories.psd1"
+        try {
+            $rootManifest = Import-PowerShellDataFile -Path $rootManifestPath
+            $allCategories = $rootManifest.Categories
+        } catch {
+            Write-Host "❌ Failed to load $rootManifestPath. Ensure it is valid PSD1." -ForegroundColor Red
+            return $false
+        }
+
+        # Ask user which category to export to
+        Write-Host "`nSelect the category to export this challenge to:" -ForegroundColor Cyan
+        $allCategories | ForEach-Object { 
+            $index = $allCategories.IndexOf($_) + 1
+            Write-Host "$index. $_"
+        }
+        $categoryChoice = Read-Host "Enter category number"
+
+        # Validate category selection
+        $categoryIndex = [int]$categoryChoice - 1
+        if ($categoryIndex -lt 0 -or $categoryIndex -ge $allCategories.Count) {
+            Write-Host "❌ Invalid category selection. Exiting." -ForegroundColor Red
+            $finished = $true
+            break
+        }
+        $category = $allCategories[$categoryIndex]
+        Write-Host "Selected category: $category" -ForegroundColor Green
+
+        # Determine next challenge number for this category
+        $categoryPath = "./challenges/$category"
+        if (Test-Path $categoryPath) {
+            $existingChallenges = Get-ChildItem -Directory $categoryPath -ErrorAction SilentlyContinue | 
+                Where-Object { $_.Name -match '^\d+$' } | 
+                Sort-Object { [int]$_.Name }
+            $nextChallengeNumber = ($existingChallenges.Count) + 1
+        } else {
+            $nextChallengeNumber = 1
+        }
+        Write-Host "Next challenge number for $category`: $nextChallengeNumber" -ForegroundColor Green
+
+        # Calculate new ID
+        $newId = ($categoryIndex + 1) * 1000 + $nextChallengeNumber
+        Write-Host "New ID for the challenge: $newId" -ForegroundColor Green
+
+        # Create the export directory
+        $exportDir = "./challenges/$category/$nextChallengeNumber"
+        if (!(Test-Path $exportDir)) {
+            New-Item -ItemType Directory -Path $exportDir -Force | Out-Null
+            Write-Host "📁 Created directory: $exportDir" -ForegroundColor Green
+        }
+
+        # Prepare challenge data with new ID
+        $challengeData = $challenge_info.data
+        $challengeData.id = $newId
+
+        # Export challenge JSON (Excluded unneeded properties)
+        $challengeData | Select-Object -Property * -ExcludeProperty @('view', 'rating', 'ratings','type_data', 'solves', 'solved_by_me', 'attempts', 'hints', 'solution_id', 'solution_state') | 
+            ConvertTo-Json -Depth 10 | 
+            Where-Object { $_ -ne 'null' -and $_.Trim() -ne '' } | 
+            Out-File "$exportDir/ctfd_challenge.json" -Encoding UTF8
+        Write-Host "✅ Exported challenge to $exportDir/ctfd_challenge.json" -ForegroundColor Green
+        
+        # Export flags
+        try {
+            $flags = Invoke-RestMethod -Method Get "$CTFd_URL_API/challenges/$challengeToExport/flags" -ContentType "application/json" -Headers $ctfd_auth
+            if ($flags.data -and $flags.data.Count -gt 0) {
+                $flags.data | ForEach-Object { $_.id = $newId }
+                $flags.data | ForEach-Object { $_.challenge_id = $newId }
+                $flags.data | ForEach-Object { $_.challenge = $newId }
+                $flags.data | ConvertTo-Json -Depth 10 | Out-File "$exportDir/ctfd_flag.json" -Encoding UTF8
+                Write-Host "✅ Exported flags to $exportDir/ctfd_flag.json" -ForegroundColor Green
+            } else {
+                Write-Host "⚠️ No flags found for challenge $challengeToExport" -ForegroundColor Yellow
+            }
+        } catch {
+            Write-Host "❌ Failed to export flags for challenge $challengeToExport" -ForegroundColor Red
+            Write-Debug $_.Exception
+        }
+
+        # Export hints
+        try {
+            $hints = Invoke-RestMethod -Method Get "$CTFd_URL_API/challenges/$challengeToExport/hints" -ContentType "application/json" -Headers $ctfd_auth
+            if ($hints.data -and $hints.data.Count -gt 0) {
+                $hints.data | ForEach-Object { $_.id = $newId }
+                $hints.data | ForEach-Object { $_.challenge_id = $newId }
+                $hints.data | ForEach-Object { $_.challenge = $newId }
+                $hints.data | ConvertTo-Json -Depth 10 | Out-File "$exportDir/ctfd_hint.json" -Encoding UTF8
+                Write-Host "✅ Exported hints to $exportDir/ctfd_hint.json" -ForegroundColor Green
+            } else {
+                Write-Host "ℹ️ No hints found for challenge $challengeToExport" -ForegroundColor Cyan
+            }
+        } catch {
+            Write-Host "❌ Failed to export hints for challenge $challengeToExport" -ForegroundColor Red
+            Write-Debug $_.Exception
+        }
+
+        # Create challenge manifest
+        $requiredFiles = @()
+        $requiredFiles = @("ctfd_challenge.json", "ctfd_flag.json")
+        if ($hints.data -and $hints.data.Count -gt 0) { $requiredFiles += "ctfd_hint.json" }
+        $Challenge_Required_Kibana_Version = Read-Host "Enter the minimum required Kibana version for this challenge (e.g. 8.17.0)"
+        $manifestContent = @"
+@{
+    Name = "$($challengeData.name)"
+    Category = "$category"
+    RequiredFiles = @(
+        "$($requiredFiles  -join "`"`n        `"")"
+    )
+    Resources = @{
+        KibanaVersion = "^$Challenge_Required_Kibana_Version"
+    }
+}
+"@
+        $manifestContent | Out-File "$exportDir/challenge_manifest.psd1" -Encoding UTF8
+        Write-Host "✅ Created challenge manifest at $exportDir/challenge_manifest.psd1" -ForegroundColor Green
+        Write-Host "`n🎉 Successfully exported challenge '$($challengeData.name)' with new ID $newId to $exportDir" -ForegroundColor Green
+        return $true
+    }
+
     # Elastic Stack Setup Functions
     function Invoke-CheckForEnv {
         # Check for existing .env file for setup
@@ -319,6 +664,10 @@ Begin {
     }
     
     function Invoke-CheckForElasticsearchStatus {
+        param (
+            $MaxRetries = 5,
+            $TimeoutSeconds = 60
+        )
         # Check for Elastic stack connectivity to a healthy cluster
         Write-Host "🔎 Waiting for Elasticsearch to be accessible."
     
@@ -329,22 +678,23 @@ Begin {
             $trys = 0
             try {
                 Write-Debug "Checking to see if the cluster is accessible. Please wait. If this takes more than a minute, make sure Elasticsearch is available."
-                $status = Invoke-RestMethod -Method Get -Uri $healthAPI -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck  
+                $status = Invoke-RestMethod -Method Get -Uri $healthAPI -ContentType "application/json" -Credential $elasticCreds -AllowUnencryptedAuthentication -SkipCertificateCheck -ConnectionTimeoutSeconds $TimeoutSeconds
             } catch {
                 Write-Debug "Waiting for healthy cluster for 5 seconds. Then checking again."
+                Write-Host "Attempt number: $($trys+1) of $MaxRetries; Current timeout set at $TimeoutSeconds seconds" -ForegroundColor Yellow
                 Write-Debug $_.Exception
                 $status
                 Start-Sleep -Seconds 5
                 $trys++
-                if($trys -gt 12){
-                    Write-Host "❌ Could not connect to the Elastic cluster. Please make sure it is running and the credentials are correct." -ForegroundColor Red
+                if($trys -ge $MaxRetries){
+                    Write-Host "❌ Could not connect to the Elasticsearch. Please make sure it is running and the credentials are correct." -ForegroundColor Red
                     exit
                 }
             }
         } until ("yellow" -eq $status.status -or "green" -eq $status.status)
     
         if ("yellow" -eq $status.status -or "green" -eq $status.status) {
-            Write-Host "⚙️ Elastic cluster is $($status.status), continuing through the setup process."
+            Write-Host "⚙️ Elasticsearch is: available ($($status.status)). Continuing..." -ForegroundColor Green
             Start-Sleep -Seconds 2
         }
     }
@@ -392,7 +742,7 @@ Begin {
                     Write-Host "Response preview: $($resp | ConvertTo-Json -Depth 3)" -ForegroundColor DarkGray
                 }
             } catch {
-                Write-Host "❌ Kibana not reachable at $KibanaUrl (attempt $($attempt+1)). Error: $($_.Exception.Message)" -ForegroundColor Red
+                Write-Host "⚠️ Kibana not yet reachable at $KibanaUrl (attempt $($attempt+1)). Message: $($_.Exception.Message)" -ForegroundColor Yellow
             }
 
             $attempt++
@@ -473,6 +823,7 @@ Begin {
                 $checkInUsePorts = Invoke-CheckForInUsePorts
                 if($checkInUsePorts){
                     Write-Host "❌ Ports detected already in use. Make sure these ports are available before continuing. Exiting."
+                    Set-Location ..\..\..\
                     exit
                 }else{
                     docker compose up -d
@@ -514,7 +865,11 @@ Begin {
         Param (
             $filename
         )
-        
+        if($null -eq $kibanaAuth){
+            $plainCreds   = "$($elasticCreds.UserName):$($elasticCreds.GetNetworkCredential().Password)"
+            $encodedCreds = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($plainCreds))
+            $global:kibanaAuth = "Basic $encodedCreds"
+        }
         $importSavedObjectsURL = $Kibana_URL+"/s/kibana-ctf/api/saved_objects/_import?overwrite=true"
         $kibanaHeader = @{"kbn-xsrf" = "true"; "Authorization" = "$kibanaAuth"}
         $savedObjectsFilePath =  Resolve-Path $filename
@@ -764,15 +1119,157 @@ Begin {
         $randomFlagExtension = -join (Get-Random -Count 5 -InputObject $chars)
         return $randomFlagExtension
     }
+
+    # Developer Functions
+    function Invoke-Create-New-CTF-Challenge-Wizard {
+        # Load challenge categories from manifest
+        $rootManifestPath = ".\challenges\challenge_categories.psd1"
+        try {
+            $rootManifest = Import-PowerShellDataFile -Path $rootManifestPath
+            $allCategories = $rootManifest.Categories
+            $allCategories
+        } catch {
+            Write-Host "❌ Failed to load $rootManifestPath. Ensure it is valid PSD1." -ForegroundColor Red
+            return
+        }
+        
+        Write-Host "`n🛠️  Invoke-Create-New-CTF-Challenge-Wizard - Create a New CTF Challenge 🚩 " -ForegroundColor Magenta
+        Write-Host "=========================================================================`n" -ForegroundColor Cyan
+
+        # Get challenge details from user
+        $Challenge_Name = Read-Host "Enter the challenge name"
+        $Challenge_Category = Read-Host "Enter the challenge category ($allCategories New)"
+        if($Challenge_Category -eq "New"){
+            Write-Host "Creating a new challenge category requires updating the $rootmanifestPath file manually. Add the category then run the wizard again." -ForegroundColor Yellow
+            Exit
+        }elseif($allCategories -contains $Challenge_Category){
+            Write-Host "Selected existing category: $Challenge_Category" -ForegroundColor Green
+            # Get Challenge category series number from challenge category number in array
+            $categorySeriesNumber = ($allCategories.IndexOf($Challenge_Category) + 1) * 1000
+            Write-Host "Category series number is: $categorySeriesNumber" -ForegroundColor Green
+        }else{
+            Write-Host "❌ Invalid category selected. Exiting." -ForegroundColor Red
+            Exit
+        }
+
+        $Challenge_Required_Kibana_Version = Read-Host "Enter the required Kibana version for the challenge (e.g., 9.2.1)"
+
+        # Create simplified challenge object
+        $challengeObject = @"
+@{
+    Name = `"$Challenge_Name`"
+    Category = `"$Challenge_Category`"
+    RequiredFiles = @(
+        `"ctfd_challenge.json`"
+        `"ctfd_flag.json`"
+    )
+    Resources = @{
+        KibanaVersion = `"^$Challenge_Required_Kibana_Version`"
+    }
+}
+"@
+
+
+        # Determine new challenge number
+        $existingChallengesPath = ".\challenges\$($Challenge_Category)"
+        if (Test-Path $existingChallengesPath) {
+            # Get existing challenge numbers
+            $totalChallenges = Get-Item "$existingChallengesPath\*" | Where-Object { $_.PSIsContainer }
+            # Get the highest existing challenge number and increment
+            $new_challenge_number = ($totalChallenges.count + 1)
+            Write-Host "Found $($totalChallenges.count) existing challenges. New challenge number will be: $new_challenge_number" -ForegroundColor Green
+        } else {
+            Write-Host "Category folder does not exist, something is wrong. Exiting." -ForegroundColor Red
+            Exit
+        }
+
+        # Create new challenge directory
+        New-Item -ItemType Directory -Path ".\challenges\$($Challenge_Category)\$($new_challenge_number)" -Force | Out-Null
+        # Save challenge manifest
+        Out-File -FilePath ".\challenges\$($Challenge_Category)\$($new_challenge_number)\challenge_manifest.psd1" -InputObject $challengeObject -Encoding UTF8 -Force
+        Write-Host "✅ Created new challenge directory and manifest at .\challenges\$($Challenge_Category)\$($new_challenge_number)\challenge_manifest.psd1" -ForegroundColor Green
+
+        # Add required files in new challenge directory based on what is in the manifest
+        $Challenge_Description = Read-Host "Enter a brief description for the challenge (will be added to ctfd_challenge.json)"
+        $Challenge_Points = Read-Host "Enter the point value for the challenge (will be added to ctfd_challenge.json)"
+        $Challenge_Flag = Read-Host "Enter the flag for the challenge (will be added to ctfd_flag.json) {ctf_<your_flag_will_go_here>}"
+        $Challenge_Id = $categorySeriesNumber + $new_challenge_number
+        $newChallengeImport = Import-PowerShellDataFile -Path ".\challenges\$($Challenge_Category)\$($new_challenge_number)\challenge_manifest.psd1"
+        foreach ($requiredFile in $newChallengeImport.RequiredFiles) {
+            switch ($requiredFile) {
+                "ctfd_challenge.json" {
+                    $ctfd_challenge_template = @{
+                        id           = [int]$Challenge_Id
+                        name         = $Challenge_Name
+                        description  = $Challenge_Description
+                        max_attempts = 10
+                        value        = [int]$Challenge_Points
+                        category     = $Challenge_Category
+                        type         = "standard"
+                        state        = "visible"
+                    }
+                    $ctfd_challenge_template | ConvertTo-Json -Depth 10 | Out-File -FilePath ".\challenges\$($Challenge_Category)\$($new_challenge_number)\ctfd_challenge.json" -Encoding UTF8
+                    Write-Host "✅ Created ctfd_challenge.json template." -ForegroundColor Green
+                }
+                "ctfd_flag.json" {
+                    $ctfd_flag_template = @{
+                        id           = $Challenge_Id  # Update this ID after importing the challenge to CTFd
+                        challenge_id = $Challenge_Id  # Update this ID after importing the challenge to CTFd
+                        type         = "static"
+                        content      = "{ctf_$Challenge_Flag}"
+                        data         =  "case_insensitive"
+                    }
+                    $ctfd_flag_template | ConvertTo-Json -Depth 10 | Out-File -FilePath ".\challenges\$($Challenge_Category)\$($new_challenge_number)\ctfd_flag.json" -Encoding UTF8
+                    Write-Host "✅ Created ctfd_flag.json template." -ForegroundColor Green
+                }
+                default {
+                    Write-Host "⚠️ Unknown required file type: $requiredFile. Skipping." -ForegroundColor Yellow
+                }
+            }
+        }
+
+        # Ask if user wants a hint to the challenge
+        $needHint = Read-Host "Would you like to add a hint to this challenge?`n1. Yes`n2. No`n(Enter 1 or 2)"
+        if($needHint -eq 1){
+            $Challenge_Hint = Read-Host "Enter the hint for the challenge (will be added to ctfd_hint.json)"
+            $ctfd_hint_template = @{
+                id           = $Challenge_Id  # Update this ID after importing the challenge to CTFd
+                challenge_id = $Challenge_Id  # Update this ID after importing the challenge to CTFd
+                content      = $Challenge_Hint
+                cost         = 0
+            }
+            $ctfd_hint_template | ConvertTo-Json -Depth 10 | Out-File -FilePath ".\challenges\$($Challenge_Category)\$($new_challenge_number)\ctfd_hint.json" -Encoding UTF8
+            Write-Host "✅ Created ctfd_hint.json template." -ForegroundColor Green
+        }
+
+        # Ask if user if they will need an advanced PowerShell import script (elastic_import_script.ps1)
+        $needImportScript = Read-Host "Would you like to generate an advanced PowerShell import script for this challenge?`n1. Yes`n2. No`n(Enter 1 or 2)"
+        if($needImportScript -eq 1){
+            $importScriptContent = @"
+# Advanced Elastic Stack Import Script for Challenge: $Challenge_Name
+# This script will help you import the necessary resources into Elastic Stack for the challenge.
+# Make sure to customize the script as needed before running.
+function challenge {
+
+    return Write-Debug "✅ elastic_import_script.ps1 executed"
+}
+"@
+
+            Out-File -FilePath ".\challenges\$($Challenge_Category)\$($new_challenge_number)\elastic_import_script.ps1" -InputObject $importScriptContent -Encoding UTF8 -Force
+            Write-Host "✅ Created elastic_import_script.ps1 template." -ForegroundColor Green
+        }
+
+        return "Finished generating new challenge files. Now try to import the new challenge into CTFd and tweak as needed!"
+
+    }
     
     # Main menu options
+    $option0 = "[0] 🤖 Deploy everything from scratch (Recommended)"
     $option1 = "[1] 🏁 Deploy CTFd"
     $option2 = "[2] ⚙️ Deploy Elastic Stack"
     $option3 = "[3] 🚩 Import Flags (CTFd) + Challenges (Elastic Stack)"
-    $option4 = "[4] 🗑️ Delete CTFd"
-    $option5 = "[5] 🗑️ Delete Elastic Stack"
-    $option6 = "[6] 🔍 Check for Requirements"
-    $option7 = "[7] 🤖 Deploy everything from scratch (Recommended)"
+    $option4 = "[4] 🔍 Check for Requirements"
+    $option5 = "[5] 🔧 Developer Options (Create/Export/Test Challenges + Manage Stacks)"
 
     # Challenge category options
     $challenge_option0 = "[0] 🌀 All Challenges         (Recommended)"
@@ -781,6 +1278,19 @@ Begin {
     $challenge_option3 = "[3] 📈 Dashboards             (Kibana dashboards only)"
     #$challenge_option4 = "[4] 🎯 Hand-pick Challenges   (Choose specific ones)"
     $quit              = "[Q] ❌ Quit"
+
+    # Developer menu options
+    $developer_option0 = "[0] 🛠️ Create New CTF Challenge (Template / Wizard)"
+    $developer_option1 = "[1] 📥 Import CTF Challenge to CTFd and Elastic Stack"
+    $developer_option2 = "[2] 📦 Export Existing CTF Challenge (From CTFd)"
+    $developer_option3 = "[3] 🟢 Start Up Elastic Stack (Requires preconfigured docker setup with already imported challenges)"
+    $developer_option4 = "[4] 🔴 Shut Down Elastic Stack"
+    $developer_option5 = "[5] 🟢 Start Up CTFd (Requires preconfigured docker setup with already imported challenges)"
+    $developer_option6 = "[6] 🔴 Shut Down CTFd"
+    $developer_option7 = "[7] 🚦Check Elastic Stack and CTFd Status"
+    $developer_option8 = "[8] 🗑️ Delete CTFd"
+    $developer_option9 = "[9] 🗑️ Delete Elastic Stack"
+
 
     $quit = "Q. Quit"
 
@@ -791,18 +1301,39 @@ Begin {
         Write-Host "====================================================" -ForegroundColor Cyan
         Write-Host "What would you like to do?" -ForegroundColor Yellow
         Write-Host ""
+        Write-Host $option0 -ForegroundColor White
         Write-Host $option1 -ForegroundColor White
         Write-Host $option2 -ForegroundColor White
         Write-Host $option3 -ForegroundColor White
         Write-Host $option4 -ForegroundColor White
         Write-Host $option5 -ForegroundColor White
         Write-Host $option6 -ForegroundColor White
-        Write-Host $option7 -ForegroundColor White
         Write-Host ""
         Write-Host $quit -ForegroundColor Red
         Write-Host ""
     }
 
+    function Show-Developer-Menu {
+        Write-Host ""
+        Write-Host "=========================================================================================" -ForegroundColor Cyan
+        Write-Host "        🔧 Developer Options for Creating, Exporting, and Testing Challenges 🛠️" -ForegroundColor Green
+        Write-Host "=========================================================================================" -ForegroundColor Cyan
+        Write-Host "What would you like to do?" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host $developer_option0 -ForegroundColor White
+        Write-Host $developer_option1 -ForegroundColor White
+        Write-Host $developer_option2 -ForegroundColor White
+        Write-Host $developer_option3 -ForegroundColor White
+        Write-Host $developer_option4 -ForegroundColor White
+        Write-Host $developer_option5 -ForegroundColor White
+        Write-Host $developer_option6 -ForegroundColor White
+        Write-Host $developer_option7 -ForegroundColor White
+        Write-Host $developer_option8 -ForegroundColor White
+        Write-Host $developer_option9 -ForegroundColor White
+        Write-Host ""
+        Write-Host $quit -ForegroundColor Red
+        Write-Host ""
+    }
     function Show-CTF-Challenges-Menu {
         Write-Host ""
         Write-Host "====================================================" -ForegroundColor Cyan
@@ -865,17 +1396,23 @@ Begin {
                 Write-Host "`n🔄 Cloning CTFd repo..." -ForegroundColor Cyan
                 git clone https://github.com/CTFd/CTFd.git
                 Set-Location ./CTFd/
+                # Configure CTFd Preset Admin User/Pass
+                Write-Host "`n⚙️  Configuring CTFd preset admin user, password and access token..." -ForegroundColor Cyan
+                Invoke-Setup-CTFd-Preset-Admin
+
                 Write-Host "`n▶️  Launching CTFd..." -ForegroundColor Green
                 docker compose up -d
                 Set-Location ../kibana-ctf/
                 Write-Host "`n✅ CTFd has been downloaded and is starting up!" -ForegroundColor Green
                 Write-Host "   🌍 Navigate to $CTFd_URL to complete setup" -ForegroundColor Cyan
                 Write-Host "   (It may take a few minutes for the container to be fully ready)" -ForegroundColor DarkGray
-                Write-Host "`n🛠️  Next Step is to follow the wizard and create the admin account and then obtain an Access Key:" -ForegroundColor Green
+                Write-Host "`n🛠️ Next Step is to follow the wizard and create the admin account and then obtain an Access Key:" -ForegroundColor Green
                 Write-Host "`n📖 Refer to the README for the detailed next steps:" -ForegroundColor Green
                 Write-Host "   https://github.com/nicpenning/kibana-ctf?tab=readme-ov-file#how-to-get-started" -ForegroundColor Cyan
                 Write-Host "`n👉 Once finished, rerun this script and select option 2 to begin Elastic Stack setup." -ForegroundColor Green
                 # Setup up Auth header
+                Write-Host "`n⏳ Waiting 30 seconds for CTFd to be ready before obtaining admin token..." -ForegroundColor Yellow
+                Start-Sleep -Seconds 30 # Wait for CTFd to be ready
                 $ctfd_auth = Get-CTFd-Admin-Token
             } else {
                 Write-Host "`n❌ You chose not to deploy CTFd. Exiting..." -ForegroundColor Yellow
@@ -1043,14 +1580,7 @@ Begin {
         # 3. Credential Handling
         # -------------------------------
         # Use generated password if available, otherwise prompt user.
-        if ($elasticsearchPassword) {
-            Write-Host "Detected generated credentials — using those for setup." -ForegroundColor Blue
-            $elasticsearchPasswordSecure = ConvertTo-SecureString -String "$elasticsearchPassword" -AsPlainText -Force
-            $elasticCreds = New-Object System.Management.Automation.PSCredential -ArgumentList "elastic", $elasticsearchPasswordSecure
-        } else {
-            Write-Host "⚠️ No generated password found. Please enter Elastic user credentials." -ForegroundColor Yellow
-            $elasticCreds = Get-Credential elastic
-        }
+        $elasticCreds = Invoke-CheckForElasticCreds
 
         # Prepare base64 auth string for Kibana API requests
         $elasticCredsBase64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(
@@ -1128,6 +1658,8 @@ Begin {
 
         # Configure Elasticsearch credentials for importing saved objects into Kibana.
         # Get elastic user credentials
+        # Use generated password if available, otherwise prompt user.
+        # $elasticCreds = Invoke-CheckForElasticCreds
         Write-Debug "Going to need the password for the elastic user. Checking for generated creds now."
         $elasticCredsCheck = Invoke-CheckForEnv
 
@@ -1135,11 +1667,11 @@ Begin {
         # Base64 Encoded elastic:secure_password for Kibana auth
         if($($elasticCredsCheck)[0] -eq "True"){
             $elasticPass = ConvertTo-SecureString -String $($($elasticCredsCheck)[1]) -AsPlainText -Force
-        $elasticCreds = New-Object System.Management.Automation.PSCredential("elastic", $elasticPass)
+            $elasticCreds = New-Object System.Management.Automation.PSCredential("elastic", $elasticPass)
         } else {
             $elasticCreds = Get-Credential elastic
         }
-            $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
+        $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
 
         $kibanaAuth = "Basic $elasticCredsBase64"
                     
@@ -1250,7 +1782,7 @@ Begin {
         }
 
             Write-Host "`n✅ Setup complete! Your CTF environment is now live and ready to roll!" -ForegroundColor Green
-        Write-Host "------------------------------------------------------------"
+            Write-Host "------------------------------------------------------------"
             Write-Host "🌐 CTFd Platform:"
             Write-Host "   👉 Navigate to $CTFd_URL"
             Write-Host "   👉 Register your player account and start solving challenges!"
@@ -1336,6 +1868,18 @@ Process {
         }
 
         switch ($Option_Selected) {
+            '0' {
+                # Deploy all from scratch!
+
+                Invoke-CTFd-Deploy
+
+                Invoke-Elastic-Stack-Deploy
+
+                Invoke-Elastic-and-CTFd-Challenges
+
+                $finished = $true
+                break
+            }
             '1' {
                 # Deploy CTFd
                 Invoke-CTFd-Deploy
@@ -1358,20 +1902,6 @@ Process {
                 break
             }
             '4' {
-                # Remove CTFd
-                Invoke-Remove-CTFd
-
-                $finished = $true
-                break
-            }
-            '5' {
-                # Remove Elastic Stack
-                Invoke-Remove-Elastic-Stack
-
-                $finished = $true
-                break
-            }
-            '6' {
                 # 6. Check for Requirements
                 Write-Host "`n🔍 Checking requirements: PowerShell, Docker, and Docker Compose..."
 
@@ -1402,16 +1932,118 @@ Process {
                 $finished = $true
                 break
             }
-            '7' {
-                # Deploy all from scratch!
+            '5' {
+                # Menu for developer options
+                Show-Developer-Menu
+                $devOptionSelected = Read-Host "Enter your choice"
+                switch ($devOptionSelected) {
+                    '0' {
+                        # Create New CTF Challenge
+                        Write-Host "`n🚧 Developer Option: Create New CTF Challenge 🚧" -ForegroundColor Magenta
+                        Invoke-Create-New-CTF-Challenge-Wizard
+                        $finished = $true
+                        break
+                    }
+                    '1' {
+                        # Import a specific CTF Challenge
+                        Write-Host "`n🚧 Developer Option: Import a specific CTF Challenge 🚧" -ForegroundColor Magenta
+                        $result = Invoke-Import-Specfic-CTFd-Challenge
+                        if("true" -eq $result){
+                            Write-Host "`n✅ Challenge imported successfully!"
+                        } else {
+                            Write-Host "`n❌ Challenge import failed."
+                        }
+                        $finished = $true
+                        break
+                    }
+                    '2' {
+                        # Export Existing CTF Challenge from CTFd
+                        Write-Host "`n🚧 Developer Option: Export Existing CTF Challenge from CTFd 🚧"
 
-                Invoke-CTFd-Deploy
+                        $result = Invoke-Export-Existing-CTFd-Challenge
+                        if("true" -eq $result){
+                            Write-Host "`n✅ Challenge exported successfully!"
+                        } else {
+                            Write-Host "`n❌ Challenge export failed."
+                        }
+                        $finished = $true
+                        break
+                    }
+                    '3' {
+                        # Start up Elastic Stack
+                        Write-Host "`n🚧 Developer Option: Start up Elastic Stack 🚧" -ForegroundColor Magenta
+                        Invoke-StartDocker
+                        Write-Host "`n✅ Elastic Stack is running at $Elastic_URL."
+                        $finished = $true
+                        break
+                    }
+                    '4' {
+                        # Stop Elastic Stack
+                        Write-Host "`n🚧 Developer Option: Stop Elastic Stack 🚧" -ForegroundColor Magenta
+                        Invoke-StopDocker
+                        Write-Host "`n✅ Elastic Stack has been stopped."
+                        $finished = $true
+                        break
+                    }
+                    '5'{
+                        # Start up CTFd
+                        Write-Host "`n🚧 Developer Option: Start up CTFd 🚧"
+                        Set-Location ../CTFd
+                        docker compose up -d
+                        Set-Location ../kibana-ctf/
+                        Write-Host "`n✅ CTFd is running at $CTFd_URL"
+                        $finished = $true
+                        break
+                    }
+                    '6' {
+                        # Stop CTFd
+                        Write-Host "`n🚧 Developer Option: Stop CTFd 🚧"
+                        Set-Location ../CTFd
+                        docker compose down
+                        Set-Location ../kibana-ctf/
+                        Write-Host "`n✅ CTFd has been stopped."
+                        $finished = $true
+                        break
+                    }
+                    '7' {
+                        # Check Elastic Stack and CTFd Status
+                        Write-Host "`n🚧 Developer Option: Check Elastic Stack and CTFd Status 🚧" -ForegroundColor Magenta
+                        #Write-Host "`n🔍 Checking Elastic Stack and CTFd status..."\
+                        $elasticCreds = Invoke-CheckForElasticCreds
+                        # Check Elasticsearch Status
+                        Invoke-CheckForElasticsearchStatus -MaxRetries 1 -TimeoutSeconds 1
+                        # Check Kibana Status
+                        $kibanaStatus = Invoke-CheckForKibanaStatus -KibanaUrl $Kibana_URL -MaxRetries 1 -InitialDelay 1
+                        # Check CTFd Status
+                        Invoke-CheckForCTFdStatus -MaxRetries 1 -TimeoutSeconds 1
+                        $finished = $true
+                        break
+                    }
+                    '8' {
+                        # Remove CTFd
+                        Invoke-Remove-CTFd
 
-                Invoke-Elastic-Stack-Deploy
+                        $finished = $true
+                        break
+                    }
+                    '9' {
+                        # Remove Elastic Stack
+                        Invoke-Remove-Elastic-Stack
 
-                Invoke-Elastic-and-CTFd-Challenges
+                        $finished = $true
+                        break
+                    }
+                    default {
+                        Write-Host "Invalid choice. Please select a valid option." -ForegroundColor Yellow
+                        break
+                    }
+                    {"q","Q"} {
+                        Write-Host "You selected quit, exiting." -ForegroundColor Yellow
 
-                $finished = $true
+                        $finished = $true
+                        break
+                    }
+                }
                 break
             }
             {"q","Q"} {
@@ -1422,7 +2054,6 @@ Process {
             }
             default {
                 Write-Host "Invalid choice. Please select a valid option."
-                $finished = $true
                 break
             }
         }

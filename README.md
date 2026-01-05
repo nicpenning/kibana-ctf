@@ -16,11 +16,12 @@ _Features_:
 - [x] Assisted setup with PowerShell 7 script
 - [x] Share with community!
 - [x] Documentation on [creating new challenges!](./documentation/Creating%20a%20Challenge.md)
+- [x] Developer options to create, import, and export challenges
 
 ## Requirements 🪚
 - PowerShell 7.5+ (For Setup [Manual/Automated])
-- Docker
-- Elastic Stack (Kibana and Elasticsearch 8.17+/9.0+ - 9.1.3+ Recommended) -> Can be downloaded and set up using included script!
+- Docker & Docker Compose
+- Elastic Stack (Kibana and Elasticsearch 8.17+/9.0+ - 9.2.4+ Recommended) -> Can be downloaded and set up using included script!
 - CTFd (Latest) -> Can be downloaded and set up using included script!
 
 ```Text
@@ -31,13 +32,12 @@ _Features_:
 ====================================================
 What would you like to do?
 
+[0] 🤖 Deploy everything from scratch (Recommended)
 [1] 🏁 Deploy CTFd
 [2] ⚙️ Deploy Elastic Stack
 [3] 🚩 Import Flags (CTFd) + Challenges (Elastic Stack)
-[4] 🗑️ Delete CTFd
-[5] 🗑️ Delete Elastic Stack
-[6] 🔍 Check for Requirements
-[7] 🤖 Deploy everything from scratch (Recommended)
+[4] 🔍 Check for Requirements
+[5] 🔧 Developer Options (Create/Export/Test Challenges + Manage Stacks)
 
 Q. Quit
 
@@ -58,11 +58,15 @@ pwsh
 
 [![Watch speed run of setup!](https://img.youtube.com/vi/v962vvBVokY/hqdefault.jpg)](https://www.youtube.com/watch?v=v962vvBVokY)
 
+⚠️ About the setup video - Major changes have been implemented to fully automate the setup. New video may be released at a later date.
 
-_Note: Run Option 6. Check for Requirements, then proceed to the next step if your environment meets the requirements._
 
-### 2. Deploy everything from scratch - Use Option 7
+_Note: Run Option "🔍 Check for Requirements", then proceed to the next step if your environment meets the requirements._
+
+### 2. Deploy everything from scratch - Use Option 0 (Below options are deprecated)
    <details>
+    🗒️Note: These are deprecated steps that will be removed in future release. Instead simply run option 0 and follow the steps. (Ignore below).
+    
     a. Once deployed, go to the CTFd instance and navigate through the wizard with default settings (most of these will be overwritten later). Make sure to make note of your admin user/password combination and specify how long you want the CTF to last (this can easily be changed later if needed.)
 
    ![CTFd First Start Page](./images/image.png)

@@ -1,9 +1,123 @@
 # Instructions for Creating a New Challenge for the Kibana-CTF
 
 ## Overview
-Creating a new challenge for the Kibana CTF involves setting up several files that define the challenge's details, flag, hints, and any necessary Elastic stack configurations. Follow the steps below to create a new challenge.
+Creating a new challenge for the Kibana CTF involves setting up several files that define the challenge's details, flag, hints, and any necessary Elastic stack configurations. You can create challenges by exporting them from an existing CTFd instance, using an automated wizard, or manually. Follow the steps below to create a new challenge.
 
-## Step-by-Step Instructions
+## Developer Options Overview
+The setup script includes powerful developer options accessible via the main menu (option 5). These tools are designed to streamline challenge creation, management, and infrastructure operations:
+
+```Text
+=========================================================================================
+        🔧 Developer Options for Creating, Exporting, and Testing Challenges 🛠️
+=========================================================================================
+What would you like to do?
+
+[0] 🛠️ Create New CTF Challenge (Template / Wizard)
+[1] 📥 Import CTF Challenge to CTFd and Elastic Stack
+[2] 📦 Export Existing CTF Challenge (From CTFd)
+[3] 🟢 Start Up Elastic Stack (Requires preconfigured docker setup with already imported challenges)
+[4] 🔴 Shut Down Elastic Stack
+[5] 🟢 Start Up CTFd (Requires preconfigured docker setup with already imported challenges)
+[6] 🔴 Shut Down CTFd
+[7] 🚦Check Elastic Stack and CTFd Status
+[8] 🗑️ Delete CTFd
+[9] 🗑️ Delete Elastic Stack
+
+Q. Quit
+```
+
+- **Create New CTF Challenge (Wizard)**: Interactive tool to generate challenge files with guided prompts for name, category, description, points, flags, and optional hints or import scripts.
+- **Import CTF Challenge**: Deploy specific challenges from the project repository into both CTFd and the Elastic Stack, including saved objects and data ingestion.
+- **Export Existing CTF Challenge**: Extract challenges directly from a running CTFd instance, preserving all formatting and metadata, then integrate them into the project structure.
+- **Start/Stop Elastic Stack**: Control the Docker-based Elasticsearch and Kibana deployment for development and testing.
+- **Start/Stop CTFd**: Manage the CTFd platform deployment via Docker.
+- **Check Status**: Verify the health and availability of both Elastic Stack and CTFd services.
+- **Delete Services**: Completely remove CTFd or Elastic Stack deployments and associated data (destructive operations).
+
+These options provide a comprehensive toolkit for challenge development, testing, and infrastructure management.
+
+## Recommended Approach: Export from CTFd
+For the best experience and to capture the authentic look and feel of your CTFd challenge, we highly recommend creating challenges directly in CTFd first, then exporting them using the developer options. This approach allows you to see exactly how the challenge will appear to participants and ensures all formatting and features are preserved.
+
+### How to Export a Challenge from CTFd
+1. Create your challenge natively in your CTFd instance using the web interface. Set up the description, points, flags, hints, and any other properties as you want them to appear.
+2. Run the setup script (`Invoke-Kibana-CTF-Setup.ps1`).
+3. Select the main menu option for "Developer Options" (option 5).
+4. Choose "Export Existing CTF Challenge (From CTFd)" (option 2).
+5. The script will query your CTFd instance and display all available challenges.
+6. Select the challenge you want to export by entering its ID.
+7. Choose the category for the challenge (Discover, ES_QL, Dashboards).
+8. The script will automatically:
+   - Export the challenge data to JSON files (`ctfd_challenge.json`, `ctfd_flag.json`, optional `ctfd_hint.json`).
+   - Assign a new ID following the category-based scheme.
+   - Create the challenge directory and manifest file.
+9. Review and customize the exported files as needed (e.g., add Elastic import scripts or saved objects).
+10. Import the challenge using the setup script.
+
+### Alternative: Using the Developer Wizard
+If you prefer to create challenges programmatically without first setting them up in CTFd, use the wizard approach. This is useful for rapid prototyping or when you have all the details ready.
+
+### How to Use the Wizard
+1. Run the setup script (`Invoke-Kibana-CTF-Setup.ps1`).
+2. Select the main menu option for "Developer Options" (option 5).
+3. Choose "Create New CTF Challenge (Template / Wizard)" (option 0).
+4. Follow the interactive prompts to enter:
+   - Challenge name
+   - Category (e.g., Discover, ES_QL, Dashboards)
+   - Description
+   - Point value
+   - Flag content
+   - Optional hint
+   - Whether to generate an advanced import script
+5. The wizard will automatically:
+   - Determine the next available challenge ID based on the category.
+   - Create the challenge directory.
+   - Generate the `challenge_manifest.psd1` file.
+   - Create `ctfd_challenge.json`, `ctfd_flag.json`, and optional files like `ctfd_hint.json` or `elastic_import_script.ps1`.
+6. Review and customize the generated files as needed.
+7. Import the challenge using the setup script.
+
+### Pros and Cons of Each Approach
+
+#### Export from CTFd (Recommended)
+**Pros:**
+- Captures the exact look and feel from your CTFd instance.
+- Preserves all formatting, images, and advanced features.
+- No risk of JSON formatting errors.
+- Allows testing the challenge in CTFd before exporting.
+- Most authentic representation for participants.
+
+**Cons:**
+- Requires creating the challenge in CTFd first.
+- Dependent on having a running CTFd instance.
+- May need additional customization for Elastic components.
+
+#### Wizard Approach
+**Pros:**
+- Quick and guided setup reduces time and errors.
+- Automatically handles ID assignment and file structure.
+- Ensures consistency across challenges.
+- Generates all required files with proper formatting.
+- Ideal for rapid prototyping.
+
+**Cons:**
+- Less flexibility for highly customized or complex challenges.
+- Requires running the script in a PowerShell environment.
+- May need manual tweaks for advanced scenarios.
+
+#### Manual Approach
+**Pros:**
+- Full control over every detail and customization.
+- Allows for advanced modifications not supported by automated tools.
+- No dependency on the setup script or CTFd instance.
+- Suitable for experienced users or unique challenge designs.
+
+**Cons:**
+- Time-consuming and prone to formatting or ID errors.
+- Requires deep knowledge of file schemas and structures.
+- Higher risk of inconsistencies.
+
+## Manual Creation Process
 
 ### 1. Choose a Category and Challenge Number
 
@@ -149,7 +263,7 @@ If you want to provide hints for your challenge, create a file named `ctfd_hint.
 **Example:**
 ```json
 {
-  "id": 1003,
+  "id": 1001,
   "type": "standard",
   "challenge_id": 1001,
   "content": "Not the data!\n\n![](https://media1.giphy.com/media/qN9x0UIc0Rhg4/200w.gif?cid=6c09b952q6k3us6dh9m3dgek4fnqmti482nhgbfgmdk0r3mg&ep=v1_gifs_search&rid=200w.gif&ct=g)\n\nCheck out the saved search/session itself (not the queries, not the results).",
@@ -255,10 +369,12 @@ To test importing of challenges over and over, it makes most sense to delete the
 
 Use the [Resetting the Instance](https://docs.ctfd.io/tutorials/configuration/resetting-a-ctfd-instance/) docs to delete **just** the challenges before importing already imported challenges.
 
+✨To import a single challenge without re-running the full setup process, use the Developer Options menu (option 5) and select "Import CTF Challenge to CTFd and Elastic Stack" (option 1). This allows you to quickly test and validate individual challenges without affecting the rest of your CTF environment.
+
 ---
 
 ## Conclusion
-By following these steps, you can create a new challenge for the Kibana CTF.  Make sure to test your challenge thoroughly and consider sharing it with the community!
+By following these steps, you can create a new challenge for the Kibana CTF using the recommended export from CTFd approach for the most authentic experience, the wizard for quick setup, or manual creation for full customization. Make sure to test your challenge thoroughly and consider sharing it with the community!
 
 With the manifest model, the setup script will automatically:  
 - Discover your challenge  
