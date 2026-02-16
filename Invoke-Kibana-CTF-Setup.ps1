@@ -409,6 +409,8 @@ Begin {
         Write-Host "1. Discover"
         Write-Host "2. ES_QL"
         Write-Host "3. Dashboards"
+        Write-Host "4. Rules"
+        
         $challengeCategoryToImport = Read-Host "Enter your choice: "
         
         # Display challenges in the selected category
@@ -418,6 +420,8 @@ Begin {
             '1' { 'Discover' }
             '2' { 'ES_QL' }
             '3' { 'Dashboards' }
+            '4' { 'Rules' }
+            
             default {
                 Write-Host "Invalid choice. Exiting." -ForegroundColor Yellow
                 $finished = $true
@@ -1120,6 +1124,41 @@ Begin {
         return $randomFlagExtension
     }
 
+    function Import-Kibana-Detection-Rules {
+        # Get Kibana Creds
+        $elasticCreds = Invoke-CheckForElasticCreds
+        $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
+        $kibanaAuth = "Basic $elasticCredsBase64"
+
+        # Install pre-packaged Kibana detection rules
+        Write-Host "`n🔧 Importing pre-packaged Kibana detection rules..." -ForegroundColor Blue
+        try {
+            # Check for installed rules first
+            $installedRules = Invoke-RestMethod -Method Get -Uri "$Kibana_URL/s/kibana-ctf/api/detection_engine/rules/prepackaged/_status" -Headers @{"kbn-xsrf"="true"; "Authorization"="$kibanaAuth"} -ContentType "application/json" -AllowUnencryptedAuthentication -SkipCertificateCheck
+            if ($installedRules.rules_not_installed -lt 1) {
+                Write-Host "⚠️ All pre-packaged Kibana detection rules are already installed. Skipping import." -ForegroundColor Yellow
+                return
+            }else{
+                Write-Host "ℹ️ Not all pre-packaged Kibana detection rules are installed. Proceeding with import."
+                $results = Invoke-RestMethod -Method Put -Uri "$Kibana_URL/s/kibana-ctf/api/detection_engine/rules/prepackaged" -Headers @{"kbn-xsrf"="true"; "Authorization"="$kibanaAuth"} -ContentType "application/json" -AllowUnencryptedAuthentication -SkipCertificateCheck
+                return Write-Host "$($results.rules_installed) Pre-packaged Kibana detection rules imported successfully." -ForegroundColor Green
+            }
+        } catch {
+            Write-Host "❌ Failed to import Kibana detection rules." -ForegroundColor Red
+            Write-Debug $_.Exception
+            break
+        }
+#https://127.0.0.1:5601/s/kibana-ctf/internal/detection_engine/prebuilt_rules/upgrade/_perform
+        # Display import summary 
+        if ($results) {
+            Write-Host "`n📊 Kibana Detection Rules Import Summary:" -ForegroundColor Cyan
+            Write-Host "   Total Rules Found: $($results.total)" -ForegroundColor Green
+            Write-Host "   Rules Created: $($results.created)" -ForegroundColor Green
+            Write-Host "   Rules Updated: $($results.updated)" -ForegroundColor Green
+        }
+
+    }
+
     # Developer Functions
     function Invoke-Create-New-CTF-Challenge-Wizard {
         # Load challenge categories from manifest
@@ -1276,7 +1315,7 @@ function challenge {
     $challenge_option1 = "[1] 🔎 Discover Challenges    (Kibana Discover focus)"
     $challenge_option2 = "[2] 📊 ES|QL Challenges       (ES|QL query practice)"
     $challenge_option3 = "[3] 📈 Dashboards             (Kibana dashboards only)"
-    #$challenge_option4 = "[4] 🎯 Hand-pick Challenges   (Choose specific ones)"
+    $challenge_option4 = "[4] 🎯 Rules                  (Detection Rules)"
     $quit              = "[Q] ❌ Quit"
 
     # Developer menu options
@@ -1290,6 +1329,7 @@ function challenge {
     $developer_option7 = "[7] 🚦Check Elastic Stack and CTFd Status"
     $developer_option8 = "[8] 🗑️ Delete CTFd"
     $developer_option9 = "[9] 🗑️ Delete Elastic Stack"
+    $developer_option10 = "[10] 📊 Import Kibana Detection Rules"
 
 
     $quit = "Q. Quit"
@@ -1330,6 +1370,7 @@ function challenge {
         Write-Host $developer_option7 -ForegroundColor White
         Write-Host $developer_option8 -ForegroundColor White
         Write-Host $developer_option9 -ForegroundColor White
+        Write-Host $developer_option10 -ForegroundColor White
         Write-Host ""
         Write-Host $quit -ForegroundColor Red
         Write-Host ""
@@ -1346,7 +1387,7 @@ function challenge {
         Write-Host $challenge_option1 -ForegroundColor White
         Write-Host $challenge_option2 -ForegroundColor White
         Write-Host $challenge_option3 -ForegroundColor White
-        #Write-Host $challenge_option4 -ForegroundColor White
+        Write-Host $challenge_option4 -ForegroundColor White
         Write-Host ""
         Write-Host $quit -ForegroundColor Red
         Write-Host ""
@@ -1699,8 +1740,12 @@ function challenge {
         Write-Host "📥 Importing Kibana CTF Dashboard"
         Import-SavedObject "./setup/Elastic/kibana_dashboard.ndjson"
 
+        # Import Rules
+        Write-Host "📥 Importing Kibana CTF Detection Rules"
+        Import-Kibana-Detection-Rules
+
         # Import Challenges (if selected)
-        if ((0, 1, 2, 3) -contains $CTF_Options_Selected) {
+        if ((0, 1, 2, 3, 4) -contains $CTF_Options_Selected) {
             $rootManifestPath = "./challenges/challenge_categories.psd1"
             if (-not (Test-Path $rootManifestPath)) {
                 Write-Host "❌ Root manifest not found at $rootManifestPath." -ForegroundColor Red
@@ -1720,9 +1765,10 @@ function challenge {
                 1 { $challengeTypes = @("Discover") }
                 2 { $challengeTypes = @("ES_QL") }
                 3 { $challengeTypes = @("Dashboards") }
+                4 { $challengeTypes = @("Rules") }
                 default {
                     Write-Host "⚠️ Invalid choice: '$CTF_Options_Selected'" -ForegroundColor Yellow
-                    Write-Host "👉 Please enter a valid option (0–3)." -ForegroundColor Cyan
+                    Write-Host "👉 Please enter a valid option (0–4)." -ForegroundColor Cyan
                     $challengeTypes = @()
                 }
             }
@@ -1973,7 +2019,7 @@ Process {
                         # Start up Elastic Stack
                         Write-Host "`n🚧 Developer Option: Start up Elastic Stack 🚧" -ForegroundColor Magenta
                         Invoke-StartDocker
-                        Write-Host "`n✅ Elastic Stack is running at $Elastic_URL."
+                        Write-Host "`n✅ Elastic Stack is running at $Elasticsearch_URL."
                         $finished = $true
                         break
                     }
@@ -2030,6 +2076,14 @@ Process {
                         # Remove Elastic Stack
                         Invoke-Remove-Elastic-Stack
 
+                        $finished = $true
+                        break
+                    }
+                    '10' {
+                        # Import Kibana Detection Rules
+                        Write-Host "`n🚧 Developer Option: Import Kibana Detection Rules 🚧" -ForegroundColor Magenta
+                        Import-Kibana-Detection-Rules
+                        Write-Host "`n✅ Kibana Detection Rules imported successfully!"
                         $finished = $true
                         break
                     }

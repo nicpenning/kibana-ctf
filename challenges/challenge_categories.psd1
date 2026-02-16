@@ -10,5 +10,6 @@
         "Dashboards"
 
         # 4000 Series
+        "Rules"
     )
 }

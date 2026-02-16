@@ -1,0 +1,1 @@
+All Rule challenges live in this directory.

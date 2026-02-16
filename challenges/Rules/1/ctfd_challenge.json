@@ -1,0 +1,10 @@
+{
+  "name": "My First Rule",
+  "category": "Rules",
+  "id": 4001,
+  "value": 20,
+  "max_attempts": 10,
+  "type": "standard",
+  "state": "visible",
+  "description": "Check out my first rule to catch those baddies executing network traffic from calc!"
+}
