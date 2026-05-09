@@ -1,10 +1,10 @@
 {
-  "name": "My First Rule",
-  "category": "Rules",
   "id": 4001,
-  "value": 20,
+  "name": "My First Rule",
+  "description": "Check out my first rule to catch those baddies executing network traffic from calc!![calc](https://media.tenor.com/Vrv3rgnNdPsAAAAM/krach-boursier.gif)",
   "max_attempts": 10,
+  "value": 20,
+  "category": "Rules",
   "type": "standard",
-  "state": "visible",
-  "description": "Check out my first rule to catch those baddies executing network traffic from calc!![calc](https://media.tenor.com/Vrv3rgnNdPsAAAAM/krach-boursier.gif)"
+  "state": "visible"
 }

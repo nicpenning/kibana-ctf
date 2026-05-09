@@ -308,7 +308,7 @@ Begin {
             $import_challenge = Invoke-RestMethod -Method POST "$CTFd_URL_API/challenges" -ContentType "application/json" -Headers $ctfd_auth -Body $current_challenge
             Write-Host "✅ Imported challenge $($ctfd_challenge.name) - $($import_challenge.success)"
         }catch{
-            Write-Host "❌ Could not import challenge: $($ctfd_challenge.name) - $($ctfd_challenge.id)"
+            Write-Host "❌ Could not import challenge to CTFd (it might already exist): $($ctfd_challenge.name) - $($ctfd_challenge.id)"
             Write-Debug $_.Exception
         }
     }
@@ -1237,7 +1237,7 @@ Begin {
         foreach ($requiredFile in $newChallengeImport.RequiredFiles) {
             switch ($requiredFile) {
                 "ctfd_challenge.json" {
-                    $ctfd_challenge_template = @{
+                    $ctfd_challenge_template = [ordered]@{
                         id           = [int]$Challenge_Id
                         name         = $Challenge_Name
                         description  = $Challenge_Description
@@ -1251,7 +1251,7 @@ Begin {
                     Write-Host "✅ Created ctfd_challenge.json template." -ForegroundColor Green
                 }
                 "ctfd_flag.json" {
-                    $ctfd_flag_template = @{
+                    $ctfd_flag_template = [ordered]@{
                         id           = $Challenge_Id  # Update this ID after importing the challenge to CTFd
                         challenge_id = $Challenge_Id  # Update this ID after importing the challenge to CTFd
                         type         = "static"
@@ -1271,7 +1271,7 @@ Begin {
         $needHint = Read-Host "Would you like to add a hint to this challenge?`n1. Yes`n2. No`n(Enter 1 or 2)"
         if($needHint -eq 1){
             $Challenge_Hint = Read-Host "Enter the hint for the challenge (will be added to ctfd_hint.json)"
-            $ctfd_hint_template = @{
+            $ctfd_hint_template = [ordered]@{
                 id           = $Challenge_Id  # Update this ID after importing the challenge to CTFd
                 challenge_id = $Challenge_Id  # Update this ID after importing the challenge to CTFd
                 content      = $Challenge_Hint

@@ -1,0 +1,10 @@
+{
+  "id": 4002,
+  "name": "High Quality Rules Only - No Exceptions!",
+  "description": "The best rules never have exceptions, well except maybe just this one.",
+  "max_attempts": 10,
+  "value": 10,
+  "category": "Rules",
+  "type": "standard",
+  "state": "visible"
+}

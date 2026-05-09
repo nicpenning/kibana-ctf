@@ -1,14 +1,11 @@
 @{
-    Name = "My First Rule"
+    Name = "High Quality Rules Only - No Exceptions!"
     Category = "Rules"
     RequiredFiles = @(
         "ctfd_challenge.json"
         "ctfd_flag.json"
-        "elastic_import_script.ps1"
-        "elastic_rule.ndjson"
     )
     Resources = @{
         KibanaVersion = "^9.4.0"
-        LicenseRequired = "basic"
     }
 }

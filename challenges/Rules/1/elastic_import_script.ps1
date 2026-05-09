@@ -2,7 +2,7 @@
 # This script will help you import the necessary resources into Elastic Stack for the challenge.
 # Make sure to customize the script as needed before running.
 function challenge {
-    # Create suspicious events and document for rules
+    # Create the detection rule in Elastic Stack using the API
 
     # Import the calc.exe detection rule and execute it to create the alert
 
