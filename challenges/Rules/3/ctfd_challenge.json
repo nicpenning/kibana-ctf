@@ -1,0 +1,10 @@
+{
+  "id": 4003,
+  "name": "🧮 Calculated! 📡",
+  "description": "Calc popped with network connections? This I gotta see! ",
+  "max_attempts": 10,
+  "value": 30,
+  "category": "Rules",
+  "type": "standard",
+  "state": "visible"
+}

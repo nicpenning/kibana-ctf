@@ -6,5 +6,11 @@
   "value": 10,
   "category": "Rules",
   "type": "standard",
-  "state": "visible"
+  "state": "visible",
+  "requirements": {
+  "prerequisites": [
+    4001
+  ],
+  "anonymize": true
+}
 }
