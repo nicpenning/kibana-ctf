@@ -6,5 +6,6 @@
   "value": 30,
   "category": "Rules",
   "type": "standard",
-  "state": "visible"
+  "state": "visible",
+  "connection_info": "https://127.0.0.1:5601/s/kibana-ctf/app/security/rules"
 }

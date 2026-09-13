@@ -8,9 +8,10 @@
   "type": "standard",
   "state": "visible",
   "requirements": {
-  "prerequisites": [
-    4001
-  ],
-  "anonymize": true
-}
+    "prerequisites": [
+      4001
+    ],
+    "anonymize": true
+  },
+  "connection_info": "https://127.0.0.1:5601/s/kibana-ctf/app/security/rules"
 }
