@@ -1139,7 +1139,7 @@ Begin {
                 Write-Host "⚠️ All pre-packaged Kibana detection rules are already installed. Skipping import." -ForegroundColor Yellow
                 return
             }else{
-                Write-Host "ℹ️ Not all pre-packaged Kibana detection rules are installed. Proceeding with import."
+                Write-Host "ℹ️ Not all pre-packaged Kibana detection rules are installed. Proceeding with import. This can take a few minutes depending on your system and network speed." -ForegroundColor Cyan
                 $results = Invoke-RestMethod -Method Put -Uri "$Kibana_URL/s/kibana-ctf/api/detection_engine/rules/prepackaged" -Headers @{"kbn-xsrf"="true"; "Authorization"="$kibanaAuth"} -ContentType "application/json" -AllowUnencryptedAuthentication -SkipCertificateCheck
                 return Write-Host "$($results.rules_installed) Pre-packaged Kibana detection rules imported successfully." -ForegroundColor Green
             }
