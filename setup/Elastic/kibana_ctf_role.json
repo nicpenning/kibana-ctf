@@ -22,7 +22,8 @@
           "feature_savedQueryManagement.read",
           "feature_dashboard_v2.read",
           "feature_visualize_v2.read",
-          "feature_siemV4.read"
+          "feature_siemV4.read",
+          "feature_actions.read"
         ],
         "resources": [
           "space:kibana-ctf"
