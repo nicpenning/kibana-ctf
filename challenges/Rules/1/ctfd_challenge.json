@@ -1,7 +1,7 @@
 {
   "id": 4001,
   "name": "My First Rule",
-  "description": "Check out my first rule to catch those baddies executing network traffic from calc!![calc](https://media.tenor.com/Vrv3rgnNdPsAAAAM/krach-boursier.gif)",
+  "description": "Check out my first rule to catch those baddies executing network traffic from calc!!\r\n\r\n[calc](https://media.tenor.com/Vrv3rgnNdPsAAAAM/krach-boursier.gif)",
   "max_attempts": 10,
   "value": 20,
   "category": "Rules",
