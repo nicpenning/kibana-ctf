@@ -2,6 +2,6 @@
   "id": 2004,
   "challenge_id": 2004,
   "type": "static",
-  "content": "{ctf_creating_lens_from_es|ql_is_kinda_cool}",
+  "content": "{ctf_creating_lens_from_es|ql_with_a_facade}",
   "data": "case_insensitive"
 }

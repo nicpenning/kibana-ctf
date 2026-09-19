@@ -7,7 +7,7 @@
         "elastic_saved_objects.ndjson"
     )
     Resources = @{
-        KibanaVersion = "^8.17.0"
+        KibanaVersion = "^9.5.3"
         LicenseRequired = "basic"
     }
 }
