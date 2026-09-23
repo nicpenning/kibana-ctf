@@ -1722,6 +1722,7 @@ function challenge {
         Invoke-CheckForElasticsearchStatus
 
         # Check in configuration.psd1 if the Elastic Stack has had the synthetic data already ingested. If not, ingest it now.
+        $configurationSettings = Import-PowerShellDataFile $configPath
         if ($configurationSettings.Ingested_Synthetic_Data -eq $false) {
             # Ingest Dummy Documents
             $docCount = 25000
@@ -1951,6 +1952,7 @@ Process {
             '2' {
                 # Deploy Elastic Stack
                 # If configuration.psd1 has Initialized_Elastic_Stack set to true, skip the Elastic Stack deployment and go straight to importing challenges.
+                $configurationSettings = Import-PowerShellDataFile $configPath
                 if ($configurationSettings.Initialized_Elastic_Stack -eq $true) {
                     Write-Host "`n✅ Elastic Stack already initialized (see configuration.psd1). Skipping deployment." -ForegroundColor Green
                 } else {
