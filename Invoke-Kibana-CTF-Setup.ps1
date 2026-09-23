@@ -25,7 +25,7 @@
 
     Variable Options
     -Elasticsearch_URL "https://127.0.0.1:9200"
-    -Kibana_URL "http://127.0.0.1:5601"
+    -Kibana_URL "https://127.0.0.1:5601"
     -CTFd_URL "http://127.0.0.1:8000"
     -CTF_Start_Date "12/24/2024 12:00 PM" (default - Now) # To do
     -CTF_End_Date "12/24/2024 1:00 PM" (default - 1 hour from Start Date) # To do
@@ -42,7 +42,7 @@ Param (
 
     # Kibana URL. (default - http://127.0.0.1:5601)
     [Parameter(Mandatory=$false)]
-    $Kibana_URL = "http://127.0.0.1:5601",
+    $Kibana_URL = "https://127.0.0.1:5601",
     
     # CTFd URL. (default - http://127.0.0.1:8000)
     [Parameter(Mandatory=$false)]
@@ -77,7 +77,7 @@ Begin {
         $Elasticsearch_URL = $configurationSettings.Elasticsearch_URL
         Write-Host "💾 Modifed Elasticsearch URL detected in configuration.psd1, using $Elasticsearch_URL" -ForegroundColor Yellow
     }
-    if($configurationSettings.Kibana_URL -ne "http://127.0.0.1:5601"){
+    if($configurationSettings.Kibana_URL -ne "https://127.0.0.1:5601"){
         $Kibana_URL = $configurationSettings.Kibana_URL
         Write-Host "💾 Modifed Kibana URL detected in configuration.psd1, using $Kibana_URL" -ForegroundColor Yellow
     }
@@ -1679,7 +1679,7 @@ function challenge {
 
         # Get / Save CTFd Access Token
         $ctfd_auth = Get-CTFd-Admin-Token
-
+        $configurationSettings = Import-PowerShellDataFile $configPath
         # Get / Save Elasticsearch URL
         if ($configurationSettings.Elasticsearch_URL) {
             $Elasticsearch_URL = $configurationSettings.Elasticsearch_URL
@@ -1696,7 +1696,7 @@ function challenge {
             Write-Host "📊 Kibana URL detected: $Kibana_URL" -ForegroundColor Green
         } else {
             Write-Host "Kibana URL required." -ForegroundColor Yellow
-            $Kibana_URL = Read-Host "Enter full Kibana URL (e.g. http://127.0.0.1:5601)"
+            $Kibana_URL = Read-Host "Enter full Kibana URL (e.g. https://127.0.0.1:5601)"
             Update-Psd1Value -Path $configPath -Key "Kibana_URL" -Value $Kibana_URL
         }
 
@@ -1723,7 +1723,7 @@ function challenge {
 
         # Check in configuration.psd1 if the Elastic Stack has had the synthetic data already ingested. If not, ingest it now.
         $configurationSettings = Import-PowerShellDataFile $configPath
-        if ($configurationSettings.Ingested_Synthetic_Data -eq $false) {
+        if ($configurationSettings.Ingested_Synthetic_Data -eq $false -or $null -eq $configurationSettings.Ingested_Synthetic_Data) {
             # Ingest Dummy Documents
             $docCount = 25000
             $batchSize = 2500
@@ -1742,13 +1742,14 @@ function challenge {
             Invoke-Ingest-Elasticsearch-Documents -documentToIngest $dummyDocs -batchSize $batchSize
 
             # Update configuration.psd1 to indicate that synthetic data has been ingested
-            Update-Psd1Value -Path "./configuration.psd1" -Key "Ingested_Synthetic_Data" -Value $true
+            Update-Psd1Value -Path "./configuration.psd1" -Key "Ingested_Synthetic_Data" -Value 'true'
         }else {
             Write-Host "✅ Synthetic data already ingested. Skipping ingestion." -ForegroundColor Green
         }
 
         # Import Kibana Dashboard
         Write-Host "📥 Importing Kibana CTF Dashboard"
+        
         Import-SavedObject "./setup/Elastic/kibana_dashboard.ndjson"
 
         # Import Rules
