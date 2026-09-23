@@ -3,7 +3,7 @@
   "name": "A Call to Action",
   "description": "Can these alerts be actionable?",
   "max_attempts": 10,
-  "value": 30,
+  "value": 50,
   "category": "Rules",
   "type": "standard",
   "state": "visible",
