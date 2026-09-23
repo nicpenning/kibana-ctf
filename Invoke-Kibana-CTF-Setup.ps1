@@ -894,7 +894,7 @@ Begin {
         $result = Invoke-RestMethod -Method POST -Uri $importSavedObjectsURL -Headers $kibanaHeader -ContentType "multipart/form-data; boundary=`"$boundary`"" -Body $bodyLines -AllowUnencryptedAuthentication -SkipCertificateCheck
         if($result.errors -or $null -eq $result){
             Write-Host "❌ There was an error trying to import $filename"
-            $result.errors | Out-File -FilePath "./setup/Elastic/kibana_import_error.log" -Encoding UTF8
+            $result.errors | ConvertTo-Json -Depth 10 | Out-File -FilePath "./setup/Elastic/kibana_import_error.log" -Encoding UTF8
             Write-Host "💡 Check the log file at ./setup/Elastic/kibana_import_error.log" -ForegroundColor Yellow
         }else{
             Write-Debug "✅ Imported $filename"
