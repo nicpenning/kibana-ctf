@@ -1,5 +1,5 @@
 @{
-    Name = "Fantastic Filter Fun "
+    Name = "Fantastic Filter Fun"
     Category = "Visualization Sensation"
     RequiredFiles = @(
         "ctfd_challenge.json"

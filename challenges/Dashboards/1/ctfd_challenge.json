@@ -3,7 +3,7 @@
   "name": "Welcome",
   "description": "Dashboards in Kibana are awesome! You can add all sort of fun visualizations, but sometimes a simple text box can present a welcoming vibe. \r\n\r\n![Welcome!](https://media.tenor.com/96sQtTGIsPQAAAAM/simpsons-homer.gif)",
   "max_attempts": 10,
-  "value": 10,
+  "value": 20,
   "category": "Visualization Sensation",
   "type": "standard",
   "state": "visible",
