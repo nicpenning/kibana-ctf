@@ -3,7 +3,7 @@
   "name": "But wait, there's moar.",
   "description": "What in the world spawned this calc? There must be more to the story here, but what?",
   "max_attempts": 10,
-  "value": 30,
+  "value": 40,
   "category": "Rules",
   "type": "standard",
   "state": "visible",

@@ -23,7 +23,7 @@ function challenge {
         agent = [PSCustomObject]@{
             type = "endpoint"
             name = "elastic-agent"
-            version = "9.5.3"
+            version = "9.5.4"
         }
         observer = [PSCustomObject]@{
             vendor = "Elastic"
@@ -43,12 +43,12 @@ function challenge {
         process = [PSCustomObject]@{
             name = "scvhost.exe"
             executable = "C:\Users\Default\AppData\Local\Temp\System32\scvhost.exe"
-            command_line = "C:\Users\Default\AppData\Local\Temp\System32\scvhost.exe --build-order supply-depot --rally-point vespene --payload 63,74,66,5f,61,70,74,5f,33,31,33,33,37,5f,6d,6f,61,72,5f,76,65,73,70,65,6e,65,5f,67,61,73,5f,69,73,5f,72,65,71,75,69,72,65,64"
+            command_line = "C:\Users\Default\AppData\Local\Temp\System32\scvhost.exe --build-order supply-depot --rally-point vespene --payload 7b,63,74,66,5f,61,70,74,5f,33,31,33,33,37,5f,6d,6f,61,72,5f,76,65,73,70,65,6e,65,5f,67,61,73,5f,69,73,5f,72,65,71,75,69,72,65,64,7d"
             args = @(
                 "C:\Users\Default\AppData\Local\Temp\System32\scvhost.exe",
                 "--build-order", "supply-depot",
                 "--rally-point", "vespene",
-                "--payload", "63,74,66,5f,61,70,74,5f,33,31,33,33,37,5f,6d,6f,61,72,5f,76,65,73,70,65,6e,65,5f,67,61,73,5f,69,73,5f,72,65,71,75,69,72,65,64"
+                "--payload", "7b,63,74,66,5f,61,70,74,5f,33,31,33,33,37,5f,6d,6f,61,72,5f,76,65,73,70,65,6e,65,5f,67,61,73,5f,69,73,5f,72,65,71,75,69,72,65,64,7d"
             )
             pid = 1180
             entity_id = "{8f4d2c10-9e75-4d8e-a9a1-scv1180}"

@@ -40,7 +40,7 @@ function New-CalcNetworkRedHerring {
             created = $timestamp
             ingested = (Get-Date -AsUTC).ToString("o")
         }
-        agent = [PSCustomObject]@{ type = "endpoint"; name = "elastic-agent"; version = "9.5.3" }
+        agent = [PSCustomObject]@{ type = "endpoint"; name = "elastic-agent"; version = "9.5.4" }
         observer = [PSCustomObject]@{ vendor = "Elastic"; product = "Elastic Defend"; type = "endpoint" }
         host = [PSCustomObject]@{
             name = "not_nics_machine"
@@ -88,7 +88,7 @@ function challenge {
         agent = [PSCustomObject]@{
             type = "endpoint"
             name = "elastic-agent"
-            version = "9.5.3"
+            version = "9.5.4"
         }
         observer = [PSCustomObject]@{
             vendor = "Elastic"
@@ -131,7 +131,7 @@ function challenge {
         }
         url = [PSCustomObject]@{
             domain = "updates.secureyodomainfool.net"
-            full = "https://updates.secureyodomainfool.net/update?q=99,116,102,95,99,97,108,99,95,103,111,101,115,95,116,104,101,95,119,101,97,115,101,108"
+            full = "https://updates.secureyodomainfool.net/update?q=123,99,116,102,95,99,97,108,99,95,103,111,101,115,95,116,104,101,95,119,101,97,115,101,108,125"
             scheme = "https"
         }
         network = [PSCustomObject]@{
