@@ -1,4 +1,4 @@
-# Advanced Elastic Stack Import Script for Challenge: High Quality Rules Only - No Exceptions!
+# Advanced Elastic Stack Import Script for Challenge: A Call to Action
 function challenge {
     # Create an exception for the calc.exe detection rule in Elastic Stack using the API
     # Requires overwrite_exceptions=true parameter to be set in the import API call
