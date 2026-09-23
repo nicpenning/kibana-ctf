@@ -894,7 +894,8 @@ Begin {
         $result = Invoke-RestMethod -Method POST -Uri $importSavedObjectsURL -Headers $kibanaHeader -ContentType "multipart/form-data; boundary=`"$boundary`"" -Body $bodyLines -AllowUnencryptedAuthentication -SkipCertificateCheck
         if($result.errors -or $null -eq $result){
             Write-Host "❌ There was an error trying to import $filename"
-            $result.errors
+            $result.errors | Out-File -FilePath "./setup/Elastic/kibana_import_error.log" -Encoding UTF8
+            Write-Host "💡 Check the log file at ./setup/Elastic/kibana_import_error.log" -ForegroundColor Yellow
         }else{
             Write-Debug "✅ Imported $filename"
         }
@@ -913,6 +914,7 @@ Begin {
 
         # Create the space!
         try{
+            Write-Host "`n🔧 Creating the Kibana CTF space..." -ForegroundColor Cyan
             $result = Invoke-RestMethod -Method POST -Uri $createKibanaCTFSpaceURL -Headers $kibanaHeader -ContentType "application/json" -Body $kibanaCTFSpace -AllowUnencryptedAuthentication -SkipCertificateCheck
         }catch{
             # Delete and try again if Kibana CTF Space already exists.
@@ -923,7 +925,8 @@ Begin {
 
         if($result.errors -or $null -eq $result){
             Write-Host " ❌There was an error trying to import the Kibana CTF Space." -ForegroundColor Yellow
-            $result.errors
+            $result.errors | Out-File -Append -FilePath "./setup/Elastic/kibana_import_error.log" -Encoding UTF8
+            Write-Host "💡 Check the log file at ./setup/Elastic/kibana_import_error.log" -ForegroundColor Yellow
         }else{
             Write-Host "✅ Created Kibana CTF Space!"
         }
@@ -1635,7 +1638,7 @@ function challenge {
         Invoke-CheckForElasticsearchStatus
 
         # Save state to configuration.psd1
-        Update-Psd1Value -Path "./configuration.psd1" -Key "initializedElasticStack" -Value "true"
+        Update-Psd1Value -Path "./configuration.psd1" -Key "Initialized_Elastic_Stack" -Value "true"
 
         # -------------------------------
         # 5. User Confirmation for Kibana
@@ -1700,7 +1703,6 @@ function challenge {
         # Configure Elasticsearch credentials for importing saved objects into Kibana.
         # Get elastic user credentials
         # Use generated password if available, otherwise prompt user.
-        # $elasticCreds = Invoke-CheckForElasticCreds
         Write-Debug "Going to need the password for the elastic user. Checking for generated creds now."
         $elasticCredsCheck = Invoke-CheckForEnv
 
@@ -1719,22 +1721,30 @@ function challenge {
         # Check Elasticsearch
         Invoke-CheckForElasticsearchStatus
 
-        # Ingest Dummy Documents
-        $docCount = 25000
-        $batchSize = 2500
-        Write-Host "Ingesting $docCount documents in batches of $batchSize..."
+        # Check in configuration.psd1 if the Elastic Stack has had the synthetic data already ingested. If not, ingest it now.
+        if ($configurationSettings.Ingested_Synthetic_Data -eq $false) {
+            # Ingest Dummy Documents
+            $docCount = 25000
+            $batchSize = 2500
+            Write-Host "Ingesting $docCount documents in batches of $batchSize..."
 
-        $spinner = @('|','/','-','\'); $i = 0
-        Write-Host "⏳ Generating $docCount fake documents..." -ForegroundColor Cyan
+            $spinner = @('|','/','-','\'); $i = 0
+            Write-Host "⏳ Generating $docCount fake documents..." -ForegroundColor Cyan
 
-        $dummyDocs = foreach ($n in 1..$docCount) {
-            Write-Host -NoNewline "`r$($spinner[$i % $spinner.Length]) Generating doc $n of $docCount..."
-            $i++
-            Invoke-Generate-FakeEvent
+            $dummyDocs = foreach ($n in 1..$docCount) {
+                Write-Host -NoNewline "`r$($spinner[$i % $spinner.Length]) Generating doc $n of $docCount..."
+                $i++
+                Invoke-Generate-FakeEvent
+            }
+            Write-Host "`r✅ Generated $($dummyDocs.Count) fake documents." -ForegroundColor Green
+
+            Invoke-Ingest-Elasticsearch-Documents -documentToIngest $dummyDocs -batchSize $batchSize
+
+            # Update configuration.psd1 to indicate that synthetic data has been ingested
+            Update-Psd1Value -Path "./configuration.psd1" -Key "Ingested_Synthetic_Data" -Value $true
+        }else {
+            Write-Host "✅ Synthetic data already ingested. Skipping ingestion." -ForegroundColor Green
         }
-        Write-Host "`r✅ Generated $($dummyDocs.Count) fake documents." -ForegroundColor Green
-
-        Invoke-Ingest-Elasticsearch-Documents -documentToIngest $dummyDocs -batchSize $batchSize
 
         # Import Kibana Dashboard
         Write-Host "📥 Importing Kibana CTF Dashboard"
@@ -1919,7 +1929,12 @@ Process {
 
                 Invoke-CTFd-Deploy
 
-                Invoke-Elastic-Stack-Deploy
+                # If configuration.psd1 has Initialized_Elastic_Stack set to true, skip the Elastic Stack deployment and go straight to importing challenges.
+                if ($configurationSettings.Initialized_Elastic_Stack -eq $true) {
+                    Write-Host "`n✅ Elastic Stack already initialized (see configuration.psd1). Skipping deployment and going straight to importing challenges." -ForegroundColor Green
+                } else {
+                    Invoke-Elastic-Stack-Deploy
+                }
 
                 Invoke-Elastic-and-CTFd-Challenges
 
@@ -1935,7 +1950,12 @@ Process {
             }
             '2' {
                 # Deploy Elastic Stack
-                Invoke-Elastic-Stack-Deploy
+                # If configuration.psd1 has Initialized_Elastic_Stack set to true, skip the Elastic Stack deployment and go straight to importing challenges.
+                if ($configurationSettings.Initialized_Elastic_Stack -eq $true) {
+                    Write-Host "`n✅ Elastic Stack already initialized (see configuration.psd1). Skipping deployment." -ForegroundColor Green
+                } else {
+                    Invoke-Elastic-Stack-Deploy
+                }
                 
                 $finished = $true
                 break
