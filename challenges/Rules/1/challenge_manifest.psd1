@@ -8,7 +8,7 @@
         "elastic_rule.ndjson"
     )
     Resources = @{
-        KibanaVersion = "^9.4.0"
+        KibanaVersion = "^9.5.4"
         LicenseRequired = "basic"
     }
 }

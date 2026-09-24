@@ -6,6 +6,6 @@
         "ctfd_flag.json"
     )
     Resources = @{
-        KibanaVersion = "^9.5.3"
+        KibanaVersion = "^9.5.4"
     }
 }
