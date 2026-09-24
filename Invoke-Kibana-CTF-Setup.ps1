@@ -2018,9 +2018,9 @@ Process {
                         Write-Host "`n🚧 Developer Option: Import a specific CTF Challenge 🚧" -ForegroundColor Magenta
                         $result = Invoke-Import-Specfic-CTFd-Challenge
                         if("true" -eq $result){
-                            Write-Host "`n✅ Challenge imported successfully!"
+                            Write-Host "`n✅ Challenge import process finished!"
                         } else {
-                            Write-Host "`n❌ Challenge import failed."
+                            Write-Host "`n❌ Challenge import process failed."
                         }
                         $finished = $true
                         break
