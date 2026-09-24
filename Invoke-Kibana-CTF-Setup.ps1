@@ -476,12 +476,12 @@ Begin {
             Write-Debug "✅ All required files found. Importing Challenge: $($manifest.Name)"
             $actualFiles | Where-Object { $_ -ne "challenge_manifest.psd1" } | ForEach-Object {
                 switch ($_) {
+                    "dynamic_flag.ps1"           { . "$challengePath/$_"; dynamic_flag }
                     "ctfd_challenge.json"        { Invoke-Import-CTFd-Challenge "$challengePath/$_" }
                     "ctfd_flag.json"             { Invoke-Import-CTFd-Flag "$challengePath/$_" }
                     "ctfd_hint.json"             { Invoke-Import-CTFd-Hint "$challengePath/$_" }
                     "elastic_import_script.ps1"  { . "$challengePath/$_"; challenge }
                     "elastic_saved_objects.ndjson" { Import-SavedObject "$challengePath/$_" }
-                    "dynamic_flag.ps1"           { . "$challengePath/$_"; dynamic_flag }
                 }
             }
 
@@ -1823,12 +1823,12 @@ function challenge {
                         Write-Debug "✅ All required files found. Importing Challenge: $($manifest.Name)"
                         $actualFiles | Where-Object { $_ -ne "challenge_manifest.psd1" } | ForEach-Object {
                             switch ($_) {
+                                "dynamic_flag.ps1"           { . "$challengePath/$_"; dynamic_flag }
                                 "ctfd_challenge.json"        { Invoke-Import-CTFd-Challenge "$challengePath/$_" }
                                 "ctfd_flag.json"             { Invoke-Import-CTFd-Flag "$challengePath/$_" }
                                 "ctfd_hint.json"             { Invoke-Import-CTFd-Hint "$challengePath/$_" }
                                 "elastic_import_script.ps1"  { . "$challengePath/$_"; challenge }
                                 "elastic_saved_objects.ndjson" { Import-SavedObject "$challengePath/$_" }
-                                "dynamic_flag.ps1"           { . "$challengePath/$_"; dynamic_flag }
                             }
                         }
                     } else {
