@@ -8,5 +8,6 @@
     )
     Resources = @{
         KibanaVersion = "^8.17.0"
+        LicenseRequired = "basic"
     }
 }

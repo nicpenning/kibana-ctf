@@ -2,6 +2,6 @@
   "id": 1008,
   "challenge_id": 1008,
   "type": "regex",
-  "content": "(?:38|\\{ctf_(?:38)_days_since_last_incident\\})",
+  "content": "(?:dynamic_days|\\{ctf_(?:dynamic_days)_days_since_last_incident\\})",
   "data": "case_insensitive"
 }

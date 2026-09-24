@@ -2,6 +2,6 @@
     "id":3010,
     "challenge_id":3010,
     "type":"static",
-    "content":"{ctf_more_regex_fun_to_be_included}",
+    "content":"{ctf_more_regex_fun_to_be_included_and_excluded_of_course}",
     "data":"case_insensitive"
 }

@@ -1,0 +1,17 @@
+{
+  "id": 4005,
+  "name": "A Call to Action",
+  "description": "Can these alerts be actionable?",
+  "max_attempts": 10,
+  "value": 50,
+  "category": "Rules",
+  "type": "standard",
+  "state": "visible",
+  "requirements": {
+    "prerequisites": [
+      4004
+    ],
+    "anonymize": true
+  },
+  "connection_info": "https://127.0.0.1:5601/s/kibana-ctf/app/security/rules"
+}

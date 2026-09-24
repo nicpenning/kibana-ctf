@@ -1,5 +1,5 @@
 @{
-    Name = "Fantastic Filter Fun "
+    Name = "Fantastic Filter Fun"
     Category = "Visualization Sensation"
     RequiredFiles = @(
         "ctfd_challenge.json"
@@ -7,5 +7,6 @@
     )
     Resources = @{
         KibanaVersion = "^9.1.0"
+        LicenseRequired = "basic"
     }
 }

@@ -3,7 +3,6 @@
     "indices": [
       {
         "names": [
-          "random-*,test*,logs-*,customz*,es-random-data-stream-001*,es-random-data-stream-002*,es-random-data-stream-003*,es-random-data-stream-004*,es-random-data-stream-005*,{ctf_sweet_my_own_data_view}*",
           "logs-*","join-*"
         ],
         "privileges": [
@@ -12,17 +11,29 @@
           "manage"
         ],
         "allow_restricted_indices": false
+      },
+      {
+        "names" : [
+          ".alerts-security.alerts-kibana-ctf"
+        ],
+        "privileges" : [
+          "read",
+          "view_index_metadata"
+        ],
+        "allow_restricted_indices" : true
       }
     ],
     "applications": [
       {
         "application": "kibana-.kibana",
         "privileges": [
-          "feature_discover.read",
+          "feature_discover_v2.read",
           "feature_indexPatterns.read",
           "feature_savedQueryManagement.read",
           "feature_dashboard_v2.read",
-          "feature_visualize_v2.read"
+          "feature_visualize_v2.read",
+          "feature_siemV4.read",
+          "feature_actions.read"
         ],
         "resources": [
           "space:kibana-ctf"

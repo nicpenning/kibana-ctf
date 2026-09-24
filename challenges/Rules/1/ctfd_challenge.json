@@ -1,0 +1,11 @@
+{
+  "id": 4001,
+  "name": "My First Rule",
+  "description": "Check out my first rule to catch those evil doers spewing network traffic from calc!!\r\n\r\n![calc](https://media.tenor.com/Vrv3rgnNdPsAAAAM/krach-boursier.gif)",
+  "max_attempts": 10,
+  "value": 20,
+  "category": "Rules",
+  "type": "standard",
+  "state": "visible",
+  "connection_info": "https://127.0.0.1:5601/s/kibana-ctf/app/security/rules"
+}

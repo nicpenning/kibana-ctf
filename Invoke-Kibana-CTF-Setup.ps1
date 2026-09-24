@@ -25,7 +25,7 @@
 
     Variable Options
     -Elasticsearch_URL "https://127.0.0.1:9200"
-    -Kibana_URL "http://127.0.0.1:5601"
+    -Kibana_URL "https://127.0.0.1:5601"
     -CTFd_URL "http://127.0.0.1:8000"
     -CTF_Start_Date "12/24/2024 12:00 PM" (default - Now) # To do
     -CTF_End_Date "12/24/2024 1:00 PM" (default - 1 hour from Start Date) # To do
@@ -42,7 +42,7 @@ Param (
 
     # Kibana URL. (default - http://127.0.0.1:5601)
     [Parameter(Mandatory=$false)]
-    $Kibana_URL = "http://127.0.0.1:5601",
+    $Kibana_URL = "https://127.0.0.1:5601",
     
     # CTFd URL. (default - http://127.0.0.1:8000)
     [Parameter(Mandatory=$false)]
@@ -77,7 +77,7 @@ Begin {
         $Elasticsearch_URL = $configurationSettings.Elasticsearch_URL
         Write-Host "💾 Modifed Elasticsearch URL detected in configuration.psd1, using $Elasticsearch_URL" -ForegroundColor Yellow
     }
-    if($configurationSettings.Kibana_URL -ne "http://127.0.0.1:5601"){
+    if($configurationSettings.Kibana_URL -ne "https://127.0.0.1:5601"){
         $Kibana_URL = $configurationSettings.Kibana_URL
         Write-Host "💾 Modifed Kibana URL detected in configuration.psd1, using $Kibana_URL" -ForegroundColor Yellow
     }
@@ -308,7 +308,7 @@ Begin {
             $import_challenge = Invoke-RestMethod -Method POST "$CTFd_URL_API/challenges" -ContentType "application/json" -Headers $ctfd_auth -Body $current_challenge
             Write-Host "✅ Imported challenge $($ctfd_challenge.name) - $($import_challenge.success)"
         }catch{
-            Write-Host "❌ Could not import challenge: $($ctfd_challenge.name) - $($ctfd_challenge.id)"
+            Write-Host "❌ Could not import challenge to CTFd (it might already exist): $($ctfd_challenge.name) - $($ctfd_challenge.id)"
             Write-Debug $_.Exception
         }
     }
@@ -409,6 +409,8 @@ Begin {
         Write-Host "1. Discover"
         Write-Host "2. ES_QL"
         Write-Host "3. Dashboards"
+        Write-Host "4. Rules"
+        
         $challengeCategoryToImport = Read-Host "Enter your choice: "
         
         # Display challenges in the selected category
@@ -418,6 +420,8 @@ Begin {
             '1' { 'Discover' }
             '2' { 'ES_QL' }
             '3' { 'Dashboards' }
+            '4' { 'Rules' }
+            
             default {
                 Write-Host "Invalid choice. Exiting." -ForegroundColor Yellow
                 $finished = $true
@@ -472,12 +476,12 @@ Begin {
             Write-Debug "✅ All required files found. Importing Challenge: $($manifest.Name)"
             $actualFiles | Where-Object { $_ -ne "challenge_manifest.psd1" } | ForEach-Object {
                 switch ($_) {
+                    "dynamic_flag.ps1"           { . "$challengePath/$_"; dynamic_flag }
                     "ctfd_challenge.json"        { Invoke-Import-CTFd-Challenge "$challengePath/$_" }
                     "ctfd_flag.json"             { Invoke-Import-CTFd-Flag "$challengePath/$_" }
                     "ctfd_hint.json"             { Invoke-Import-CTFd-Hint "$challengePath/$_" }
                     "elastic_import_script.ps1"  { . "$challengePath/$_"; challenge }
                     "elastic_saved_objects.ndjson" { Import-SavedObject "$challengePath/$_" }
-                    "dynamic_flag.ps1"           { . "$challengePath/$_"; dynamic_flag }
                 }
             }
 
@@ -890,7 +894,8 @@ Begin {
         $result = Invoke-RestMethod -Method POST -Uri $importSavedObjectsURL -Headers $kibanaHeader -ContentType "multipart/form-data; boundary=`"$boundary`"" -Body $bodyLines -AllowUnencryptedAuthentication -SkipCertificateCheck
         if($result.errors -or $null -eq $result){
             Write-Host "❌ There was an error trying to import $filename"
-            $result.errors
+            $result.errors | ConvertTo-Json -Depth 10 | Out-File -FilePath "./setup/Elastic/kibana_import_error.log" -Encoding UTF8
+            Write-Host "💡 Check the log file at ./setup/Elastic/kibana_import_error.log" -ForegroundColor Yellow
         }else{
             Write-Debug "✅ Imported $filename"
         }
@@ -909,6 +914,7 @@ Begin {
 
         # Create the space!
         try{
+            Write-Host "`n🔧 Creating the Kibana CTF space..." -ForegroundColor Cyan
             $result = Invoke-RestMethod -Method POST -Uri $createKibanaCTFSpaceURL -Headers $kibanaHeader -ContentType "application/json" -Body $kibanaCTFSpace -AllowUnencryptedAuthentication -SkipCertificateCheck
         }catch{
             # Delete and try again if Kibana CTF Space already exists.
@@ -919,7 +925,8 @@ Begin {
 
         if($result.errors -or $null -eq $result){
             Write-Host " ❌There was an error trying to import the Kibana CTF Space." -ForegroundColor Yellow
-            $result.errors
+            $result.errors | Out-File -Append -FilePath "./setup/Elastic/kibana_import_error.log" -Encoding UTF8
+            Write-Host "💡 Check the log file at ./setup/Elastic/kibana_import_error.log" -ForegroundColor Yellow
         }else{
             Write-Host "✅ Created Kibana CTF Space!"
         }
@@ -1120,6 +1127,41 @@ Begin {
         return $randomFlagExtension
     }
 
+    function Import-Kibana-Detection-Rules {
+        # Get Kibana Creds
+        $elasticCreds = Invoke-CheckForElasticCreds
+        $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
+        $kibanaAuth = "Basic $elasticCredsBase64"
+
+        # Install pre-packaged Kibana detection rules
+        Write-Host "`n🔧 Importing pre-packaged Kibana detection rules..." -ForegroundColor Blue
+        try {
+            # Check for installed rules first
+            $installedRules = Invoke-RestMethod -Method Get -Uri "$Kibana_URL/s/kibana-ctf/api/detection_engine/rules/prepackaged/_status" -Headers @{"kbn-xsrf"="true"; "Authorization"="$kibanaAuth"} -ContentType "application/json" -AllowUnencryptedAuthentication -SkipCertificateCheck
+            if ($installedRules.rules_not_installed -lt 1) {
+                Write-Host "⚠️ All pre-packaged Kibana detection rules are already installed. Skipping import." -ForegroundColor Yellow
+                return
+            }else{
+                Write-Host "ℹ️ Not all pre-packaged Kibana detection rules are installed. Proceeding with import. This can take a few minutes depending on your system and network speed." -ForegroundColor Cyan
+                $results = Invoke-RestMethod -Method Put -Uri "$Kibana_URL/s/kibana-ctf/api/detection_engine/rules/prepackaged" -Headers @{"kbn-xsrf"="true"; "Authorization"="$kibanaAuth"} -ContentType "application/json" -AllowUnencryptedAuthentication -SkipCertificateCheck
+                return Write-Host "$($results.rules_installed) Pre-packaged Kibana detection rules imported successfully." -ForegroundColor Green
+            }
+        } catch {
+            Write-Host "❌ Failed to import Kibana detection rules." -ForegroundColor Red
+            Write-Debug $_.Exception
+            break
+        }
+#https://127.0.0.1:5601/s/kibana-ctf/internal/detection_engine/prebuilt_rules/upgrade/_perform
+        # Display import summary 
+        if ($results) {
+            Write-Host "`n📊 Kibana Detection Rules Import Summary:" -ForegroundColor Cyan
+            Write-Host "   Total Rules Found: $($results.total)" -ForegroundColor Green
+            Write-Host "   Rules Created: $($results.created)" -ForegroundColor Green
+            Write-Host "   Rules Updated: $($results.updated)" -ForegroundColor Green
+        }
+
+    }
+
     # Developer Functions
     function Invoke-Create-New-CTF-Challenge-Wizard {
         # Load challenge categories from manifest
@@ -1198,7 +1240,7 @@ Begin {
         foreach ($requiredFile in $newChallengeImport.RequiredFiles) {
             switch ($requiredFile) {
                 "ctfd_challenge.json" {
-                    $ctfd_challenge_template = @{
+                    $ctfd_challenge_template = [ordered]@{
                         id           = [int]$Challenge_Id
                         name         = $Challenge_Name
                         description  = $Challenge_Description
@@ -1212,7 +1254,7 @@ Begin {
                     Write-Host "✅ Created ctfd_challenge.json template." -ForegroundColor Green
                 }
                 "ctfd_flag.json" {
-                    $ctfd_flag_template = @{
+                    $ctfd_flag_template = [ordered]@{
                         id           = $Challenge_Id  # Update this ID after importing the challenge to CTFd
                         challenge_id = $Challenge_Id  # Update this ID after importing the challenge to CTFd
                         type         = "static"
@@ -1232,7 +1274,7 @@ Begin {
         $needHint = Read-Host "Would you like to add a hint to this challenge?`n1. Yes`n2. No`n(Enter 1 or 2)"
         if($needHint -eq 1){
             $Challenge_Hint = Read-Host "Enter the hint for the challenge (will be added to ctfd_hint.json)"
-            $ctfd_hint_template = @{
+            $ctfd_hint_template = [ordered]@{
                 id           = $Challenge_Id  # Update this ID after importing the challenge to CTFd
                 challenge_id = $Challenge_Id  # Update this ID after importing the challenge to CTFd
                 content      = $Challenge_Hint
@@ -1276,7 +1318,7 @@ function challenge {
     $challenge_option1 = "[1] 🔎 Discover Challenges    (Kibana Discover focus)"
     $challenge_option2 = "[2] 📊 ES|QL Challenges       (ES|QL query practice)"
     $challenge_option3 = "[3] 📈 Dashboards             (Kibana dashboards only)"
-    #$challenge_option4 = "[4] 🎯 Hand-pick Challenges   (Choose specific ones)"
+    $challenge_option4 = "[4] 🎯 Rules                  (Detection Rules)"
     $quit              = "[Q] ❌ Quit"
 
     # Developer menu options
@@ -1290,6 +1332,7 @@ function challenge {
     $developer_option7 = "[7] 🚦Check Elastic Stack and CTFd Status"
     $developer_option8 = "[8] 🗑️ Delete CTFd"
     $developer_option9 = "[9] 🗑️ Delete Elastic Stack"
+    $developer_option10 = "[10] 📊 Import Kibana Detection Rules"
 
 
     $quit = "Q. Quit"
@@ -1330,6 +1373,7 @@ function challenge {
         Write-Host $developer_option7 -ForegroundColor White
         Write-Host $developer_option8 -ForegroundColor White
         Write-Host $developer_option9 -ForegroundColor White
+        Write-Host $developer_option10 -ForegroundColor White
         Write-Host ""
         Write-Host $quit -ForegroundColor Red
         Write-Host ""
@@ -1346,7 +1390,7 @@ function challenge {
         Write-Host $challenge_option1 -ForegroundColor White
         Write-Host $challenge_option2 -ForegroundColor White
         Write-Host $challenge_option3 -ForegroundColor White
-        #Write-Host $challenge_option4 -ForegroundColor White
+        Write-Host $challenge_option4 -ForegroundColor White
         Write-Host ""
         Write-Host $quit -ForegroundColor Red
         Write-Host ""
@@ -1594,7 +1638,7 @@ function challenge {
         Invoke-CheckForElasticsearchStatus
 
         # Save state to configuration.psd1
-        Update-Psd1Value -Path "./configuration.psd1" -Key "initializedElasticStack" -Value "true"
+        Update-Psd1Value -Path "./configuration.psd1" -Key "Initialized_Elastic_Stack" -Value "true"
 
         # -------------------------------
         # 5. User Confirmation for Kibana
@@ -1635,7 +1679,7 @@ function challenge {
 
         # Get / Save CTFd Access Token
         $ctfd_auth = Get-CTFd-Admin-Token
-
+        $configurationSettings = Import-PowerShellDataFile $configPath
         # Get / Save Elasticsearch URL
         if ($configurationSettings.Elasticsearch_URL) {
             $Elasticsearch_URL = $configurationSettings.Elasticsearch_URL
@@ -1652,14 +1696,13 @@ function challenge {
             Write-Host "📊 Kibana URL detected: $Kibana_URL" -ForegroundColor Green
         } else {
             Write-Host "Kibana URL required." -ForegroundColor Yellow
-            $Kibana_URL = Read-Host "Enter full Kibana URL (e.g. http://127.0.0.1:5601)"
+            $Kibana_URL = Read-Host "Enter full Kibana URL (e.g. https://127.0.0.1:5601)"
             Update-Psd1Value -Path $configPath -Key "Kibana_URL" -Value $Kibana_URL
         }
 
         # Configure Elasticsearch credentials for importing saved objects into Kibana.
         # Get elastic user credentials
         # Use generated password if available, otherwise prompt user.
-        # $elasticCreds = Invoke-CheckForElasticCreds
         Write-Debug "Going to need the password for the elastic user. Checking for generated creds now."
         $elasticCredsCheck = Invoke-CheckForEnv
 
@@ -1678,29 +1721,43 @@ function challenge {
         # Check Elasticsearch
         Invoke-CheckForElasticsearchStatus
 
-        # Ingest Dummy Documents
-        $docCount = 25000
-        $batchSize = 2500
-        Write-Host "Ingesting $docCount documents in batches of $batchSize..."
+        # Check in configuration.psd1 if the Elastic Stack has had the synthetic data already ingested. If not, ingest it now.
+        $configurationSettings = Import-PowerShellDataFile $configPath
+        if ($configurationSettings.Ingested_Synthetic_Data -eq $false -or $null -eq $configurationSettings.Ingested_Synthetic_Data) {
+            # Ingest Dummy Documents
+            $docCount = 25000
+            $batchSize = 2500
+            Write-Host "Ingesting $docCount documents in batches of $batchSize..."
 
-        $spinner = @('|','/','-','\'); $i = 0
-        Write-Host "⏳ Generating $docCount fake documents..." -ForegroundColor Cyan
+            $spinner = @('|','/','-','\'); $i = 0
+            Write-Host "⏳ Generating $docCount fake documents..." -ForegroundColor Cyan
 
-        $dummyDocs = foreach ($n in 1..$docCount) {
-            Write-Host -NoNewline "`r$($spinner[$i % $spinner.Length]) Generating doc $n of $docCount..."
-            $i++
-            Invoke-Generate-FakeEvent
+            $dummyDocs = foreach ($n in 1..$docCount) {
+                Write-Host -NoNewline "`r$($spinner[$i % $spinner.Length]) Generating doc $n of $docCount..."
+                $i++
+                Invoke-Generate-FakeEvent
+            }
+            Write-Host "`r✅ Generated $($dummyDocs.Count) fake documents." -ForegroundColor Green
+
+            Invoke-Ingest-Elasticsearch-Documents -documentToIngest $dummyDocs -batchSize $batchSize
+
+            # Update configuration.psd1 to indicate that synthetic data has been ingested
+            Update-Psd1Value -Path "./configuration.psd1" -Key "Ingested_Synthetic_Data" -Value 'true'
+        }else {
+            Write-Host "✅ Synthetic data already ingested. Skipping ingestion." -ForegroundColor Green
         }
-        Write-Host "`r✅ Generated $($dummyDocs.Count) fake documents." -ForegroundColor Green
-
-        Invoke-Ingest-Elasticsearch-Documents -documentToIngest $dummyDocs -batchSize $batchSize
 
         # Import Kibana Dashboard
         Write-Host "📥 Importing Kibana CTF Dashboard"
+        
         Import-SavedObject "./setup/Elastic/kibana_dashboard.ndjson"
 
+        # Import Rules
+        Write-Host "📥 Importing Kibana CTF Detection Rules"
+        Import-Kibana-Detection-Rules
+
         # Import Challenges (if selected)
-        if ((0, 1, 2, 3) -contains $CTF_Options_Selected) {
+        if ((0, 1, 2, 3, 4) -contains $CTF_Options_Selected) {
             $rootManifestPath = "./challenges/challenge_categories.psd1"
             if (-not (Test-Path $rootManifestPath)) {
                 Write-Host "❌ Root manifest not found at $rootManifestPath." -ForegroundColor Red
@@ -1720,9 +1777,10 @@ function challenge {
                 1 { $challengeTypes = @("Discover") }
                 2 { $challengeTypes = @("ES_QL") }
                 3 { $challengeTypes = @("Dashboards") }
+                4 { $challengeTypes = @("Rules") }
                 default {
                     Write-Host "⚠️ Invalid choice: '$CTF_Options_Selected'" -ForegroundColor Yellow
-                    Write-Host "👉 Please enter a valid option (0–3)." -ForegroundColor Cyan
+                    Write-Host "👉 Please enter a valid option (0–4)." -ForegroundColor Cyan
                     $challengeTypes = @()
                 }
             }
@@ -1765,12 +1823,12 @@ function challenge {
                         Write-Debug "✅ All required files found. Importing Challenge: $($manifest.Name)"
                         $actualFiles | Where-Object { $_ -ne "challenge_manifest.psd1" } | ForEach-Object {
                             switch ($_) {
+                                "dynamic_flag.ps1"           { . "$challengePath/$_"; dynamic_flag }
                                 "ctfd_challenge.json"        { Invoke-Import-CTFd-Challenge "$challengePath/$_" }
                                 "ctfd_flag.json"             { Invoke-Import-CTFd-Flag "$challengePath/$_" }
                                 "ctfd_hint.json"             { Invoke-Import-CTFd-Hint "$challengePath/$_" }
                                 "elastic_import_script.ps1"  { . "$challengePath/$_"; challenge }
                                 "elastic_saved_objects.ndjson" { Import-SavedObject "$challengePath/$_" }
-                                "dynamic_flag.ps1"           { . "$challengePath/$_"; dynamic_flag }
                             }
                         }
                     } else {
@@ -1873,7 +1931,12 @@ Process {
 
                 Invoke-CTFd-Deploy
 
-                Invoke-Elastic-Stack-Deploy
+                # If configuration.psd1 has Initialized_Elastic_Stack set to true, skip the Elastic Stack deployment and go straight to importing challenges.
+                if ($configurationSettings.Initialized_Elastic_Stack -eq $true) {
+                    Write-Host "`n✅ Elastic Stack already initialized (see configuration.psd1). Skipping deployment and going straight to importing challenges." -ForegroundColor Green
+                } else {
+                    Invoke-Elastic-Stack-Deploy
+                }
 
                 Invoke-Elastic-and-CTFd-Challenges
 
@@ -1889,7 +1952,13 @@ Process {
             }
             '2' {
                 # Deploy Elastic Stack
-                Invoke-Elastic-Stack-Deploy
+                # If configuration.psd1 has Initialized_Elastic_Stack set to true, skip the Elastic Stack deployment and go straight to importing challenges.
+                $configurationSettings = Import-PowerShellDataFile $configPath
+                if ($configurationSettings.Initialized_Elastic_Stack -eq $true) {
+                    Write-Host "`n✅ Elastic Stack already initialized (see configuration.psd1). Skipping deployment." -ForegroundColor Green
+                } else {
+                    Invoke-Elastic-Stack-Deploy
+                }
                 
                 $finished = $true
                 break
@@ -1949,9 +2018,9 @@ Process {
                         Write-Host "`n🚧 Developer Option: Import a specific CTF Challenge 🚧" -ForegroundColor Magenta
                         $result = Invoke-Import-Specfic-CTFd-Challenge
                         if("true" -eq $result){
-                            Write-Host "`n✅ Challenge imported successfully!"
+                            Write-Host "`n✅ Challenge import process finished!"
                         } else {
-                            Write-Host "`n❌ Challenge import failed."
+                            Write-Host "`n❌ Challenge import process failed."
                         }
                         $finished = $true
                         break
@@ -1973,7 +2042,7 @@ Process {
                         # Start up Elastic Stack
                         Write-Host "`n🚧 Developer Option: Start up Elastic Stack 🚧" -ForegroundColor Magenta
                         Invoke-StartDocker
-                        Write-Host "`n✅ Elastic Stack is running at $Elastic_URL."
+                        Write-Host "`n✅ Elastic Stack is running at $Elasticsearch_URL."
                         $finished = $true
                         break
                     }
@@ -2030,6 +2099,14 @@ Process {
                         # Remove Elastic Stack
                         Invoke-Remove-Elastic-Stack
 
+                        $finished = $true
+                        break
+                    }
+                    '10' {
+                        # Import Kibana Detection Rules
+                        Write-Host "`n🚧 Developer Option: Import Kibana Detection Rules 🚧" -ForegroundColor Magenta
+                        Import-Kibana-Detection-Rules
+                        Write-Host "`n✅ Kibana Detection Rules imported successfully!"
                         $finished = $true
                         break
                     }
